@@ -1,0 +1,147 @@
+\section{Maillages et structures de donn\'ees}
+
+Le template \texttt{finite\_element\_space} est responsable de la
+construction du mapping entre les indices des degr\'es de libert\'e
+locaux \`a chaque \'element, et les indices des degres de libert\'e
+globaux.
+
+Soit $M = (V, E)$ un mesh de triangles conformes. On note:
+\begin{itemize}
+\item $V = \{v_1, v_2, \dots, v_{N_v}\}$ l'ensemble des vertices du
+  mesh $M$.
+  
+\item $\tau = \{K_1, K_2, \dots, K_{N_K}\}$, o\`u $K_i = \{K_{i,1},
+  K_{i,2}, K_{i,3}\}$, $K_{i,j}\in V$ l'ensemble des \'elements du
+  mesh $M$. On suppose que $\forall i$ les \'elements de $e_i$ sont tri\'es par
+  ordre croissants, c'est-\`a-dire que $K_{i,1} < K_{i,2} < K_{i,3}$.
+  
+\item $A = \left\{ \{v, w\}\ |\ v,w\in V \text{ et } \exists e\in E
+  \text{ tel que } v,w \in e\right\}$. On note $a_i = \{a_{i,1},
+  a_{i,2}\}$, $i = 1, \dots, N_{a}$ les \'elements de l'ensemble $A$,
+  avec $N_a = \#A$. De m\^eme, on suppose que $\forall i$ les \'elements de
+  $a_i$ sont tri\'es par ordre croissants, c'est-\`a-dire
+  que $a_{i,1} < a_{i,2}$.
+\end{itemize}
+
+D'un point de vue de l'impl\'ementation informatique, l'ensemble $V$
+est repr\'esent\'e simplement par l'entier $N_v$. Dans un cadre plus
+g\'en\'eral, $V$ peut \^etre repr\'esent\'e par une liste d'entiers
+unique ${n_1, \dots, n_{N_v}}$, par exemple si la num\'erotation des
+vertices ne commence pas \`a 1, ou que des intervalles manquent.
+
+L'ensemble $E$ est repr\'esent\'e par un tableau \`a double entr\'ees
+de dimensions $N_e \times 3$:
+\begin{addmargin}[0.5in]{0em}
+  \texttt{unsigned int elements[n\_e][3];}
+\end{addmargin}
+o\`u \texttt{elements[i][j]}$ = e_{i,j}$.
+
+L'ensemble $A$ est repr\'esent\'e par un tableau \`a double entr\'ees
+de dimensions $N_a \times 2$:
+\begin{addmargin}[0.5in]{0em}
+  \texttt{unsigned int edges[n\_a][2];}
+\end{addmargin}
+o\`u \texttt{edges[i][j]}$ = a\_{i,j}$.
+
+
+\section{Element fini et degr\'es de libert\'e}
+Notons $\hat K$ le triangle de sommets $v_1 = (0,0)$, $v_2 = (1,0)$ et
+$v_3 = (0, 1)$. On note $\hat N_v = 3$ le nombre de sommets du
+triangle, $\hat N_K = 1$ le nombre de triangle et $\hat N_a = 3$ le
+nombre d'arr\^ete du triangle. Cette notation, qui parait superflue,
+devient n\'ecessaire lorsque l'on g\'eneralise le formalisme \`a des
+mesh de simplexes de dimensions $D \neq 2$.
+
+Dans ce cas, l'ensemble $A$ est donn\'e par 
+\begin{equation}
+  \tau = \left\{ \{v_1, v_2\}, \{v_1, v_3\}, \{v_2, v_3\} \right\}.
+\end{equation}
+
+Un \'element fini d\'efinit un certain nombre de degr\'es de
+libert\'es sur chaque \'element. En particulier, on note $\hat M_v$ le
+nombre de degr\'e de libert\'e associ\'es \`a chaque vertex de $K$,
+$\hat M_a$ le nombre de dof associ\'es \`a chaque arr\^ete de $K$, et
+$\hat M_K$ le nombre de dof associ\'es \`a l'\'element $K$. Donc le
+nombre de dof $\hat M_\text{tot}$ associ\'es \`a $K$ au total est donn\'e par 
+\begin{equation}
+  \hat M_\text{tot} = \hat M_v \hat N_v + \hat M_a \hat N_a + \hat M_K \hat N_K.
+\end{equation}
+Dans un mesh les degr\'es de libert\'es associ\'es aux vertices et aux
+arr\^etes d'un \'element sont identifi\'es aux degr\'es de libert\'e
+associ\'es a un autre \'element qui partage le m\^eme vertex ou la
+m\^eme arr\^ete. Ces dofs sont donc associ\'es aux vertices et aux
+arr\^etes du maillages, plut\^ot que propres \`a un \'element ou
+l'autre.
+
+Cependant, les deux points de vues sont utiles, puisque l'on assemble
+la matrice \'element fini \'element par \'element, et non fonction de
+base apr\`es fonction de base.
+
+La contribution d'un \'element $K$ au syst\`eme lin\'eaire est d'abord
+calcul\'ee en utilisant une num\'erotation des degr\'es de libert\'e
+locale \`a $K$, puis la contribution est assembl\'ee dans la matrice
+globale. Pour cette \'etape, il est n\'ecessaire d'identifier les
+degr\'es de libert\'es locaux aux degr\'es de libert\'es globaux. C'est
+le r\^ole de l'espace \'element fini, d\'ecrit plus en d\'etail dans
+la section qui suit.
+
+\section{Espace \'elements finis}
+On suppose donn\'e un mesh $M$ un \'element fini, c'est-\`a-dire que
+$\hat M_v$, $\hat M_a$ et $\hat M_K$ sont donn\'es. Commen\c cons par
+enum\'erer l'ensemble des degr\'es de libert\'es $M_\text{tot}$
+associ\'es au maillage: 
+\begin{align}
+  & M_v = \hat M_v N_v\\
+  & M_a = \hat M_a N_a\\
+  & M_K = \hat M_K N_K\\
+  & M_\text{tot} = \hat M_v N_v + \hat M_a N_a + \hat M_K N_K.
+\end{align}
+
+On note les degr\'es de libert\'e $\{\varphi_i\}_{i=1}^{M_\text{tot}}$,
+et on associe les trois intervalle d'indices avec les degr\'es
+associ\'es respectivement aux vertices, aux arr\^etes et aux
+\'elements: 
+
+\begin{itemize}
+\item Indices des dofs associ\'es aux vertices: $\{1, \dots, \hat M_v
+  N_v\}$,
+\item Indices des dofs associ\'es aux arr\^etes: $\{\hat M_v N_v + 1,
+  \hat M_v N_v + \hat M_a N_a\}$,
+\item Indices des dofs associ\'es aux \'elements: $\{\hat M_v N_v + \hat
+  M_a N_a + 1, \dots, \hat M_v N_v + \hat M_a N_a + \hat M_K N_K\}$,
+\end{itemize}
+
+En particulier, le $\hat i$-\`eme dof associ\'e au vertex $j$ a l'indice global 
+\begin{equation}
+  i = j \hat M_v + \hat i,
+\end{equation}
+le $\hat i$-\`eme dof associ\'e \`a l'arr\^ete $j$ a l'indice global 
+\begin{equation}
+  i = \hat M_v N_v + j \hat M_a + \hat i,
+\end{equation}
+and the $\hat i$-\`eme dof associ\'e au triangle j a l'indice global 
+\begin{equation}
+  i = \hat M_v N_v + \hat M_a N_a + j \hat M_K + \hat i.
+\end{equation}
+
+\section{Cellule de r\'ef\'erence}
+On d\'efinit ici la cellule (triangle) de r\'ef\'erence, et en
+particulier les enumeration des differents sous-domaines (vertices,
+arr\^etes et triangle). Soit les vertices $v_0 = (0,0)$, $v_1 =
+(1,0)$ and $v_2 = (0,1)$, et le triangle est definit par $K = \{v_0,
+v_1, v_2\}$. Donc on d\'efinit et enum\`ere les sous domaines de la
+mani\`ere suivante: 
+\begin{align}
+  \text{vertices} & v_0, v_1, v_2,\\
+  \text{arr\^etes} & e_0 = \{v_0, v_1\},\ e_1 = \{v_0, v_2\},\ e_2 =
+  \{v_1, v_2\}, \\
+  \text{triangle} & K = \{v_0, v_1, v_2\}.
+\end{align}
+
+Il y a quand meme un truc. Il faut que les dof definis sur les
+arr\^etes soient enum\'er\'es dans le m\^eme ordre sur chaque arr\^ete de
+la cellule de r\'ef\'erence. La question ne se pose pas pour les dofs
+d\'efinis sur les \'elements, parce qu'ils ne sont par partag\'es par
+diff\'erents \'elements. Pour les dofs d\'efinis sur les vertices, la
+question ne se pose pas, parce qu'il y a qu'une seule possibilit\'e
+d'enum\'erer un unique objet (le vertex). 

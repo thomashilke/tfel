@@ -5,16 +5,19 @@
 
 #include "cell.hpp"
 #include "fe.hpp"
-
+#include "mesh.hpp"
 
 int main(int argc, char *argv[]) {
-  
-  std::cout << "hello, world!" << std::endl;
 
-  double x(0.5);
-  unsigned int d(1);
+  double vertices[] = { 0.0, 0.0,
+		        1.0, 0.0,
+		       -0.5, 1.0,
+		        0.5, 1.0};
+  unsigned int elements[] = { 0, 1, 3,
+			      0, 2, 3};
 
-  std::cout << finite_element::edge_lagrange_p1::basis_function(1, &d, &x) << std::endl;
+  mesh<cell::triangle> m(vertices, 4, 2,
+			 elements, 2);
   
   return 0;
 }

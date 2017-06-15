@@ -72,12 +72,12 @@ namespace finite_element {
   };
 
   
-  template<unsigned int dimension>
+  /*template<unsigned int dimension>
   struct lagrange_p1 {
     typedef
     typename cell::simplex_of_dim<dimension>::type
     cell_type;
-  };
+    };*/
 
 }
 

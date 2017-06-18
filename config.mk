@@ -13,12 +13,12 @@ INCLUDE_DIR = include/
 LIB_DIR = lib/
 
 
-SOURCES = src/main.cpp
+SOURCES = test/finite_element_space.cpp
 
 HEADERS = 
 
-BIN = bin/main
-bin/main: build/src/main.o
+BIN = bin/test_finite_element_space
+bin/test_finite_element_space: build/test/finite_element_space.o
 
 
 LIB = 

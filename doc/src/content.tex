@@ -131,12 +131,12 @@ arr\^etes et triangle). Soit les vertices $v_0 = (0,0)$, $v_1 =
 (1,0)$ and $v_2 = (0,1)$, et le triangle est definit par $K = \{v_0,
 v_1, v_2\}$. Donc on d\'efinit et enum\`ere les sous domaines de la
 mani\`ere suivante: 
-\begin{align}
-  \text{vertices} & v_0, v_1, v_2,\\
-  \text{arr\^etes} & e_0 = \{v_0, v_1\},\ e_1 = \{v_0, v_2\},\ e_2 =
+\begin{align*}
+  \text{vertices: } & v_0, v_1, v_2,\\
+  \text{arr\^etes: } & e_0 = \{v_0, v_1\},\ e_1 = \{v_0, v_2\},\ e_2 =
   \{v_1, v_2\}, \\
-  \text{triangle} & K = \{v_0, v_1, v_2\}.
-\end{align}
+  \text{triangle: } & K = \{v_0, v_1, v_2\}.
+\end{align*}
 
 Il y a quand meme un truc. Il faut que les dof definis sur les
 arr\^etes soient enum\'er\'es dans le m\^eme ordre sur chaque arr\^ete de
@@ -145,3 +145,36 @@ d\'efinis sur les \'elements, parce qu'ils ne sont par partag\'es par
 diff\'erents \'elements. Pour les dofs d\'efinis sur les vertices, la
 question ne se pose pas, parce qu'il y a qu'une seule possibilit\'e
 d'enum\'erer un unique objet (le vertex). 
+
+\section{Assemblage}
+On consid\`ere le probl\`eme suivant. Soit $V_h$ l'espace \'element finit lagrange $\mathbb P_1\bigcap H^1_0(\Omega)$ sur une triangulation $\tau_h$ de $\Omega$. On cherche la fonction $u_h\in V_h$ telle que:
+\begin{align}
+  \int_\Omega \nabla u_h\cdot \nabla v = \int_\Omega f v,\quad \forall v \in V_h.
+\end{align}
+Bien entendu, on prend $v = \phi_j$ les fonctions de base de $V_h$, et on d\'ecompose les int\'egrale sur chaque \'element de la triangulation:
+\begin{equation}
+  \sum_{K\in\tau_h}\int_K \nabla u_h\cdot \nabla v = \sum_{K \in \tau_h}\int_\Omega f v, \quad \forall v \in V_h.
+\end{equation}
+L'inconnue $u_h$ s'\'ecrit comme une combinaison lin\'eaire des fonctions de base $\phi_i$:
+\begin{equation}
+  u_h(x) = \sum_{i = 1}^{M_\text{tot}} u_i \phi_i(x).
+\end{equation}
+Le syst\`eme devient alors:
+\begin{equation}
+  \sum_{i = 1}^{M_\text{tot}}u_i\sum_{K\in\tau_h}\int_K \nabla \phi_i\cdot \nabla \phi_j = \sum_{K \in \tau_h}\int_\Omega f \phi_j, \quad \forall j \in \{1, \dots,M_\text{tot}\}.
+\end{equation}
+
+Puisque le support des $\phi_j$ sont limit\'es aux \'el\'ements qui partagent le degr\'e de libert\'e $j$, la plupart des int\'egrales sont nulles. Soit $a$ la forme bilin\'eaire d\'efinie par
+\begin{equation}
+a(u, v) = \sum_{K\in\tau_h}\int_K \nabla u\cdot \nabla v.
+\end{equation}
+On veut calculer l'ensemble des nombres $a(\phi_i, \phi_j)$:
+\begin{equation}
+a(\phi_i, \phi_j) = \sum_{K\in\tau_h}\int_K \nabla \phi_i\cdot \nabla \phi_j = \sum_{K\in\tau_h}\int_{\hat K} \det(J(\hat x)) [J^{-\mathrm t}(\hat x)]_{kn} [J^{-\mathrm t}(\hat x)]_{km} \hat\partial_n \hat\phi_i(\hat x)\hat\partial_m \hat\phi_j(\hat x).
+\end{equation}
+En pratique, les int\'egrales sont remplac\'ees par des quadratures num\'eriques. Donc la forme bilin\'eaire $a$ devient:
+\begin{equation}
+a(\phi_i, \phi_j) = \sum_{K\in\tau_h} Q \sum_{q = 1}^{n_q}\omega_q \det(J(\hat x_q)) [J^{-\mathrm t}(\hat x_q)]_{kn} [J^{-\mathrm t}(\hat x_q)]_{km} \hat\partial_n \hat\phi_i(\hat x_q)\hat\partial_m \hat\phi_j(\hat x_q),
+\end{equation}
+avec $Q$ un coefficient de normalisation de la formule de quadrature, $\omega_q$ les poids de la formule de quadrature, et $\hat x_q$ les points de quadrature dans l'\'el\'ement de r\'ef\'erence.
+

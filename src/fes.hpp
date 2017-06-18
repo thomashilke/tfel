@@ -47,8 +47,15 @@ public:
 	local_dof_offset += hat_m * hat_n;
       }
     }
+
+    dof_number = global_dof_offset;
   }
 
+  const std::size_t get_dof_number() const { return dof_number; }
+
+  const unsigned int get_dof(std::size_t k, std::size_t i) const {
+    return dof_map.at(k, i);
+  }
 
   void show(std::ostream& stream) {
     for (unsigned int k(0); k < dof_map.get_size(0); ++k) {
@@ -61,6 +68,7 @@ public:
 
 private:
   array<unsigned int> dof_map;
+  std::size_t dof_number;
 };
 
 #endif /* _FES_H_ */

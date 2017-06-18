@@ -1,6 +1,7 @@
 CXX = g++
 DEPS_BIN = g++
-CXXFLAGS = -g -std=c++11 -I/home/foetisch/.local/include/
+DEPS_FLAGS = -I/Users/thomashilke/.local/include/
+CXXFLAGS = -g -std=c++11 -I/Users/thomashilke/.local/include/
 LDFLAGS = -g
 LDLIBS = 
 AR = ar

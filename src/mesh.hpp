@@ -1,7 +1,10 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#include <algorithm>
+
 #include <spikes/array.hpp>
+
 
 template<typename cell>
 class mesh {
@@ -22,9 +25,9 @@ public:
       sort_elements();
   }
 
-  std::size_t get_embedding_space_dimension() { return vertices.get_size(1); }
-  std::size_t get_element_number() { return elements.get_size(0); }
-  std::size_t get_vertex_number() { return vertices.get_size(0); }
+  std::size_t get_embedding_space_dimension() const { return vertices.get_size(1); }
+  std::size_t get_element_number() const { return elements.get_size(0); }
+  std::size_t get_vertex_number() const { return vertices.get_size(0); }
   
   const array<double>& get_vertices() const { return vertices; }
   const array<unsigned int>& get_elements() const { return elements; }
@@ -43,7 +46,9 @@ private:
   }
   
   void sort_elements() {
-    // TODO
+    for (unsigned int k(0); k < elements.get_size(0); ++k)
+      std::sort(&elements.at(k, 0),
+		&elements.at(k, cell::n_vertex_per_element - 1));
   }
 };
 

@@ -6,6 +6,7 @@
 #include "cell.hpp"
 #include "fe.hpp"
 #include "mesh.hpp"
+#include "fes.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -18,6 +19,9 @@ int main(int argc, char *argv[]) {
 
   mesh<cell::triangle> m(vertices, 4, 2,
 			 elements, 2);
+
+  typedef finite_element::triangle_lagrange_p1 fe;
+  finite_element_space<fe> fes(m);
   
   return 0;
 }

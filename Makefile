@@ -14,18 +14,19 @@ all: $(BIN) $(LIB) $(HEADERS)
 
 $(HEADERS): include/lexer/%: src/%
 	@echo "[INST]" $(<:src/%=%)
-	@install -m 0644 -D $< $@
+	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
+	@cp $< $(dir $@)
 
 $(OBJECTS): build/%.o: %.cpp
 	@echo "[CXX] " $@
-	@mkdir --parents $(dir $@)
-	@$(CXX) $(CXXFLAGS) -c -o $@ $<
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(DEPS): build/%.deps: %.cpp
 	@echo "[DEPS]" $@
-	@mkdir --parents $(dir $@)
-	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.o $< > $@
-	@$(DEPS_BIN) -std=c++11 -MM -MT build/$*.deps $< >> $@
+	@mkdir -p $(dir $@)
+	@$(DEPS_BIN) $(DEPSFLAGS) -std=c++11 -MM -MT build/$*.o $< > $@
+	@$(DEPS_BIN) $(DEPSFLAGS) -std=c++11 -MM -MT build/$*.deps $< >> $@
 
 $(BIN): bin/%:
 	@echo "[LD]  " $@

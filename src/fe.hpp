@@ -7,6 +7,8 @@ namespace finite_element {
 
   struct edge_lagrange_p1 {
     typedef cell::edge cell_type;
+
+    static const std::size_t n_node_per_element = 2;
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -71,6 +73,28 @@ namespace finite_element {
     }
   };
 
+  struct triangle_lagrange_p1 {
+    typedef cell::triangle cell_type;
+
+    static const std::size_t n_node_per_element = 3;
+
+    static double basis_function(unsigned int i,
+				 unsigned int* derivative,
+				 double* x) {
+      return 0.0;
+    }
+
+  protected:
+    static double bf_0_1(double* x) { return 1.0 - x[0] - x[1]; }
+    static double bf_0_2(double* x) { return x[0]; }
+    static double bf_0_3(double* x) { return x[1]; }
+    static double bf_10_1(double* x) { return -1.0; }
+    static double bf_10_2(double* x) { return  0.0; }
+    static double bf_10_3(double* x) { return  1.0; }
+    static double bf_01_1(double* x) { return -1.0; }
+    static double bf_01_2(double* x) { return  0.0; }
+    static double bf_01_3(double* x) { return  1.0; }
+  };
   
   /*template<unsigned int dimension>
   struct lagrange_p1 {

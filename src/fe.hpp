@@ -8,7 +8,11 @@ namespace finite_element {
   struct edge_lagrange_p1 {
     typedef cell::edge cell_type;
 
-    static const std::size_t n_node_per_element = 2;
+    static const std::size_t n_dof_per_element = 2;
+    static const std::size_t n_dof_per_subdomain(unsigned int i) {
+      static const std::size_t n_dof[] = {1, 0};
+      return n_dof[i];
+    }
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -37,6 +41,12 @@ namespace finite_element {
   struct edge_lagrange_p1_bubble: public edge_lagrange_p1 {
     using edge_lagrange_p1::cell_type;
 
+    static const std::size_t n_dof_per_element = 3;
+    static const std::size_t n_dof_per_subdomain(unsigned int i) {
+      static const std::size_t n_dof[] = {1, 1};
+      return n_dof[i];
+    }
+    
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
 				 double* x) {
@@ -76,7 +86,11 @@ namespace finite_element {
   struct triangle_lagrange_p1 {
     typedef cell::triangle cell_type;
 
-    static const std::size_t n_node_per_element = 3;
+    static const std::size_t n_dof_per_element = 3;
+    static const std::size_t n_dof_per_subdomain(unsigned int i) {
+      static const std::size_t n_dof[] = {1, 0, 0};
+      return n_dof[i];
+    }
 
     static double basis_function(unsigned int i,
 				 unsigned int* derivative,
@@ -94,6 +108,22 @@ namespace finite_element {
     static double bf_01_1(double* x) { return -1.0; }
     static double bf_01_2(double* x) { return  0.0; }
     static double bf_01_3(double* x) { return  1.0; }
+  };
+
+  struct triangle_lagrange_p1_bubble: public triangle_lagrange_p1 {
+    using triangle_lagrange_p1::cell_type;
+
+    static const std::size_t n_dof_per_element = 4;
+    static const std::size_t n_dof_per_subdomain(unsigned int i) {
+      static const std::size_t n_dof[] = {1, 0, 1};
+      return n_dof[i];
+    }
+
+    static double basis_function(unsigned int i,
+				 unsigned int* derivative,
+				 double* x) {
+      return 0.0;
+    }
   };
   
   /*template<unsigned int dimension>

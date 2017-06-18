@@ -20,7 +20,7 @@ $(HEADERS): include/lexer/%: src/%
 $(OBJECTS): build/%.o: %.cpp
 	@echo "[CXX] " $@
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(DEPS): build/%.deps: %.cpp
 	@echo "[DEPS]" $@

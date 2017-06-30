@@ -18,11 +18,11 @@ int main(int argc, char *argv[]) {
     const double h(length / static_cast<double>(n));
     std::cout.precision(16);
     std::cout << h << " "
-	      << error<quad::gauss1>(n) << " "
-      	      << error<quad::gauss2>(n) << " "
-      	      << error<quad::gauss3>(n) << " "
-      	      << error<quad::gauss4>(n) << " "
-      	      << error<quad::gauss5>(n) << std::endl;
+	      << error<quad::edge::gauss1>(n) << " "
+      	      << error<quad::edge::gauss2>(n) << " "
+      	      << error<quad::edge::gauss3>(n) << " "
+      	      << error<quad::edge::gauss4>(n) << " "
+      	      << error<quad::edge::gauss5>(n) << std::endl;
 
   }
   

@@ -29,6 +29,7 @@ namespace cell {
       case 0: return get_vertex(m, k, j);
       case 1: return get_edge(m, k, j);
       }
+      throw std::string("invalid subdomain id");
     }
 
     static subdomain_type get_vertex(const mesh<edge>& m,
@@ -55,6 +56,7 @@ namespace cell {
       case 0: return get_vertex_list(m);
       case 1: return get_edge_list(m);
       }
+      throw std::string("invalid subdomain id");
     }
 
     static std::set<subdomain_type> get_vertex_list(const mesh<edge>& m) {
@@ -106,6 +108,7 @@ namespace cell {
       case 1: return get_edge(m, k, j);
       case 2: return get_element(m, k, j);
       }
+      throw std::string("invalid subdomain id");
     }
     
     static subdomain_type get_vertex(const mesh<triangle>& m, std::size_t k, std::size_t j) {
@@ -140,6 +143,7 @@ namespace cell {
       case 1: return get_edge_list(m);
       case 2: return get_element_list(m);
       }
+      throw std::string("invalid subdomain id");
     }
     
     static std::set<subdomain_type> get_vertex_list(const mesh<triangle>& m) {

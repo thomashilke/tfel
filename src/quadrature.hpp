@@ -43,7 +43,7 @@ double integrate(const F& f, double a, double b, double n) {
   for (unsigned int k(0); k < n; ++k) {
     const double x1(k * h), x2((k + 1) * h);
     for (unsigned int q(0); q < Q::number_of_points; ++q)
-      result += (x2 - x1) / 2.0 * Q::w[q] * f((x1 + x2)/2.0 + (x1 + x2)/2.0 * Q::x[q]);
+      result += (x2 - x1) / 2.0 * Q::w[q] * f((x1 + x2)/2.0 + (x2 - x1)/2.0 * Q::x[q]);
   }
 
   return result;

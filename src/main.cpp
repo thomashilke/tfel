@@ -180,7 +180,8 @@ int main(int argc, char *argv[]) {
 
 	  a_el += 0;
 	}
-	sys.accumulate(fes.get_dof(k, j), fes.get_dof(k, i), a_el);
+	sys.accumulate(fes.get_dof(dm.get_parent_element_id(k), j),
+		       fes.get_dof(dm.get_parent_element_id(k), i), a_el);
       }
     }
   }
@@ -223,8 +224,8 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 
-	//rhs_el += force(x);
-	rhs_el += 1.0;
+	//rhs_el += volume * omega.at(q) * force(x);
+	rhs_el += volume * omega.at(q) * 1.0 * phi.at(j);
       }
       rhs.at(fes.get_dof(k, j)) += rhs_el;
     }
@@ -268,10 +269,10 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 
-	// rhs_el += g_dot_n(x);
-	rhs_el += 1.0;
+	// rhs_el += volume * omega.at(q) * g_dot_n(x);
+	rhs_el += volume * omega.at(q) * 1.0 * phi.at(j);
       }
-      rhs.at(fes.get_dof(k, j)) += rhs_el;
+      rhs.at(fes.get_dof(right_boundary.get_parent_element_id(k), j)) += rhs_el;
     }
   }
 

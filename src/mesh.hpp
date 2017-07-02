@@ -37,6 +37,7 @@ public:
   std::size_t get_element_number() const { return elements.get_size(0); }
   array<double> get_jmt(std::size_t k) const { return m.get_jmt(parent_element_id.at(k)); }
   std::size_t get_subdomain_id(std::size_t k) const { return parent_subdomain_id.at(k); }
+  std::size_t get_parent_element_id(std::size_t k) const { return parent_element_id.at(k); }
 
   template<typename F>
   submesh<parent_cell_type> query_elements(F f) const {

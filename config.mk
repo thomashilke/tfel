@@ -1,7 +1,7 @@
 CXX = g++
 DEPS_BIN = g++
-DEPSFLAGS = -I/Users/thomashilke/.local/include/
-CXXFLAGS = -g -std=c++11 -I/Users/thomashilke/.local/include/
+DEPSFLAGS = -I/home/thomas/.local/include/
+CXXFLAGS = -g -std=c++11 -I/home/thomas/.local/include/
 LDFLAGS = -g
 LDLIBS = 
 AR = ar
@@ -16,7 +16,8 @@ LIB_DIR = lib/
 SOURCES = test/finite_element_space.cpp \
 	test/quadrature_1d.cpp \
 	src/quadrature.cpp \
-	src/main.cpp
+	src/main.cpp \
+	src/cell.cpp
 
 HEADERS = 
 
@@ -24,7 +25,7 @@ BIN = bin/test_finite_element_space \
 	bin/test_quadrature_1d \
 	bin/main
 bin/test_finite_element_space: build/test/finite_element_space.o
-bin/main: build/src/main.o
+bin/main: build/src/main.o build/src/quadrature.o build/src/cell.o
 bin/test_quadrature_1d: build/test/quadrature_1d.o build/src/quadrature.o
 
 LIB = 

@@ -13,6 +13,8 @@ public:
   finite_element_space(const mesh<cell_type>& m)
     : dof_map{m.get_element_number(),
               fe_type::n_dof_per_element} {
+    const array<unsigned int>& elements(m.get_elements());
+    
     using cell::subdomain_type;
 
     std::size_t global_dof_offset(0);
@@ -23,7 +25,7 @@ public:
      */
     for (unsigned int sd(0); sd < cell_type::n_subdomain_type; ++sd) {
       if(fe_type::n_dof_per_subdomain(sd)) {
-	std::set<subdomain_type> subdomains(cell_type::get_subdomain_list(m, sd));
+	std::set<subdomain_type> subdomains(cell_type::get_subdomain_list(elements, sd));
 	
 	const std::size_t n(subdomains.size());
 	const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
@@ -32,7 +34,7 @@ public:
 	for (unsigned int k(0); k < m.get_element_number(); ++k) {
 	  for (unsigned int hat_j(0); hat_j < hat_n; ++hat_j) {
 	    // for subdomain hat_j:
-	    subdomain_type subdomain(cell_type::get_subdomain(m, k, sd, hat_j));
+	    subdomain_type subdomain(cell_type::get_subdomain(elements, k, sd, hat_j));
 	    // j is the global index of subdomain hat_j
 	    const std::size_t j(std::distance(subdomains.begin(),
 					      subdomains.find(subdomain)));

@@ -3,66 +3,85 @@
 
 #include <set>
 
-#include "mesh.hpp"
+#include <spikes/array.hpp>
+
 #include "meta.hpp"
 
 namespace cell {
   typedef std::set<std::size_t> subdomain_type;
+
+  struct empty_cell {};
   
-  struct point { };
+  struct point {
+    static const std::size_t n_dimension = 0;
+    static const std::size_t n_vertex_per_element = 1;
+    static const std::size_t n_subdomain_type = 1;
+    static const std::size_t n_subdomain_of_type[1];
+    static const bool is_simplicial = true;
+
+    typedef empty_cell boundary_cell_type;
+
+    static double get_cell_volume(const array<double>& vertices,
+				  const array<unsigned int>& elements,
+				  unsigned int k) {
+      return 1.0;
+    }
+  };
   
   struct edge {
     static const std::size_t n_dimension = 1;
     static const std::size_t n_vertex_per_element = 2;
     static const std::size_t n_subdomain_type = 2;
+    static const std::size_t n_subdomain_of_type[2];
     static const bool is_simplicial = true;
 
+    typedef point boundary_cell_type;
+    
     static const std::size_t n_subdomain(unsigned int i) {
       static const std::size_t n_sub[] = {2, 1};
       return n_sub[i];
     }
 
-    static const subdomain_type get_subdomain(const mesh<edge>& m,
+    static const subdomain_type get_subdomain(const array<unsigned int>& elements,
 					      std::size_t k,
 					      std::size_t sd, std::size_t j) {
       switch (sd) {
-      case 0: return get_vertex(m, k, j);
-      case 1: return get_edge(m, k, j);
+      case 0: return get_vertex(elements, k, j);
+      case 1: return get_edge(elements, k, j);
       }
       throw std::string("invalid subdomain id");
     }
 
-    static subdomain_type get_vertex(const mesh<edge>& m,
+    static subdomain_type get_vertex(const array<unsigned int>& elements,
 				     std::size_t k,
 				     std::size_t j) {
       subdomain_type vertex;
-      vertex.insert(m.get_elements().at(k, j));
+      vertex.insert(elements.at(k, j));
       return vertex;
     }
     
-    static subdomain_type get_edge(const mesh<edge>& m,
+    static subdomain_type get_edge(const array<unsigned int>& elements,
 				   std::size_t k,
 				   std::size_t j) {
       subdomain_type element;
       for (unsigned int i(0); i < 2; ++i)
-	element.insert(m.get_elements().at(k, i));
+	element.insert(elements.at(k, i));
       return element;
     }
 
 
-    static std::set<subdomain_type> get_subdomain_list(const mesh<edge>& m,
+    static std::set<subdomain_type> get_subdomain_list(const array<unsigned int>& elements,
 						       std::size_t sd) {
       switch (sd) {
-      case 0: return get_vertex_list(m);
-      case 1: return get_edge_list(m);
+      case 0: return get_vertex_list(elements);
+      case 1: return get_edge_list(elements);
       }
       throw std::string("invalid subdomain id");
     }
 
-    static std::set<subdomain_type> get_vertex_list(const mesh<edge>& m) {
+    static std::set<subdomain_type> get_vertex_list(const array<unsigned int>& elements) {
       std::set<subdomain_type> vertex_list;
 
-      const array<unsigned int>& elements(m.get_elements());
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
 	for (unsigned int i(0); i < elements.get_size(1); ++i) {
 	  subdomain_type vertex;
@@ -74,10 +93,9 @@ namespace cell {
       return vertex_list;
     }
 
-    static std::set<subdomain_type> get_edge_list(const mesh<edge>& m) {
+    static std::set<subdomain_type> get_edge_list(const array<unsigned int>& elements) {
       std::set<subdomain_type> element_list;
 
-      const array<unsigned int>& elements(m.get_elements());
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
 	subdomain_type edge;
 	for (unsigned int i(0); i < elements.get_size(1); ++i)
@@ -87,69 +105,105 @@ namespace cell {
       
       return element_list;
     }
+
+    static double get_cell_volume(const array<double>& vertices,
+				  const array<unsigned int>& elements,
+				  unsigned int k) {
+      return std::abs(vertices.at(elements.at(k, 0), 0)
+		      - vertices.at(elements.at(k, 1), 0));
+    }
+
+    static array<double> get_jmt(const array<double>& vertices,
+				 const array<unsigned int>& elements,
+				 unsigned int k) {
+      array<double> jmt{1,1};
+      jmt.at(0,0) = (vertices.at(elements.at(k, 1), 0)
+		     - vertices.at(elements.at(k, 0), 0));
+      return jmt;
+    }
+    
+    static array<double> map_points_on_subdomain(std::size_t subdomain_id, const array<double>& xs) {
+      if (subdomain_id >= 2)
+	throw std::string("edge::map_points_on_subdomain: only two subdomains for an edge.");
+      
+      array<double> hat_xs(xs);
+      for (std::size_t i(0); i < hat_xs.get_size(0); ++i)
+	if (subdomain_id == 0)
+	  hat_xs.at(i, 0) = 0.0;
+	else
+	  hat_xs.at(i, 0) = 1.0;
+
+      return hat_xs;
+    }
+
   };
     
   struct triangle {
     static const std::size_t n_dimension = 2;
     static const std::size_t n_vertex_per_element = 3;
     static const std::size_t n_subdomain_type = 3;
+    static const std::size_t n_subdomain_of_type[3];
     static const bool is_simplicial = true;
+
+    typedef edge boundary_cell_type;
 
     static const std::size_t n_subdomain(unsigned int i) {
       static const std::size_t n_sub[] = {3, 3, 1};
       return n_sub[i];
     }
 
-    static subdomain_type get_subdomain(const mesh<triangle>& m,
+    static subdomain_type get_subdomain(const array<unsigned int>& elements,
 					std::size_t k,
 					std::size_t sd, std::size_t j) {
       switch (sd) {
-      case 0: return get_vertex(m, k, j);
-      case 1: return get_edge(m, k, j);
-      case 2: return get_element(m, k, j);
+      case 0: return get_vertex(elements, k, j);
+      case 1: return get_edge(elements, k, j);
+      case 2: return get_element(elements, k, j);
       }
       throw std::string("invalid subdomain id");
     }
     
-    static subdomain_type get_vertex(const mesh<triangle>& m, std::size_t k, std::size_t j) {
+    static subdomain_type get_vertex(const array<unsigned int>& elements,
+				     std::size_t k, std::size_t j) {
       subdomain_type vertex;
-      vertex.insert(m.get_elements().at(k, j));
+      vertex.insert(elements.at(k, j));
       return vertex;
     }
     
-    static subdomain_type get_edge(const mesh<triangle>& m, std::size_t k, std::size_t j) {
+    static subdomain_type get_edge(const array<unsigned int>& elements,
+				   std::size_t k, std::size_t j) {
       subdomain_type edge;
       if (j < 2) {
-	edge.insert(m.get_elements().at(k, 0));
-	edge.insert(m.get_elements().at(k, j + 1));
+	edge.insert(elements.at(k, 0));
+	edge.insert(elements.at(k, j + 1));
       } else {
-	edge.insert(m.get_elements().at(k, 1));
-	edge.insert(m.get_elements().at(k, 2));
+	edge.insert(elements.at(k, 1));
+	edge.insert(elements.at(k, 2));
       }
       return edge;
     }
 
-    static subdomain_type get_element(const mesh<triangle>& m, std::size_t k, std::size_t j) {
+    static subdomain_type get_element(const array<unsigned int>& elements,
+				      std::size_t k, std::size_t j) {
       subdomain_type element;
       for (unsigned int i(0); i < 3; ++i)
-	element.insert(m.get_elements().at(k, i));
+	element.insert(elements.at(k, i));
       return element;
     }
 
-    static std::set<subdomain_type> get_subdomain_list(const mesh<triangle>& m,
+    static std::set<subdomain_type> get_subdomain_list(const array<unsigned int>& elements,
 						       std::size_t sd) {
       switch (sd) {
-      case 0: return get_vertex_list(m);
-      case 1: return get_edge_list(m);
-      case 2: return get_element_list(m);
+      case 0: return get_vertex_list(elements);
+      case 1: return get_edge_list(elements);
+      case 2: return get_element_list(elements);
       }
       throw std::string("invalid subdomain id");
     }
     
-    static std::set<subdomain_type> get_vertex_list(const mesh<triangle>& m) {
+    static std::set<subdomain_type> get_vertex_list(const array<unsigned int>& elements) {
       std::set<subdomain_type> vertex_list;
 
-      const array<unsigned int>& elements(m.get_elements());
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
 	for (unsigned int i(0); i < elements.get_size(1); ++i) {
 	  subdomain_type vertex;
@@ -161,10 +215,9 @@ namespace cell {
       return vertex_list;
     }
 
-    static std::set<subdomain_type> get_edge_list(const mesh<triangle>& m) {
+    static std::set<subdomain_type> get_edge_list(const array<unsigned int>& elements) {
       std::set<subdomain_type> edge_list;
 
-      const array<unsigned int>& elements(m.get_elements());
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
 	for (unsigned int i(0); i < elements.get_size(1) - 1; ++i) {
 	  for (unsigned int j(i + 1); j < elements.get_size(1); ++j) {
@@ -179,10 +232,9 @@ namespace cell {
       return edge_list;
     }
 
-    static std::set<subdomain_type> get_element_list(const mesh<triangle>& m) {
+    static std::set<subdomain_type> get_element_list(const array<unsigned int>& elements) {
       std::set<subdomain_type> element_list;
 
-      const array<unsigned int>& elements(m.get_elements());
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
 	subdomain_type triangle;
 	for (unsigned int i(0); i < elements.get_size(1); ++i)

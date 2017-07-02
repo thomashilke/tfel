@@ -30,6 +30,19 @@ namespace finite_element {
       return bf[derivatives[0]][i](x);
     }
 
+    static double phi(unsigned int i, double* x) {
+      unsigned int d(0);
+      return basis_function(i, &d, x);
+    }
+
+    static double dphi(unsigned int k, unsigned int i, double* x) {
+      if (k != 0)
+	throw std::string("finite_element::edge_lagrange_p1::dphi: space dimension is 1,"
+			  " therefore k must be in {0}.");
+      unsigned int d(1);
+      return basis_function(i, &d, x);
+    }
+
   protected:
     static double bf_0_1(double* x) { return 1.0 - x[0]; }
     static double bf_0_2(double* x) { return       x[0]; }

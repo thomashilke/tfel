@@ -16,8 +16,8 @@ namespace finite_element {
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
-				 double* x) {
-      typedef double (*bf_type)(double*);
+				 const double* x) {
+      typedef double (*bf_type)(const double*);
       static const bf_type bf[2][2] = {{bf_0_1, bf_0_2},
 				       {bf_1_1, bf_1_2}};
       if (i >= 2)
@@ -30,12 +30,12 @@ namespace finite_element {
       return bf[derivatives[0]][i](x);
     }
 
-    static double phi(unsigned int i, double* x) {
+    static double phi(unsigned int i, const double* x) {
       unsigned int d(0);
       return basis_function(i, &d, x);
     }
 
-    static double dphi(unsigned int k, unsigned int i, double* x) {
+    static double dphi(unsigned int k, unsigned int i, const double* x) {
       if (k != 0)
 	throw std::string("finite_element::edge_lagrange_p1::dphi: space dimension is 1,"
 			  " therefore k must be in {0}.");
@@ -44,10 +44,10 @@ namespace finite_element {
     }
 
   protected:
-    static double bf_0_1(double* x) { return 1.0 - x[0]; }
-    static double bf_0_2(double* x) { return       x[0]; }
-    static double bf_1_1(double* x) { return - 1.0; }
-    static double bf_1_2(double* x) { return   1.0; }
+    static double bf_0_1(const double* x) { return 1.0 - x[0]; }
+    static double bf_0_2(const double* x) { return       x[0]; }
+    static double bf_1_1(const double* x) { return - 1.0; }
+    static double bf_1_2(const double* x) { return   1.0; }
   };
 
   
@@ -63,7 +63,7 @@ namespace finite_element {
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
 				 double* x) {
-      typedef double (*bf_type)(double*);
+      typedef double (*bf_type)(const double*);
       static const bf_type bf[2][3] = {{edge_lagrange_p1::bf_0_1, edge_lagrange_p1::bf_0_2, bf_0_3},
 				       {edge_lagrange_p1::bf_1_1, edge_lagrange_p1::bf_1_2, bf_1_3}};
       if (i >= 3)
@@ -81,16 +81,16 @@ namespace finite_element {
     }
     
   protected:
-    static double bf_0_3(double* x) {
+    static double bf_0_3(const double* x) {
       return edge_lagrange_p1::bf_0_1(x) * edge_lagrange_p1::bf_0_2(x);
     }
     
-    static double bf_1_3(double* x) {
+    static double bf_1_3(const double* x) {
       return edge_lagrange_p1::bf_1_1(x) * edge_lagrange_p1::bf_0_2(x)
 	+ edge_lagrange_p1::bf_0_1(x) * edge_lagrange_p1::bf_1_2(x);
     }
     
-    static double bf_2_3(double* x) {
+    static double bf_2_3(const double* x) {
       return edge_lagrange_p1::bf_1_1(x) * edge_lagrange_p1::bf_1_2(x)
 	+ edge_lagrange_p1::bf_1_1(x) * edge_lagrange_p1::bf_1_2(x);
     }

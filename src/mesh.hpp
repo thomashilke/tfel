@@ -73,6 +73,18 @@ public:
     
     return submesh<parent_cell_type>(m, el, el_id, sd_id);
   }
+
+  void show(std::ostream& stream) {
+    for (std::size_t k(0); k < get_element_number(); ++k) {
+      std::cout << "element " << k << ": ";
+      for (std::size_t i(0); i < elements.get_size(1); ++i) {
+	std::cout << elements.at(k, i) << " ";
+      }
+      std::cout << " is #" << parent_subdomain_id.at(k) << "subdomain of parent element " << parent_element_id.at(k);
+      std::cout << std::endl;
+    }
+  }
+  
 private:
   const mesh<parent_cell_type>& m;
 
@@ -132,7 +144,9 @@ public:
     const std::size_t subdomain_id(cell_type::n_subdomain_type - 2);
     for (unsigned int k(0); k < get_element_number(); ++k) {
       for (unsigned int j(0); j < cell_type::n_subdomain(subdomain_id); ++j) {
+	
 	subdomain_info current{k, j, cell::get_subdomain(elements, k, subdomain_id, j)};
+	std::cout << "subdomain " << j  << "of element " << k << ": " << *current.subdomain.begin() << std::endl;
 	subdomain_count[current] += 1;
       }
     }
@@ -160,7 +174,16 @@ public:
     
     return submesh<cell_type>(*this, el, el_id, sd_id);
   }
-  
+
+  void show(std::ostream& stream) {
+    for (std::size_t k(0); k < get_element_number(); ++k) {
+      std::cout << "element " << k << ": ";
+      for (std::size_t i(0); i < elements.get_size(1); ++i) {
+	std::cout << elements.at(k, i) << " ";
+      }
+      std::cout << std::endl;
+    }
+  }
 private:
   array<double> vertices;
   array<unsigned int> elements;

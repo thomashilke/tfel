@@ -118,8 +118,8 @@ namespace cell {
 				 const array<unsigned int>& elements,
 				 unsigned int k) {
       array<double> jmt{1,1};
-      jmt.at(0,0) = (vertices.at(elements.at(k, 1), 0)
-		     - vertices.at(elements.at(k, 0), 0));
+      jmt.at(0,0) = 1.0 / (vertices.at(elements.at(k, 1), 0)
+			   - vertices.at(elements.at(k, 0), 0));
       return jmt;
     }
     
@@ -128,11 +128,12 @@ namespace cell {
 	throw std::string("edge::map_points_on_subdomain: only two subdomains for an edge.");
       
       array<double> hat_xs(xs);
-      for (std::size_t i(0); i < hat_xs.get_size(0); ++i)
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
 	if (subdomain_id == 0)
 	  hat_xs.at(i, 0) = 0.0;
 	else
 	  hat_xs.at(i, 0) = 1.0;
+      }
 
       return hat_xs;
     }

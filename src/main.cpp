@@ -66,8 +66,8 @@ double force(double* x) {
 
 int main(int argc, char *argv[]) {
   try {
-  const std::size_t n(5);
-  mesh<cell::edge> m(gen_segment_mesh(0.0, 5.0, n));
+  const std::size_t n(2);
+  mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
   submesh<cell::edge> dm(m.get_boundary_submesh());
   submesh<cell::edge> left_boundary(dm.query_elements([](const double* x) -> bool {
 	                                                return *x < 1.0 / 2.0;
@@ -76,11 +76,13 @@ int main(int argc, char *argv[]) {
 	                                                 return *x > 1.0 / 2.0;
                                                        }));
   
+  m.show(std::cout);
+  right_boundary.show(std::cout);
+  
   typedef finite_element::edge_lagrange_p1 fe;
-  finite_element_space<fe> fes(m, dm);
+  finite_element_space<fe> fes(m, left_boundary);
 
   fes.show(std::cout);
-
 
   sparse_linear_system sys(fes.get_dof_number(),
 			   fes.get_dof_number());
@@ -167,18 +169,18 @@ int main(int argc, char *argv[]) {
 
 	  array<double> phi{n_dof};
 	  for (std::size_t i(0); i < n_dof; ++i)
-	    phi.at(i) = fe::phi(i, &xq.at(q, 0));
+	    phi.at(i) = fe::phi(i, &hat_xq.at(q, 0));
 
 	  array<double> dphi{dim, n_dof};
  	  for (std::size_t i(0); i < n_dof; ++i) {
 	    for (std::size_t n(0); n < dim; ++n) {
 	      dphi.at(n, i) = 0.0;
 	      for (std::size_t k(0); k < dim; ++k)
-		dphi.at(n, i) += jmt.at(n, k) * fe::dphi(k, i, &xq.at(q, 0));
+		dphi.at(n, i) += jmt.at(n, k) * fe::dphi(k, i, &hat_xq.at(q, 0));
 	    }
 	  }
 
-	  a_el += 0;
+	  a_el += 0.0;
 	}
 	sys.accumulate(fes.get_dof(dm.get_parent_element_id(k), j),
 		       fes.get_dof(dm.get_parent_element_id(k), i), a_el);
@@ -224,7 +226,7 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 
-	//rhs_el += volume * omega.at(q) * force(x);
+	//rhs_el += volume * omega.at(q) * force(x) * phi.at(j);
 	rhs_el += volume * omega.at(q) * 1.0 * phi.at(j);
       }
       rhs.at(fes.get_dof(k, j)) += rhs_el;
@@ -242,8 +244,8 @@ int main(int argc, char *argv[]) {
 	const std::size_t dim(m.get_embedding_space_dimension());
 	const std::size_t n_dof(fe::n_dof_per_element);
 
-	const double volume(dm.get_cell_volume(k));
-	const array<double> jmt(dm.get_jmt(k));
+	const double volume(right_boundary.get_cell_volume(k));
+	const array<double> jmt(right_boundary.get_jmt(k));
 
 	array<double> xq{n_q, dm_quad::n_point_space_dimension};
 	xq.set_data(&dm_quad::x[0][0]);
@@ -253,23 +255,22 @@ int main(int argc, char *argv[]) {
 	// Here we must transform the quadrature points on one
 	// of the possible boundary of the reference cell:
 	  
-	array<double> hat_xq(fe::cell_type::map_points_on_subdomain(dm.get_subdomain_id(k), xq));
-
+	array<double> hat_xq(fe::cell_type::map_points_on_subdomain(right_boundary.get_subdomain_id(k), xq));
 
 	array<double> phi{n_dof};
 	for (std::size_t i(0); i < n_dof; ++i)
-	  phi.at(i) = fe::phi(i, &xq.at(q, 0));
-
+	  phi.at(i) = fe::phi(i, &hat_xq.at(q, 0));
+	
 	array<double> dphi{dim, n_dof};
 	for (std::size_t i(0); i < n_dof; ++i) {
 	  for (std::size_t n(0); n < dim; ++n) {
 	    dphi.at(n, i) = 0.0;
 	    for (std::size_t k(0); k < dim; ++k)
-	      dphi.at(n, i) += jmt.at(n, k) * fe::dphi(k, i, &xq.at(q, 0));
+	      dphi.at(n, i) += jmt.at(n, k) * fe::dphi(k, i, &hat_xq.at(q, 0));
 	  }
 	}
 
-	// rhs_el += volume * omega.at(q) * g_dot_n(x);
+	// rhs_el += volume * omega.at(q) * g_dot_n(x) * phi.at(j);
 	rhs_el += volume * omega.at(q) * 1.0 * phi.at(j);
       }
       rhs.at(fes.get_dof(right_boundary.get_parent_element_id(k), j)) += rhs_el;

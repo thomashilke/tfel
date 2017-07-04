@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
                                                        }));
   
   typedef finite_element::edge_lagrange_p1 fe;
-  finite_element_space<fe> fes(m/*, left_boundary*/);
+  finite_element_space<fe> fes(m, dm);
 
   fes.show(std::cout);
 

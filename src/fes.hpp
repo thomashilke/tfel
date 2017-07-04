@@ -1,6 +1,8 @@
 #ifndef _FES_H_
 #define _FES_H_
 
+#include <unordered_set>
+
 #include "cell.hpp"
 #include "mesh.hpp"
 
@@ -25,7 +27,8 @@ public:
      */
     for (unsigned int sd(0); sd < cell_type::n_subdomain_type; ++sd) {
       if(fe_type::n_dof_per_subdomain(sd)) {
-	std::set<subdomain_type> subdomains(cell_type::get_subdomain_list(elements, sd));
+	subdomain_list.push_back(cell_type::get_subdomain_list(elements, sd));
+	std::set<subdomain_type>& subdomains(subdomain_list.back());
 	
 	const std::size_t n(subdomains.size());
 	const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
@@ -53,6 +56,29 @@ public:
     dof_number = global_dof_offset;
   }
 
+  finite_element_space(const mesh<cell_type>& m, const submesh<cell_type>& dm)
+    : finite_element_space(m) {
+
+    using cell::subdomain_type;
+    
+    std::size_t global_dof_offset(0);
+    for (std::size_t sd(0); sd < submesh<cell_type>::cell_type::n_subdomain_type; ++sd) {
+      const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
+      if (fe_type::n_dof_per_subdomain(sd)) {
+	const array<unsigned int>& elements(dm.get_elements());
+	std::set<subdomain_type> subdomains(cell_type::get_subdomain_list(elements, sd));
+
+	for (const auto& subdomain: subdomains) {
+	  const std::size_t j(std::distance(subdomain_list[sd].begin(),
+					    subdomain_list[sd].find(subdomain)));
+	  for (unsigned int hat_i(0); hat_i < hat_m; ++hat_i)
+	    dirichlet_dof.insert((j * hat_m + hat_i) + global_dof_offset);
+	}
+	global_dof_offset += hat_m * subdomain_list[sd].size();
+      }
+    }
+  }
+
   const std::size_t get_dof_number() const { return dof_number; }
 
   const unsigned int get_dof(std::size_t k, std::size_t i) const {
@@ -61,16 +87,25 @@ public:
 
   void show(std::ostream& stream) {
     for (unsigned int k(0); k < dof_map.get_size(0); ++k) {
+      stream << "element " << k << ": ";
       for (unsigned int i(0); i < dof_map.get_size(1); ++i) {
 	stream << dof_map.at(k, i) << " ";
       }
       stream << std::endl;
     }
+
+    std::cout << "dirichlet dofs: ";
+    for (const auto& dof: dirichlet_dof)
+      std::cout << dof << " ";
+    std::cout << std::endl;
   }
 
 private:
   array<unsigned int> dof_map;
   std::size_t dof_number;
+
+  std::unordered_set<unsigned int> dirichlet_dof;
+  std::vector<std::set<cell::subdomain_type> > subdomain_list;
 };
 
 #endif /* _FES_H_ */

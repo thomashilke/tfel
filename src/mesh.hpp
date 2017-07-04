@@ -39,6 +39,9 @@ public:
   std::size_t get_subdomain_id(std::size_t k) const { return parent_subdomain_id.at(k); }
   std::size_t get_parent_element_id(std::size_t k) const { return parent_element_id.at(k); }
 
+  const array<double>& get_vertices() const { return m.vertices; }
+  const array<unsigned int>& get_elements() const { return elements; }
+  
   template<typename F>
   submesh<parent_cell_type> query_elements(F f) const {
     std::vector<bool> selected_elements(get_element_number(), false);

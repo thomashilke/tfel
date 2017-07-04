@@ -2,6 +2,7 @@
 #define _CELL_H_
 
 #include <set>
+#include <cmath>
 
 #include <spikes/array.hpp>
 

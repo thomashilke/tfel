@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <ostream>
 
 #include <spikes/array.hpp>
 
@@ -76,12 +77,12 @@ public:
 
   void show(std::ostream& stream) {
     for (std::size_t k(0); k < get_element_number(); ++k) {
-      std::cout << "element " << k << ": ";
+      stream << "element " << k << ": ";
       for (std::size_t i(0); i < elements.get_size(1); ++i) {
-	std::cout << elements.at(k, i) << " ";
+	stream << elements.at(k, i) << " ";
       }
-      std::cout << " is #" << parent_subdomain_id.at(k) << "subdomain of parent element " << parent_element_id.at(k);
-      std::cout << std::endl;
+      stream << " is #" << parent_subdomain_id.at(k) << "subdomain of parent element " << parent_element_id.at(k);
+      stream << std::endl;
     }
   }
   
@@ -146,7 +147,6 @@ public:
       for (unsigned int j(0); j < cell_type::n_subdomain(subdomain_id); ++j) {
 	
 	subdomain_info current{k, j, cell::get_subdomain(elements, k, subdomain_id, j)};
-	std::cout << "subdomain " << j  << "of element " << k << ": " << *current.subdomain.begin() << std::endl;
 	subdomain_count[current] += 1;
       }
     }
@@ -177,11 +177,11 @@ public:
 
   void show(std::ostream& stream) {
     for (std::size_t k(0); k < get_element_number(); ++k) {
-      std::cout << "element " << k << ": ";
+      stream << "element " << k << ": ";
       for (std::size_t i(0); i < elements.get_size(1); ++i) {
-	std::cout << elements.at(k, i) << " ";
+	stream << elements.at(k, i) << " ";
       }
-      std::cout << std::endl;
+      stream << std::endl;
     }
   }
 private:

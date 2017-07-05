@@ -2,6 +2,7 @@
 #define _FES_H_
 
 #include <unordered_set>
+#include <ostream>
 
 #include "cell.hpp"
 #include "mesh.hpp"
@@ -94,10 +95,10 @@ public:
       stream << std::endl;
     }
 
-    std::cout << "dirichlet dofs: ";
+    stream << "dirichlet dofs: ";
     for (const auto& dof: dirichlet_dof)
-      std::cout << dof << " ";
-    std::cout << std::endl;
+      stream << dof << " ";
+    stream << std::endl;
   }
 
 private:

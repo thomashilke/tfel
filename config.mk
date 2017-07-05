@@ -1,7 +1,9 @@
+include site-config.mk
+
 CXX = g++
 DEPS_BIN = g++
-DEPSFLAGS = -I/home/thomas/.local/include/
-CXXFLAGS = -g -std=c++11 -I/home/thomas/.local/include/
+DEPSFLAGS = -I$(SITE_INCLUDE_DIR)
+CXXFLAGS = -g -std=c++11 -I$(SITE_INCLUDE_DIR)
 LDFLAGS = -g
 LDLIBS = 
 AR = ar

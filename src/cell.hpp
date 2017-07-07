@@ -27,6 +27,18 @@ namespace cell {
 				  unsigned int k) {
       return 1.0;
     }
+
+    static array<double> map_points_to_space_coordinates(const array<double>& vertices,
+							 const array<unsigned int>& elements,
+							 std::size_t subdomain_id, const array<double>& xs) {
+      array<double> hat_xs(xs);
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(subdomain_id, 0), n);
+      }
+      
+      return hat_xs;
+    }
   };
   
   struct edge {
@@ -123,7 +135,7 @@ namespace cell {
       return jmt;
     }
     
-    static array<double> map_points_on_subdomain(std::size_t subdomain_id, const array<double>& xs) {
+    static array<double> map_points_to_subdomain(std::size_t subdomain_id, const array<double>& xs) {
       if (subdomain_id >= 2)
 	throw std::string("edge::map_points_on_subdomain: only two subdomains for an edge.");
       
@@ -135,6 +147,20 @@ namespace cell {
 	  hat_xs.at(i, 0) = 1.0;
       }
 
+      return hat_xs;
+    }
+
+    static array<double> map_points_to_space_coordinates(const array<double>& vertices,
+							 const array<unsigned int>& elements,
+							 std::size_t subdomain_id, const array<double>& xs) {
+      array<double> hat_xs{xs.get_size(0), vertices.get_size(1)};
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(subdomain_id, 0), n) +
+	    xs.at(i, 0) * (vertices.at(elements.at(subdomain_id, 1), n)
+			   - vertices.at(elements.at(subdomain_id, 0), n));
+      }
+      
       return hat_xs;
     }
 

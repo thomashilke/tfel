@@ -4,30 +4,59 @@
 #include <cstddef>
 
 
-template<std::size_t order, std::size_t derivative>
-struct test_function {
-  double operator()(unsigned int k,
-		    const double* x, const double* x_hat,
-		    const double* phi, const double* psi) const {
-    return phi[derivative];
-  }
+template<std::size_t n, typename ... Ts> struct get_type;
+
+template<std::size_t n, typename T, typename ... Ts>
+struct get_type<n, T, Ts...> { typedef typename get_type<n - 1, Ts...>::type type; };
+
+template<typename T, typename ... Ts>
+struct get_type<0, T, Ts...> { typedef T type; };
+
+
+template<std::size_t n, typename ... Ts> struct get_arg;
+
+template<std::size_t n, typename T, typename ... Ts>
+struct get_arg<n, T, Ts...> {
+  static
+  typename get_type<n, T, Ts...>::type
+  get(T t, Ts ... ts) { return get_arg<n - 1, Ts...>::get(ts...); }
 };
 
-template<std::size_t order, std::size_t derivative>
-struct trial_function {
+template<typename T, typename ... Ts>
+struct get_arg<0, T, Ts...> {
+  static T get(T t, Ts ... ts) { return t; }
+};
+
+template<typename T>
+struct get_arg<0, T> {
+  static T get(T t) { return t; }
+};
+
+
+template<std::size_t n, typename ... Ts>
+typename get_type<n, Ts...>::type
+argument(Ts... ts) {
+  return get_arg<n, Ts...>::get(ts...);
+}
+
+
+template<std::size_t arg, std::size_t order, std::size_t derivative>
+struct form {
+  template<typename ... Ts>
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
-		    const double* phi, const double* psi) const {
-    return psi[derivative];
+		    Ts ... ts) const {
+    return argument<arg>(ts...)[derivative];
   }
 };
 
 struct free_function {
   free_function(double (*f)(const double*)): f(f) {}
-  
+
+  template<typename ... Ts>
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
-	      const double* phi, const double* psi) const {
+		    Ts ... ts) const {
     return f(x);
   }
   
@@ -38,10 +67,11 @@ private:
 
 struct constant {
   constant(double c): value(c) {}
-  
+
+  template<typename ... Ts>
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
-		    const double* phi, const double* psi) const {
+		    Ts ... ts) const {
     return value;
   }
   
@@ -59,9 +89,11 @@ template<typename expr_t>
 struct expression {
   expr_t expr;
   expression(const expr_t& e): expr(e) {}
+
+  template<typename ... Ts>
   double operator()(unsigned int k, const double* x, const double* x_hat,
-		    const double* phi, const double* psi) const {
-    return expr(k, x, x_hat, phi, psi);
+		    Ts ... ts) const {
+    return expr(k, x, x_hat, ts...);
   }
 };
 
@@ -69,10 +101,11 @@ template<typename left, typename right, typename op>
 struct binary_expression {
   binary_expression(const expression<left>& l, const expression<right>& r): l(l), r(r) {}
 
+  template<typename ... Ts>
   double operator()(unsigned int k, const double* x, const double* x_hat,
-		    const double* phi, const double* psi) const {
-    return op::apply(l(k, x, x_hat, phi, psi),
-		     r(k, x, x_hat, phi, psi));
+		    Ts ... ts) const {
+    return op::apply(l(k, x, x_hat, ts...),
+		     r(k, x, x_hat, ts...));
   }
   
   expression<left> l;
@@ -80,8 +113,8 @@ struct binary_expression {
 };
 
 
-typedef expression<test_function<0, 0> > test_function_t;
-typedef expression<trial_function<0, 0> > trial_function_t;
+typedef expression<form<1, 0, 0> > trial_function_t;
+typedef expression<form<0, 0, 0> > test_function_t;
 typedef expression<free_function> free_function_t;
 typedef expression<constant> constant_t;
 
@@ -89,20 +122,12 @@ typedef expression<constant> constant_t;
 template<std::size_t d, typename expression>
 struct differentiate;
 
-template<std::size_t d>
-struct differentiate<d, test_function<0, 0> > {
-  typedef test_function<1, d> type;
+template<std::size_t d, std::size_t arg>
+struct differentiate<d, form<arg, 0, 0> > {
+  typedef form<arg, 1, d> type;
   
   static
-  type initialize(const expression<test_function<0, 0> >&) { return type(); }
-};
-
-template<std::size_t d>
-struct differentiate<d, trial_function<0, 0> > {
-  typedef trial_function<1, d> type;
-  
-  static
-  type initialize(const expression<trial_function<0, 0> >&) { return type(); }
+  type initialize(const expression<form<arg, 0, 0> >&) { return type(); }
 };
 
 template<std::size_t d, typename left, typename right>

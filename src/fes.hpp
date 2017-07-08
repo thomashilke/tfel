@@ -12,6 +12,7 @@ class finite_element_space {
 public:
   typedef fe fe_type;
   typedef typename fe_type::cell_type cell_type;
+  struct element;
 
   finite_element_space(const mesh<cell_type>& m)
     : dof_map{m.get_element_number(),
@@ -107,6 +108,13 @@ private:
 
   std::unordered_set<unsigned int> dirichlet_dof;
   std::vector<std::set<cell::subdomain_type> > subdomain_list;
+};
+
+template<typename fe>
+struct finite_element_space<fe>::element {
+
+private:
+  array<double> coefficients;
 };
 
 #endif /* _FES_H_ */

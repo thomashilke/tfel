@@ -1,19 +1,13 @@
 #ifndef FORM_H
 #define FORM_H
 
-//bilinear_form a(fes, fes);
-//a += integrate<quad::triangle::>(d<1>(phi) * d<1>(psi), m);
-
-//linear_form f(fes);
-//f += integrate<quad::triangle::>(force * psi, m);
-//f += integrate<quad::edge::gauss2>(g * psi, dm);
-
-
 
 template<typename cell_t, typename quadrature_t, typename form_t>
 struct mesh_integration_proxy {
   mesh_integration_proxy(const form_t& f, const mesh<cell_t>& m)
-    : f(f), m(m) {}
+    : f(f), m(m), xq{quadrature_t::n_point, quadrature_type::n_point_space_dimension} {
+    xq.set_data(&quadrature_t::x[0][0]);
+  }
 
   typedef quadrature_t quadrature_type;
   typedef form_t form_type;
@@ -21,15 +15,13 @@ struct mesh_integration_proxy {
   
   const mesh<cell_type>& m;
   const form_type f;
+  array<double> xq;
 
   std::size_t get_global_element_id(std::size_t k) const {
     return k;
   }
 
   array<double> get_quadrature_points(std::size_t k) const {
-    const std::size_t n_q(quadrature_type::n_point);
-    array<double> xq{n_q, quadrature_type::n_point_space_dimension};
-    xq.set_data(&quadrature_type::x[0][0]);
     return xq;
   }
 };
@@ -87,9 +79,8 @@ public:
     typedef typename trial_fes_type::fe_type trial_fe_type;
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
-    const auto& m(integration_proxy.m);
 
-    
+    const auto& m(integration_proxy.m);
     const std::size_t dim(m.get_embedding_space_dimension());
 
     // prepare the quadrature weights
@@ -98,17 +89,18 @@ public:
     omega.set_data(&quadrature_type::w[0]);
 
 
+    // storage for the point-wise basis function evaluation
+    const std::size_t n_dof(test_fe_type::n_dof_per_element);
+    array<double> phi{n_q, n_dof, dim + 1};
 
+
+    // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
 									m.get_elements(),
 									k, xq_hat));
-
       // prepare the basis function on the quadrature points
-      const std::size_t n_dof(test_fe_type::n_dof_per_element);
-      array<double> phi{n_q, n_dof, dim + 1};
-      
       for (unsigned int q(0); q < n_q; ++q) {
 	for (std::size_t i(0); i < n_dof; ++i)
 	  phi.at(q, i, 0) = test_fe_type::phi(i, &xq_hat.at(q, 0));
@@ -172,8 +164,6 @@ public:
     typedef typename T::cell_type cell_type;
 
     const auto& m(integration_proxy.m);
-
-    
     const std::size_t dim(m.get_embedding_space_dimension());
 
     // prepare the quadrature weights
@@ -182,6 +172,12 @@ public:
     omega.set_data(&quadrature_type::w[0]);
 
 
+    // storage for the point-wise basis function evaluation
+    const std::size_t n_dof(test_fe_type::n_dof_per_element);
+    array<double> psi{n_q, n_dof, dim + 1};
+
+    
+    // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
@@ -189,9 +185,6 @@ public:
 									k, xq_hat));
 
       // prepare the basis function on the quadrature points
-      const std::size_t n_dof(test_fe_type::n_dof_per_element);
-      array<double> psi{n_q, n_dof, dim + 1};
-      
       for (unsigned int q(0); q < n_q; ++q) {
 	for (std::size_t i(0); i < n_dof; ++i)
 	  psi.at(q, i, 0) = test_fe_type::phi(i, &xq_hat.at(q, 0));

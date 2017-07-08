@@ -33,15 +33,15 @@ public:
       elements{0, 0},
       parent_element_id{0},
       parent_subdomain_id{0} {}
-  
-  double get_cell_volume(std::size_t k) { return cell_type::get_cell_volume(m.get_vertices(), elements, k); }
+  std::size_t get_embedding_space_dimension() const { return m.get_embedding_space_dimension(); }
+  double get_cell_volume(std::size_t k) const { return cell_type::get_cell_volume(m.get_vertices(), elements, k); }
   std::size_t get_element_number() const { return elements.get_size(0); }
   array<double> get_jmt(std::size_t k) const { return m.get_jmt(parent_element_id.at(k)); }
   std::size_t get_subdomain_id(std::size_t k) const { return parent_subdomain_id.at(k); }
   std::size_t get_parent_element_id(std::size_t k) const { return parent_element_id.at(k); }
 
-  const array<double>& get_vertices() const { return m.vertices; }
-  const array<unsigned int>& get_elements() const { return elements; }
+  const array<double>& get_vertices() const { return m.get_vertices(); }
+  const array<unsigned int>& get_elements() const { return m.get_elements(); }
   
   template<typename F>
   submesh<parent_cell_type> query_elements(F f) const {
@@ -120,7 +120,7 @@ public:
   const array<double>& get_vertices() const { return vertices; }
   const array<unsigned int>& get_elements() const { return elements; }
 
-  double get_cell_volume(std::size_t k) {
+  double get_cell_volume(std::size_t k) const {
     return cell_type::get_cell_volume(vertices, elements, k);
   }
 
@@ -203,5 +203,8 @@ private:
 		&elements.at(k, cell::n_vertex_per_element - 1));
   }
 };
+
+mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n);
+
 
 #endif /* _MESH_H_ */

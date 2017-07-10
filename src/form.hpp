@@ -223,7 +223,9 @@ public:
   expression<form<0,0,0> > get_test_function() const { return form<0,0,0>(); }
   expression<form<1,0,0> > get_trial_function() const { return form<1,0,0>(); }
 
-  typename trial_fes_type::element solve(const linear_form<test_fes_type>& f) const;
+  typename trial_fes_type::element solve(const linear_form<test_fes_type>& f) const {
+    //linear_solver petsc_gmres_solver;
+  }
   
   void show(std::ostream& stream) {
     a.show(stream);

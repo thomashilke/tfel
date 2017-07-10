@@ -5,6 +5,8 @@
 #include <map>
 #include <chrono>
 
+#include <petscksp.h>
+
 #include <spikes/array.hpp>
 
 #include "cell.hpp"
@@ -17,6 +19,22 @@
 #include "sparse_linear_system.hpp"
 #include "form.hpp"
 
+
+class numerical_experiment {
+public:
+  numerical_experiment(int argc, char** argv) {
+    PetscInitialize(&argc, &argv, nullptr, nullptr);
+  }
+  
+  virtual ~numerical_experiment() {
+    PetscFinalize();
+  }
+  //virtual void run() = 0;
+};
+
+
+
+
 double force(const double* x) {
   return 1.0;
 }
@@ -26,6 +44,7 @@ double g(const double* x) {
 }
 
 int main(int argc, char *argv[]) {
+  numerical_experiment ne(argc, argv);
   timer t;
   try {
     const std::size_t n(10000);
@@ -70,6 +89,9 @@ int main(int argc, char *argv[]) {
 		<< std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     }
 
+    typedef finite_element_space<fe>::element element_type;
+    const element_type u(a.solve(f));
+    
     //a.show(std::cout);
     //f.show(std::cout);
   }

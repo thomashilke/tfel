@@ -7,6 +7,7 @@
 #include <spikes/array.hpp>
 
 #include "mesh.hpp"
+#include "linear_solver.hpp"
 
 
 template<typename cell_t, typename quadrature_t, typename form_t>
@@ -137,6 +138,8 @@ public:
 
   expression<form<0,0,0> > get_test_function() const { return form<0,0,0>(); }
 
+  const array<double>& get_components() const { return f; }
+  
   void show(std::ostream& stream) {
     stream << "rhs = [" << f.at(0);
     for (std::size_t j(1); j < f.get_size(0); ++j)
@@ -155,7 +158,10 @@ public:
   bilinear_form(const test_fes_type& te_fes,
 		const trial_fes_type& tr_fes)
     : test_fes(te_fes), trial_fes(tr_fes),
-      a(te_fes.get_dof_number(), tr_fes.get_dof_number()) {}
+      a(te_fes.get_dof_number(), tr_fes.get_dof_number()) {
+    for (const auto& i: test_fes.get_dirichlet_dof())
+      a.accumulate(i, i, 1.0);
+  }
 
   template<typename T>
   void operator+=(const T& integration_proxy) {
@@ -213,8 +219,8 @@ public:
 							       &phi.at(q, i, 0),
 							       &phi.at(q, j, 0));
 	  }
-	  a.accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), j),
-		       trial_fes.get_dof(integration_proxy.get_global_element_id(k), i), a_el);
+	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), j),
+		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), i), a_el);
 	}
       }
     }
@@ -223,8 +229,25 @@ public:
   expression<form<0,0,0> > get_test_function() const { return form<0,0,0>(); }
   expression<form<1,0,0> > get_trial_function() const { return form<1,0,0>(); }
 
-  typename trial_fes_type::element solve(const linear_form<test_fes_type>& f) const {
-    //linear_solver petsc_gmres_solver;
+  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) const {
+    a.show(std::cout);
+
+    array<double> f(form.get_components());
+    for (const auto& i: test_fes.get_dirichlet_dof())
+      f.at(i) = 0.0;
+    
+    linear_solver s;
+    auto petsc_gmres_ilu(s.get_solver(solver::petsc,
+				      method::gmres,
+				      preconditioner::ilu,
+				      test_fes.get_dof_number()));
+    for (const auto& v: a.get_elements())
+      petsc_gmres_ilu->add_value(v.first.first, v.first.second, v.second);
+    petsc_gmres_ilu->assemble();
+
+    typename trial_fes_type::element result(trial_fes, petsc_gmres_ilu->solve(f));
+    delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
+    return result;
   }
   
   void show(std::ostream& stream) {
@@ -236,6 +259,11 @@ private:
   const trial_fes_type& trial_fes;
   
   sparse_linear_system a;
+
+  void accumulate(std::size_t i, std::size_t j, double value) {
+    if (test_fes.get_dirichlet_dof().count(i) == 0)
+      a.accumulate(i, j, value);
+  }
 };
 
 #endif /* FORM_H */

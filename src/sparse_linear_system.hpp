@@ -30,6 +30,11 @@ public:
       stream << std::setw(4) << std::setprecision(12) << profile.at(n_equation - 1, j) << ", ";
     stream << std::setw(4) << std::setprecision(12) << profile.at(n_equation - 1, n_unknown - 1) << "];" << std::endl;
   }
+
+  std::size_t get_equation_number() const { return n_equation; }
+  std::size_t get_equation_unknown() const { return n_unknown; }
+
+  const std::map<std::pair<std::size_t, std::size_t>, double> get_elements() const { return elements; }
   
 private:
   std::size_t n_equation, n_unknown;

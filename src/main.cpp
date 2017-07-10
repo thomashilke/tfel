@@ -5,8 +5,6 @@
 #include <map>
 #include <chrono>
 
-#include <petscksp.h>
-
 #include <spikes/array.hpp>
 
 #include "cell.hpp"
@@ -18,22 +16,8 @@
 #include "timer.hpp"
 #include "sparse_linear_system.hpp"
 #include "form.hpp"
-
-
-class numerical_experiment {
-public:
-  numerical_experiment(int argc, char** argv) {
-    PetscInitialize(&argc, &argv, nullptr, nullptr);
-  }
-  
-  virtual ~numerical_experiment() {
-    PetscFinalize();
-  }
-  //virtual void run() = 0;
-};
-
-
-
+#include "linear_solver.hpp"
+#include "export.hpp"
 
 double force(const double* x) {
   return 1.0;
@@ -44,10 +28,9 @@ double g(const double* x) {
 }
 
 int main(int argc, char *argv[]) {
-  numerical_experiment ne(argc, argv);
   timer t;
   try {
-    const std::size_t n(10000);
+    const std::size_t n(4);
     
     mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
@@ -59,13 +42,12 @@ int main(int argc, char *argv[]) {
 	}));
     std::cout << std::setw(40) << "mesh: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
-  
  
     typedef finite_element::edge_lagrange_p1 fe;
     finite_element_space<fe> fes(m, left_boundary);
     std::cout << std::setw(40) << "finite element system: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
-
+    fes.show(std::cout);
     
     bilinear_form<finite_element_space<fe>, finite_element_space<fe> >
       a(fes, fes); {
@@ -91,7 +73,9 @@ int main(int argc, char *argv[]) {
 
     typedef finite_element_space<fe>::element element_type;
     const element_type u(a.solve(f));
-    
+
+
+    exporter::ascii("u.dat", u);
     //a.show(std::cout);
     //f.show(std::cout);
   }

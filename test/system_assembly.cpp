@@ -19,7 +19,7 @@
 int main(int argc, char *argv[]) {
   timer t;
   try {
-    const std::size_t n(10000);
+    const std::size_t n(6);
     
     mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
@@ -35,7 +35,8 @@ int main(int argc, char *argv[]) {
  
     typedef finite_element::edge_lagrange_p1 fe;
     finite_element_space<fe> fes(m, left_boundary);
-
+    fes.show(std::cout);
+    
     sparse_linear_system sys(fes.get_dof_number(),
 			     fes.get_dof_number());
 

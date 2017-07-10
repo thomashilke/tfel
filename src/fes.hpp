@@ -15,8 +15,9 @@ public:
   struct element;
 
   finite_element_space(const mesh<cell_type>& m)
-    : dof_map{m.get_element_number(),
-              fe_type::n_dof_per_element} {
+    : m(m),
+      dof_map{m.get_element_number(),
+      fe_type::n_dof_per_element} {
     const array<unsigned int>& elements(m.get_elements());
     
     using cell::subdomain_type;
@@ -87,6 +88,9 @@ public:
     return dof_map.at(k, i);
   }
 
+  const std::unordered_set<unsigned int>& get_dirichlet_dof() const { return dirichlet_dof; }
+  const std::vector<std::set<cell::subdomain_type> > get_subdomain_list() const { return subdomain_list; }
+  
   void show(std::ostream& stream) {
     for (unsigned int k(0); k < dof_map.get_size(0); ++k) {
       stream << "element " << k << ": ";
@@ -102,7 +106,10 @@ public:
     stream << std::endl;
   }
 
+  const mesh<cell_type>& get_mesh() const { return m; }
+
 private:
+  const mesh<cell_type>& m;
   array<unsigned int> dof_map;
   std::size_t dof_number;
 
@@ -112,9 +119,21 @@ private:
 
 template<typename fe>
 struct finite_element_space<fe>::element {
+public:
+  element(const finite_element_space<fe>& fes,
+	  array<double>&& a): coefficients(a), fes(fes) {}
+  element(const finite_element_space<fe>& fes,
+	  const array<double>& a): coefficients(a), fes(fes) {}
+  element(const element& e): coefficients(e.coefficients), fes(e.fes) {}
+  ~element() {}
 
+  const finite_element_space<fe>& get_finite_element_space() const { return fes; }
+  const mesh<typename fe::cell_type>& get_mesh() const { return fes.get_mesh(); }
+
+  const array<double>& get_components() const { return coefficients; }
 private:
   array<double> coefficients;
+  const finite_element_space<fe>& fes;
 };
 
 #endif /* _FES_H_ */

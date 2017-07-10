@@ -19,18 +19,31 @@
 #include "linear_solver.hpp"
 #include "export.hpp"
 
+double bell(double x) {
+  const double epsilon(1e-6);
+  if (std::abs(x) < 1.0 - epsilon) {
+    return std::exp(1.0 - 1.0 / (1.0 - x * x));
+  } else {
+    return 0.0;
+  }
+}
+
+double shift_scale_bell(double x, double width, double x_0) {
+  return bell((x - x_0) / width);
+}
+
 double force(const double* x) {
-  return 1.0;
+  return shift_scale_bell(x[0], 0.25, 0.5);
 }
 
 double g(const double* x) {
-  return 1.0;
+  return 0.0;
 }
 
 int main(int argc, char *argv[]) {
   timer t;
   try {
-    const std::size_t n(4);
+    const std::size_t n(10000);
     
     mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
@@ -47,7 +60,6 @@ int main(int argc, char *argv[]) {
     finite_element_space<fe> fes(m, left_boundary);
     std::cout << std::setw(40) << "finite element system: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
-    fes.show(std::cout);
     
     bilinear_form<finite_element_space<fe>, finite_element_space<fe> >
       a(fes, fes); {
@@ -73,11 +85,13 @@ int main(int argc, char *argv[]) {
 
     typedef finite_element_space<fe>::element element_type;
     const element_type u(a.solve(f));
+    std::cout << std::setw(40) << "solve linear system: "
+		<< std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
 
 
     exporter::ascii("u.dat", u);
-    //a.show(std::cout);
-    //f.show(std::cout);
+    std::cout << std::setw(40) << "export the solution: "
+	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
   }
   catch (const std::string& e) {
     std::cout << e << std::endl;

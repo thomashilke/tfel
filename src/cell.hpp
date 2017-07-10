@@ -22,6 +22,37 @@ namespace cell {
 
     typedef empty_cell boundary_cell_type;
 
+
+    
+    static std::set<subdomain_type> get_vertex_list(const array<unsigned int>& elements) {
+      std::set<subdomain_type> vertex_list;
+
+      for (unsigned int k(0); k < elements.get_size(0); ++k) {
+	for (unsigned int i(0); i < elements.get_size(1); ++i) {
+	  subdomain_type vertex;
+	  vertex.insert(elements.at(k, i));
+	  vertex_list.insert(vertex);
+	}
+      }
+      
+      return vertex_list;      
+    }
+
+    static std::set<subdomain_type> get_subdomain_list(const array<unsigned int>& elements,
+						       std::size_t sd) {
+      switch (sd) {
+      case 0: return get_vertex_list(elements);
+      }
+      throw std::string("invalid subdomain id");
+    }
+
+    static array<double> map_points_to_subdomain(std::size_t subdomain_id, const array<double>& xs) {
+      if (subdomain_id >= 1)
+	throw std::string("point::map_points_on_subdomain: only one subdomains for a point.");
+      
+      return xs;
+    }
+    
     static double get_cell_volume(const array<double>& vertices,
 				  const array<unsigned int>& elements,
 				  unsigned int k) {

@@ -69,8 +69,7 @@ public:
       const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
       if (fe_type::n_dof_per_subdomain(sd)) {
 	const array<unsigned int>& elements(dm.get_elements());
-	std::set<subdomain_type> subdomains(cell_type::get_subdomain_list(elements, sd));
-
+	std::set<subdomain_type> subdomains(submesh<cell_type>::cell_type::get_subdomain_list(elements, sd));
 	for (const auto& subdomain: subdomains) {
 	  const std::size_t j(std::distance(subdomain_list[sd].begin(),
 					    subdomain_list[sd].find(subdomain)));

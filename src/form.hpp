@@ -41,9 +41,9 @@ struct submesh_integration_proxy {
 
   typedef quadrature_t quadrature_type;
   typedef form_t form_type;
-  typedef cell_t cell_type;
+  typedef typename submesh<cell_t>::cell_type cell_type;
   
-  const submesh<cell_type>& m;
+  const submesh<cell_t>& m;
   const form_type f;
   
   std::size_t get_global_element_id(std::size_t k) const {
@@ -54,7 +54,7 @@ struct submesh_integration_proxy {
     const std::size_t n_q(quadrature_type::n_point);
     array<double> xq{n_q, quadrature_type::n_point_space_dimension};
     xq.set_data(&quadrature_type::x[0][0]);
-    array<double> hat_xq(cell_type::map_points_to_subdomain(m.get_subdomain_id(k), xq));
+    array<double> hat_xq(cell_t::map_points_to_subdomain(m.get_subdomain_id(k), xq));
     return hat_xq;
   }
 };
@@ -230,8 +230,6 @@ public:
   expression<form<1,0,0> > get_trial_function() const { return form<1,0,0>(); }
 
   typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) const {
-    a.show(std::cout);
-
     array<double> f(form.get_components());
     for (const auto& i: test_fes.get_dirichlet_dof())
       f.at(i) = 0.0;

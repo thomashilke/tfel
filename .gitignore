@@ -5,3 +5,4 @@ bin/*
 lib/*
 .DS_Store
 site-config.mk
+*.dat

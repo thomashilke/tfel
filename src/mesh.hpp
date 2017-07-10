@@ -41,7 +41,7 @@ public:
   std::size_t get_parent_element_id(std::size_t k) const { return parent_element_id.at(k); }
 
   const array<double>& get_vertices() const { return m.get_vertices(); }
-  const array<unsigned int>& get_elements() const { return m.get_elements(); }
+  const array<unsigned int>& get_elements() const { return elements; }
   
   template<typename F>
   submesh<parent_cell_type> query_elements(F f) const {
@@ -75,7 +75,7 @@ public:
     return submesh<parent_cell_type>(m, el, el_id, sd_id);
   }
 
-  void show(std::ostream& stream) {
+  void show(std::ostream& stream) const {
     for (std::size_t k(0); k < get_element_number(); ++k) {
       stream << "element " << k << ": ";
       for (std::size_t i(0); i < elements.get_size(1); ++i) {
@@ -175,7 +175,7 @@ public:
     return submesh<cell_type>(*this, el, el_id, sd_id);
   }
 
-  void show(std::ostream& stream) {
+  void show(std::ostream& stream) const {
     for (std::size_t k(0); k < get_element_number(); ++k) {
       stream << "element " << k << ": ";
       for (std::size_t i(0); i < elements.get_size(1); ++i) {

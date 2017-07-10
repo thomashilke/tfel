@@ -7,6 +7,7 @@ namespace exporter {
   void ascii(const std::string& filename,
 	     const typename finite_element_space<finite_element::edge_lagrange_p1>::element& v) {
     std::ofstream file(filename.c_str(), std::ios::out);
+    file.precision(12);
 
     const mesh<cell::edge>& m(v.get_mesh());
     const std::set<cell::subdomain_type>& nodes(v.get_finite_element_space().get_subdomain_list().front());

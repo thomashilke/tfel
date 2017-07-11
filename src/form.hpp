@@ -61,15 +61,67 @@ struct submesh_integration_proxy {
 
 
 template<typename quadrature_type, typename cell_type, typename form_type>
-mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >
+typename std::enable_if<(form_type::rank > 0),
+		 mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >
+		 >::type
 integrate(const expression<form_type>& f, const mesh<cell_type>& m) {
   return mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >(f, m);
 }
 
 template<typename quadrature_type, typename cell_type, typename form_type>
-submesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >
+typename std::enable_if<(form_type::rank > 0),
+		 submesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >
+		 >::type
+
 integrate(const expression<form_type>& f, const submesh<cell_type>& m) {
   return submesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >(f, m);
+}
+
+template<typename T>
+double integrate_with_proxy(const T& integration_proxy) {
+  static_assert(T::form_type::rank == 0, "integrate_with_proxy expects rank-0 expression.");
+
+  typedef typename T::quadrature_type quadrature_type;
+  typedef typename T::cell_type cell_type;
+
+  const auto& m(integration_proxy.m);
+  const std::size_t dim(m.get_embedding_space_dimension());
+
+  // prepare the quadrature weights
+  const std::size_t n_q(quadrature_type::n_point);
+  array<double> omega{n_q};
+  omega.set_data(&quadrature_type::w[0]);
+
+  double result(0.0);
+  for (unsigned int k(0); k < m.get_element_number(); ++k) {
+    const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
+    const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
+								      m.get_elements(),
+								      k, xq_hat));
+    // evaluate the expression
+    const double volume(m.get_cell_volume(k));
+    double rhs_el(0.0);
+    for (unsigned int q(0); q < n_q; ++q) {
+      rhs_el += volume * omega.at(q)
+	* integration_proxy.f(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+    }
+    result += rhs_el;
+  }
+  return result;
+}
+
+template<typename quadrature_type, typename cell_type, typename form_type>
+typename std::enable_if<form_type::rank == 0, double>::type
+integrate(const expression<form_type>& f, const mesh<cell_type>& m) {
+  mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> > proxy(f, m);
+  return integrate_with_proxy(proxy);
+}
+
+template<typename quadrature_type, typename cell_type, typename form_type>
+typename std::enable_if<form_type::rank == 0, double>::type
+integrate(const expression<form_type>& f, const submesh<cell_type>& m) {
+  submesh_integration_proxy<cell_type, quadrature_type, expression<form_type> > proxy(f, m);
+  return integrate_with_proxy(proxy);
 }
 
 template<typename test_fes_type>
@@ -80,6 +132,8 @@ public:
 
   template<typename T>
   void operator+=(const T& integration_proxy) {
+    static_assert(T::form_type::rank == 1, "linear_form expects rank-1 expression.");
+    
     typedef typename test_fes_type::fe_type test_fe_type;
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
@@ -165,6 +219,8 @@ public:
 
   template<typename T>
   void operator+=(const T& integration_proxy) {
+    static_assert(T::form_type::rank == 2, "linear_form expects rank-2 expression.");
+      
     typedef typename test_fes_type::fe_type test_fe_type;
     typedef typename trial_fes_type::fe_type trial_fe_type;
     typedef typename T::quadrature_type quadrature_type;

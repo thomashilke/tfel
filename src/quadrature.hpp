@@ -3,9 +3,13 @@
 
 #include <cstddef>
 
+#include "cell.hpp"
+
 namespace quad {
   namespace point {
     struct eval {
+      typedef cell::point cell_type;
+      
       static const std::size_t n_point_space_dimension = 1;
       static const std::size_t n_point = 1;
       static const double x[1][1];
@@ -16,6 +20,8 @@ namespace quad {
   namespace edge {
     // see wikipedia on gauss quadrature rules
     struct gauss1 {
+      typedef cell::edge cell_type;
+      
       static const std::size_t n_point_space_dimension = 1;
       static const std::size_t n_point = 1;
       static const double x[1][1];
@@ -23,6 +29,8 @@ namespace quad {
     };
   
     struct gauss2 {
+      typedef cell::edge cell_type;
+      
       static const std::size_t n_point_space_dimension = 1;
       static const std::size_t n_point = 2;
       static const double x[2][1];
@@ -30,6 +38,8 @@ namespace quad {
     };
 
     struct gauss3 {
+      typedef cell::edge cell_type;
+      
       static const std::size_t n_point_space_dimension = 1;
       static const std::size_t n_point = 3;
       static const double x[3][1];
@@ -37,6 +47,8 @@ namespace quad {
     };
 
     struct gauss4 {
+      typedef cell::edge cell_type;
+      
       static const std::size_t n_point_space_dimension = 1;
       static const std::size_t n_point = 4;
       static const double x[4][1];
@@ -44,6 +56,8 @@ namespace quad {
     };
 
     struct gauss5 {
+      typedef cell::edge cell_type;
+      
       static const std::size_t n_point_space_dimension = 1;
       static const std::size_t n_point = 5;
       static const double x[5][1];
@@ -54,6 +68,8 @@ namespace quad {
   namespace triangle {
     // see freefem++ manual, pp190
     struct qf1pT {
+      typedef cell::triangle cell_type;
+      
       static const std::size_t n_point_space_dimension = 2;
       static const std::size_t n_point = 1;
       static const double x[1][2];
@@ -61,6 +77,8 @@ namespace quad {
     };
 
     struct qf2pT {
+      typedef cell::triangle cell_type;
+      
       static const std::size_t n_point_space_dimension = 2;
       static const std::size_t n_point = 3;
       static const double x[3][2];
@@ -68,6 +86,8 @@ namespace quad {
     };
 
     struct qf5pT {
+      typedef cell::triangle cell_type;
+      
       static const std::size_t n_point_space_dimension = 2;
       static const std::size_t n_point = 7;
       static const double x[7][2];
@@ -75,6 +95,8 @@ namespace quad {
     };
 
     struct qf1pTlump {
+      typedef cell::triangle cell_type;
+      
       static const std::size_t n_point_space_dimension = 2;
       static const std::size_t n_point = 3;
       static const double x[3][2];

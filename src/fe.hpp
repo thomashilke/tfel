@@ -5,14 +5,20 @@
 
 namespace finite_element {
 
+  template<typename fe_type>
+  struct is_continuous {
+    static const bool value = fe_type::is_continuous;
+  };
+  
   struct edge_lagrange_p1 {
     typedef cell::edge cell_type;
 
     static const std::size_t n_dof_per_element = 2;
-    static const std::size_t n_dof_per_subdomain(unsigned int i) {
-      static const std::size_t n_dof[] = {1, 0};
+    static constexpr std::size_t n_dof[2] = {1, 0};
+    static constexpr std::size_t n_dof_per_subdomain(unsigned int i) {
       return n_dof[i];
     }
+    static const bool is_continuous = true;
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -55,19 +61,20 @@ namespace finite_element {
     using edge_lagrange_p1::cell_type;
 
     static const std::size_t n_dof_per_element = 3;
-    static const std::size_t n_dof_per_subdomain(unsigned int i) {
-      static const std::size_t n_dof[] = {1, 1};
+    static constexpr std::size_t n_dof[] = {1, 1};
+    static constexpr std::size_t n_dof_per_subdomain(unsigned int i) {
       return n_dof[i];
     }
+    static const bool is_continuous = true;
     
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
-				 double* x) {
+				 const double* x) {
       typedef double (*bf_type)(const double*);
       static const bf_type bf[2][3] = {{edge_lagrange_p1::bf_0_1, edge_lagrange_p1::bf_0_2, bf_0_3},
 				       {edge_lagrange_p1::bf_1_1, edge_lagrange_p1::bf_1_2, bf_1_3}};
       if (i >= 3)
-	throw std::string("finite_element::edge_lagrange_p1::basis_function: "
+	throw std::string("finite_element::edge_lagrange_p1_bubble::basis_function: "
 			  "i out of range");
 
       if (derivatives[0] > 1) {
@@ -78,6 +85,19 @@ namespace finite_element {
       }
 
       return bf[derivatives[0]][i](x);
+    }
+
+    static double phi(unsigned int i, const double* x) {
+      unsigned int d(0);
+      return basis_function(i, &d, x);
+    }
+
+    static double dphi(unsigned int k, unsigned int i, const double* x) {
+      if (k != 0)
+	throw std::string("finite_element::edge_lagrange_p1::dphi: space dimension is 1,"
+			  " therefore k must be in {0}.");
+      unsigned int d(1);
+      return basis_function(i, &d, x);
     }
     
   protected:
@@ -104,6 +124,7 @@ namespace finite_element {
       static const std::size_t n_dof[] = {1, 0, 0};
       return n_dof[i];
     }
+    static const bool is_continuous = true;
 
     static double basis_function(unsigned int i,
 				 unsigned int* derivative,
@@ -131,6 +152,7 @@ namespace finite_element {
       static const std::size_t n_dof[] = {1, 0, 1};
       return n_dof[i];
     }
+    static const bool is_continuous = true;
 
     static double basis_function(unsigned int i,
 				 unsigned int* derivative,
@@ -138,14 +160,6 @@ namespace finite_element {
       return 0.0;
     }
   };
-  
-  /*template<unsigned int dimension>
-  struct lagrange_p1 {
-    typedef
-    typename cell::simplex_of_dim<dimension>::type
-    cell_type;
-    };*/
-
 }
 
 #endif /* _FE_H_ */

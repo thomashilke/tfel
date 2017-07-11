@@ -2,7 +2,9 @@
 #define _INTEGRAND_EXPRESSION_H_
 
 #include <cstddef>
+#include <algorithm>
 
+#include "fes.hpp"
 
 template<std::size_t n, typename ... Ts> struct get_type;
 
@@ -48,6 +50,8 @@ struct form {
 		    Ts ... ts) const {
     return argument<arg>(ts...)[derivative];
   }
+
+  static constexpr std::size_t rank = arg + 1;
 };
 
 struct free_function {
@@ -59,10 +63,40 @@ struct free_function {
 		    Ts ... ts) const {
     return f(x);
   }
+
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat) const {
+    return f(x);
+  }
+
+  static constexpr std::size_t rank = 0;
   
 private:
   typedef double (*function_type)(const double*);
   function_type f;
+};
+
+template<typename fe>
+struct finite_element_function {
+public:
+  finite_element_function(const typename finite_element_space<fe>::element& v): v(v) {}
+
+  template<typename ... Ts>
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat,
+		    Ts ... ts) const {
+    return v.evaluate(k, x_hat);
+  }
+
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat) const {
+    return v.evaluate(k, x_hat);
+  }
+
+  static constexpr std::size_t rank = 0;
+			     
+private:
+  const typename finite_element_space<fe>::element& v;
 };
 
 struct constant {
@@ -74,6 +108,16 @@ struct constant {
 		    Ts ... ts) const {
     return value;
   }
+
+  template<typename ... Ts>
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat) const {
+    return value;
+  }
+
+  
+
+  static constexpr std::size_t rank = 0;
   
 private:
   const double value;
@@ -95,6 +139,12 @@ struct expression {
 		    Ts ... ts) const {
     return expr(k, x, x_hat, ts...);
   }
+
+  double operator()(unsigned int k, const double* x, const double* x_hat) const {
+    return expr(k, x, x_hat);
+  }
+
+  static constexpr std::size_t rank = expr_t::rank;
 };
 
 template<typename left, typename right, typename op>
@@ -107,11 +157,20 @@ struct binary_expression {
     return op::apply(l(k, x, x_hat, ts...),
 		     r(k, x, x_hat, ts...));
   }
+
+  double operator()(unsigned int k, const double* x, const double* x_hat) const {
+    return op::apply(l(k, x, x_hat),
+		     r(k, x, x_hat));
+  }
+
+  static constexpr std::size_t rank = left::rank < right::rank ? right::rank : left::rank;
   
   expression<left> l;
   expression<right> r;
 };
 
+template<typename fe>
+using fe_function_t = expression<finite_element_function<fe> >;
 
 typedef expression<form<1, 0, 0> > trial_function_t;
 typedef expression<form<0, 0, 0> > test_function_t;

@@ -53,3 +53,5 @@ install: $(BIN) $(HEADERS) $(LIB)
 
 print-%:
 	@echo $*=$($*)
+show-mpi-cl:
+	@$(CXX) --showall

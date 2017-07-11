@@ -130,6 +130,17 @@ public:
   const mesh<typename fe::cell_type>& get_mesh() const { return fes.get_mesh(); }
 
   const array<double>& get_components() const { return coefficients; }
+
+  double evaluate(std::size_t k, const double* x_hat) const {
+    typedef fe fe_type;
+    
+    double value(0.0);
+    for (std::size_t n(0); n < fe_type::n_dof_per_element; ++n) {
+      value += coefficients.at(fes.get_dof(k, n)) * fe_type::phi(n, x_hat);
+    }
+    return value;
+  }
+  
 private:
   array<double> coefficients;
   const finite_element_space<fe>& fes;

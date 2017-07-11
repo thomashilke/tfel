@@ -20,7 +20,7 @@
 #include "export.hpp"
 
 double bell(double x) {
-  const double epsilon(1e-6);
+  const double epsilon(1e-5);
   if (std::abs(x) < 1.0 - epsilon) {
     return std::exp(1.0 - 1.0 / (1.0 - x * x));
   } else {
@@ -33,17 +33,22 @@ double shift_scale_bell(double x, double width, double x_0) {
 }
 
 double force(const double* x) {
-  return shift_scale_bell(x[0], 0.25, 0.5);
+  //return shift_scale_bell(x[0], 0.25, 0.5);
+  return 1.0;
 }
 
 double g(const double* x) {
   return 0.0;
 }
 
+double exact_solution(const double* x) {
+  return 0.5 * x[0] * (1.0 - x[0]);
+}
+
 int main(int argc, char *argv[]) {
   timer t;
   try {
-    const std::size_t n(10000);
+    const std::size_t n(1000);
     
     mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
@@ -56,8 +61,9 @@ int main(int argc, char *argv[]) {
     std::cout << std::setw(40) << "mesh: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
  
-    typedef finite_element::edge_lagrange_p1 fe;
-    finite_element_space<fe> fes(m, left_boundary);
+    typedef finite_element::edge_lagrange_p1_bubble fe;
+    //typedef finite_element::edge_lagrange_p1 fe;
+    finite_element_space<fe> fes(m, dm);
     std::cout << std::setw(40) << "finite element system: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     
@@ -89,9 +95,33 @@ int main(int argc, char *argv[]) {
 		<< std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
 
 
-    exporter::ascii("u.dat", u);
+    exporter::ascii<fe>("u.dat", u);
     std::cout << std::setw(40) << "export the solution: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
+
+    auto p(std::cout.precision(16));
+    std::cout << "mass of the force function: "
+	      << integrate<quad::edge::gauss5>(expression<free_function>(force), m) << std::endl;
+    std::cout << "mass of the exact solution: "
+	      << integrate<quad::edge::gauss5>(free_function_t(exact_solution), m) << std::endl;
+    std::cout << "mass of the approximate solution: "
+	      << integrate<quad::edge::gauss5>(fe_function_t<fe>(u), m) << std::endl;
+    std::cout.precision(p);
+
+    std::cout << std::setw(40) << "compute some metrics: "
+	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
+
+    if (false) {
+      double h_k(1.0 / 5.0);
+      double h_i(h_k / 10.0);
+      for (std::size_t k(0); k < 5; ++k)
+	for (std::size_t i(0); i < 11; ++i) {
+	  double x_hat(1.0 / 10.0 * i);
+	  std::cerr << k * h_k + i * h_i << " "
+		    << u.evaluate(k, &x_hat) << std::endl;
+	}
+    }
+    
   }
   catch (const std::string& e) {
     std::cout << e << std::endl;

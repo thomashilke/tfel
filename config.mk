@@ -22,6 +22,7 @@ SOURCES = test/finite_element_space.cpp \
 	test/system_assembly.cpp \
 	test/linear_solver.cpp \
 	test/square_mesh.cpp \
+	test/l2_projection.cpp \
 	src/quadrature.cpp \
 	src/main.cpp \
 	src/cell.cpp \
@@ -36,6 +37,7 @@ BIN = bin/test_finite_element_space \
 	bin/test_system_assembly \
 	bin/test_linear_solver \
 	bin/test_square_mesh \
+	bin/test_l2_projection \
 	bin/main
 bin/test_finite_element_space: build/test/finite_element_space.o build/src/fe.o
 bin/main: build/src/main.o build/src/quadrature.o build/src/cell.o build/src/mesh.o build/src/fe.o
@@ -44,6 +46,7 @@ bin/test_expression: build/test/expression.o
 bin/test_system_assembly: build/test/system_assembly.o build/src/quadrature.o build/src/mesh.o build/src/fe.o
 bin/test_linear_solver: build/test/linear_solver.o build/src/fe.o
 bin/test_square_mesh: build/test/square_mesh.o build/src/mesh.o
+bin/test_l2_projection: build/test/l2_projection.o build/src/quadrature.o build/src/cell.o build/src/mesh.o build/src/fe.o
 
 LIB = 
 

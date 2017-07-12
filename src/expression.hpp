@@ -115,8 +115,6 @@ struct constant {
     return value;
   }
 
-  
-
   static constexpr std::size_t rank = 0;
   
 private:
@@ -169,6 +167,26 @@ struct binary_expression {
   expression<right> r;
 };
 
+template<typename inner_expr>
+struct composition {
+  composition(double (*f)(double), const expression<inner_expr>& e): f(f), e(e) {}
+
+  template<typename ... Ts>
+  double operator()(unsigned int k, const double* x, const double* x_hat,
+		    Ts ... ts) const {
+    return f(e(k, x, x_hat, ts...));
+  }
+
+  double operator()(unsigned int k, const double* x, const double* x_hat) const {
+    return f(e(k, x, x_hat));
+  }
+
+  static constexpr std::size_t rank = inner_expr::rank;
+  
+  expression<inner_expr> e;
+  double (*f)(double);
+};
+
 template<typename fe>
 using fe_function_t = expression<finite_element_function<fe> >;
 
@@ -177,6 +195,16 @@ typedef expression<form<0, 0, 0> > test_function_t;
 typedef expression<free_function> free_function_t;
 typedef expression<constant> constant_t;
 
+template<typename fe>
+fe_function_t<fe> make_expr(const typename finite_element_space<fe>::element& u) {
+  return fe_function_t<fe>(finite_element_function<fe>(u) );
+}
+free_function_t make_expr(double(*f)(const double*)) {
+  return free_function_t(free_function(f));
+}
+constant_t make_expr(double c) {
+  return constant_t(constant(c));
+}
 
 template<std::size_t d, typename expression>
 struct differentiate;
@@ -216,6 +244,11 @@ struct differentiate<d, binary_expression<left, right, op> > {
   }
 };
 
+
+template<typename inner_expr>
+expression<composition<inner_expr> > compose(double (*f)(double), const expression<inner_expr>& e) {
+  return composition<inner_expr>(f, e.expr);
+}
 
 template<std::size_t direction, typename expr>
 expression<typename differentiate<direction, expr>::type>

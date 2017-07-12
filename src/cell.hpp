@@ -53,9 +53,9 @@ namespace cell {
       return xs;
     }
     
-    static double get_cell_volume(const array<double>& vertices,
-				  const array<unsigned int>& elements,
-				  unsigned int k) {
+    static double get_cell_volume(const array<double>& /*vertices*/,
+				  const array<unsigned int>& /*elements*/,
+				  unsigned int /*k*/) {
       return 1.0;
     }
 
@@ -107,6 +107,9 @@ namespace cell {
     static subdomain_type get_edge(const array<unsigned int>& elements,
 				   std::size_t k,
 				   std::size_t j) {
+      if (j != 0)
+	throw std::string("invalid edge id");
+      
       subdomain_type element;
       for (unsigned int i(0); i < 2; ++i)
 	element.insert(elements.at(k, i));

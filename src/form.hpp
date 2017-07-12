@@ -31,7 +31,7 @@ struct mesh_integration_proxy {
     return k;
   }
 
-  array<double> get_quadrature_points(std::size_t k) const {
+  array<double> get_quadrature_points(std::size_t /*k*/) const {
     return xq;
   }
 };
@@ -87,7 +87,6 @@ double integrate_with_proxy(const T& integration_proxy) {
   typedef typename T::cell_type cell_type;
 
   const auto& m(integration_proxy.m);
-  const std::size_t dim(m.get_embedding_space_dimension());
 
   // prepare the quadrature weights
   const std::size_t n_q(quadrature_type::n_point);

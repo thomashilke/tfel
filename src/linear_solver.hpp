@@ -117,7 +117,7 @@ namespace linear_solver_impl {
 
     void assemble() {}
     
-    virtual array<double> solve(const array<double>& rhs) {
+    virtual array<double> solve(const array<double>& /*rhs*/) {
       throw std::string("unimplemented");
     }
 

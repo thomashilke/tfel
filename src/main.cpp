@@ -39,7 +39,7 @@ double force(const double* x) {
   return 1.0;
 }
 
-double g(const double* x) {
+double g(const double* /*x*/) {
   return 0.0;
 }
 
@@ -47,7 +47,7 @@ double exact_solution(const double* x) {
   return 0.5 * x[0] * (1.0 - x[0]);
 }
 
-int main(int argc, char *argv[]) {
+int main(int, char**) {
   timer t;
   try {
     const std::size_t n(10);

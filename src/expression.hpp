@@ -183,8 +183,8 @@ struct composition {
 
   static constexpr std::size_t rank = inner_expr::rank;
   
-  expression<inner_expr> e;
   double (*f)(double);
+  expression<inner_expr> e;
 };
 
 template<typename fe>

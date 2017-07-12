@@ -4,6 +4,10 @@
 #include <fstream>
 #include <type_traits>
 
+#include "fe.hpp"
+#include "fes.hpp"
+#include "quadrature.hpp"
+
 namespace exporter {
 
   template<typename fe>

@@ -5,6 +5,7 @@
 #include <utility>
 #include <map>
 #include <ostream>
+#include <iomanip>
 
 class sparse_linear_system {
 public:

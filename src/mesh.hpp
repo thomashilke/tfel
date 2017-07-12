@@ -205,6 +205,7 @@ private:
 };
 
 mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n);
-
+mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
+				     unsigned int n_1, unsigned int n_2);
 
 #endif /* _MESH_H_ */

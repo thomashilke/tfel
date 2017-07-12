@@ -21,8 +21,8 @@ struct mesh_integration_proxy {
   typedef form_t form_type;
   typedef cell_t cell_type;
   
-  const mesh<cell_type>& m;
   const form_type f;
+  const mesh<cell_type>& m;
   array<double> xq;
 
   std::size_t get_global_element_id(std::size_t k) const {
@@ -43,8 +43,8 @@ struct submesh_integration_proxy {
   typedef form_t form_type;
   typedef typename submesh<cell_t>::cell_type cell_type;
   
-  const submesh<cell_t>& m;
   const form_type f;
+  const submesh<cell_t>& m;
   
   std::size_t get_global_element_id(std::size_t k) const {
     return m.get_parent_element_id(k);

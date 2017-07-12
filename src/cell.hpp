@@ -81,7 +81,7 @@ namespace cell {
 
     typedef point boundary_cell_type;
     
-    static const std::size_t n_subdomain(unsigned int i) {
+    static std::size_t n_subdomain(unsigned int i) {
       static const std::size_t n_sub[] = {2, 1};
       return n_sub[i];
     }
@@ -206,7 +206,7 @@ namespace cell {
 
     typedef edge boundary_cell_type;
 
-    static const std::size_t n_subdomain(unsigned int i) {
+    static std::size_t n_subdomain(unsigned int i) {
       static const std::size_t n_sub[] = {3, 3, 1};
       return n_sub[i];
     }

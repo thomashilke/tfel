@@ -81,9 +81,9 @@ public:
     }
   }
 
-  const std::size_t get_dof_number() const { return dof_number; }
+  std::size_t get_dof_number() const { return dof_number; }
 
-  const unsigned int get_dof(std::size_t k, std::size_t i) const {
+  unsigned int get_dof(std::size_t k, std::size_t i) const {
     return dof_map.at(k, i);
   }
 

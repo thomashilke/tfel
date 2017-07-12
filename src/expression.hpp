@@ -115,8 +115,6 @@ struct constant {
     return value;
   }
 
-  
-
   static constexpr std::size_t rank = 0;
   
 private:
@@ -197,6 +195,16 @@ typedef expression<form<0, 0, 0> > test_function_t;
 typedef expression<free_function> free_function_t;
 typedef expression<constant> constant_t;
 
+template<typename fe>
+fe_function_t<fe> make_expr(const typename finite_element_space<fe>::element& u) {
+  return fe_function_t<fe>(finite_element_function<fe>(u) );
+}
+free_function_t make_expr(double(*f)(const double*)) {
+  return free_function_t(free_function(f));
+}
+constant_t make_expr(double c) {
+  return constant_t(constant(c));
+}
 
 template<std::size_t d, typename expression>
 struct differentiate;

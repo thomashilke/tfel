@@ -112,8 +112,8 @@ int main(int argc, char *argv[]) {
 	      << integrate<quad::edge::gauss5>(fe_function_t<fe>(u), m)
 	      << std::endl;
     std::cout << "error L2 of the approximate solution: "
-	      << std::sqrt(integrate<quad::edge::gauss5>(compose(sqr, (fe_function_t<fe>(u)
-								       - free_function_t(exact_solution)) )
+	      << std::sqrt(integrate<quad::edge::gauss5>(compose(sqr, (make_expr<fe>(u)
+								       - make_expr(exact_solution)) )
 							 , m))
 	      << std::endl;
 

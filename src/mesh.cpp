@@ -21,10 +21,10 @@ mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
   std::vector<double> vertices((n_1 + 1) * (n_2 + 1) * 2);
   std::vector<unsigned int> elements(2 * n_1 * n_2 * 3);
 
-  for (unsigned int j(0); j < n_2 + 1; ++j)
-    for (unsigned int i(0); i < n_1 + 1; ++i) {
-      vertices[2 * (j * (n_1 + 1) + i)] = x_1 / (n_1 + 1) * i;
-      vertices[2 * (j * (n_1 + 1) + i) + 1] = x_2 / (n_2 + 1) * j;
+  for (unsigned int j(0); j <= n_2; ++j)
+    for (unsigned int i(0); i <= n_1; ++i) {
+      vertices[2 * (j * (n_1 + 1) + i)] = x_1 / n_1 * i;
+      vertices[2 * (j * (n_1 + 1) + i) + 1] = x_2 / n_2 * j;
     }
 
   for (unsigned int j(0); j < n_2; ++j)

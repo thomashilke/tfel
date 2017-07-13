@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <ostream>
+#include <algorithm>
 
 #include <spikes/array.hpp>
 
@@ -129,7 +130,9 @@ template<typename test_fes_type>
 class linear_form {
 public:
   linear_form(const test_fes_type& te_fes)
-    : test_fes(te_fes), f{te_fes.get_dof_number()} {}
+    : test_fes(te_fes), f{te_fes.get_dof_number()} {
+    std::fill(f.get_data(), f.get_data() + te_fes.get_dof_number(), 0.0);
+  }
 
   template<typename T>
   void operator+=(const T& integration_proxy) {

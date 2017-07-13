@@ -23,6 +23,16 @@ namespace projector {
     return a.solve(f);
   }
 
+  template<typename fe_type>
+  typename finite_element_space<fe_type>::element
+  lagrange(double (*fun)(const double*), const finite_element_space<fe_type>& fes) {
+    typename finite_element_space<fe_type>::element fun_h;
+
+    for (std::size_t n(0); n < fes.get_dof_number(); ++n) {
+      // TODO
+    }
+  }
+
   /* 
   // This cannot work since the return value hold a reference to the fes.
   template<typename fe_type, typename quadrature_type>

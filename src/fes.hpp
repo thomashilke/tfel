@@ -140,6 +140,10 @@ public:
     }
     return value;
   }
+
+  double evaluate(const double* x_hat) const {
+    // TODO
+  }
   
 private:
   array<double> coefficients;

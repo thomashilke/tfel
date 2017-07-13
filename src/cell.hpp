@@ -7,6 +7,7 @@
 #include <spikes/array.hpp>
 
 #include "meta.hpp"
+#include "linear_algebra.hpp"
 
 namespace cell {
   typedef std::set<std::size_t> subdomain_type;
@@ -306,7 +307,59 @@ namespace cell {
       
       return element_list;
     }
-    
+
+    /*
+     * Maps points defined on the reference triangle to space coordinates
+     */
+    static array<double> map_points_to_space_coordinates(const array<double>& vertices,
+							 const array<unsigned int>& elements,
+							 std::size_t subdomain_id, const array<double>& xs) {
+      array<double> hat_xs{xs.get_size(0), vertices.get_size(1)};
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(subdomain_id, 0), n) 
+	    + xs.at(i, 0) * (vertices.at(elements.at(subdomain_id, 1), n)
+			     - vertices.at(elements.at(subdomain_id, 0), n))
+	    + xs.at(i, 1) * (vertices.at(elements.at(subdomain_id, 2), n)
+			   - vertices.at(elements.at(subdomain_id, 0), n));
+      }
+      
+      return hat_xs;
+    }
+
+
+    /*
+     * Return the integration-wise cell volume
+     */
+    static double get_cell_volume(const array<double>& vertices,
+				  const array<unsigned int>& elements,
+				  unsigned int k) {
+      const double
+	a_1(vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0)),
+	a_2(vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1)),
+	b_1(vertices.at(elements.at(k, 2), 0) - vertices.at(elements.at(k, 0), 0)),
+	b_2(vertices.at(elements.at(k, 2), 1) - vertices.at(elements.at(k, 0), 1));
+      
+      return 0.5 * std::abs(a_1 * b_2 - a_2 * b_1);
+    }
+
+    /*
+     * Return the inverse transpose of the jacobian of the T_k(x) mapping
+     */
+    static array<double> get_jmt(const array<double>& vertices,
+				 const array<unsigned int>& elements,
+				 unsigned int k) {
+      array<double> jmt{2,2};
+      jmt.at(0,0) = vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0);
+      jmt.at(0,1) = vertices.at(elements.at(k, 2), 0) - vertices.at(elements.at(k, 0), 0);
+      jmt.at(1,0) = vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1);
+      jmt.at(1,1) = vertices.at(elements.at(k, 2), 1) - vertices.at(elements.at(k, 0), 1);
+
+      matrix_inverse(&jmt.at(0,0), 2);
+      std::swap(jmt.at(0, 1), jmt.at(1, 0));
+      
+      return jmt;
+    }
   };
 
 }

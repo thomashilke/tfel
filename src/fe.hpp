@@ -9,6 +9,44 @@ namespace finite_element {
   struct is_continuous {
     static const bool value = fe_type::is_continuous;
   };
+
+  template<typename fe_type>
+  struct is_lagrangian {
+    static const bool value = fe_type::is_lagrangian;
+  };
+
+  struct edge_lagrange_p0 {
+    typedef cell::edge cell_type;
+
+    static const std::size_t n_dof_per_element = 1;
+    static constexpr std::size_t n_dof[2] = {0, 1};
+    static constexpr std::size_t n_dof_per_subdomain(unsigned int i) {
+      return n_dof[i];
+    }
+    static const bool is_continuous = false;
+    static const bool is_lagrangian = true;
+
+    static double basis_function(unsigned int i,
+				 unsigned int* derivatives,
+				 const double* x) {
+      if (derivatives[0] == 0) {
+	return 1.0;
+      } else {
+	return 0.0;
+      }
+    }
+
+    static double phi(unsigned int i, const double* x) {
+      return 1.0;
+    }
+      
+    static double dphi(unsigned int k, unsigned int i, const double* x) {
+      if (k >= 1)
+	throw std::string("finite_element::edge_lagrange_p0::dphi: space dimension is 1,"
+			  " therefore k must be in {0}.");
+      return 0.0;
+    }
+  };
   
   struct edge_lagrange_p1 {
     typedef cell::edge cell_type;
@@ -19,6 +57,7 @@ namespace finite_element {
       return n_dof[i];
     }
     static const bool is_continuous = true;
+    static const bool is_lagrangian = true;
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -66,6 +105,7 @@ namespace finite_element {
       return n_dof[i];
     }
     static const bool is_continuous = true;
+    static const bool is_lagrangian = false;
     
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -116,6 +156,40 @@ namespace finite_element {
     }
   };
 
+  struct triangle_lagrange_p0 {
+    typedef cell::triangle cell_type;
+
+    static const std::size_t n_dof_per_element = 1;
+    static constexpr std::size_t n_dof[3] = {0, 0, 1};
+    static constexpr std::size_t n_dof_per_subdomain(unsigned int i) {
+      return n_dof[i];
+    }
+    static const bool is_continuous = false;
+    static const bool is_lagrangian = true;
+
+    static double basis_function(unsigned int i,
+				 unsigned int* derivatives,
+				 const double* x) {
+      if (derivatives[0] == 0 and derivatives[1] == 0) {
+	return 1.0;
+      } else {
+	return 0.0;
+      }
+    }
+
+    static double phi(unsigned int i, const double* x) {
+      return 1.0;
+    }
+      
+    static double dphi(unsigned int k, unsigned int i, const double* x) {
+      if (k >= 2)
+	throw std::string("finite_element::edge_lagrange_p0::dphi: space dimension is 1,"
+			  " therefore k must be in {0, 1}.");
+      return 0.0;
+    }
+  };
+
+  
   struct triangle_lagrange_p1 {
     typedef cell::triangle cell_type;
 
@@ -125,23 +199,48 @@ namespace finite_element {
       return n_dof[i];
     }
     static const bool is_continuous = true;
+    static const bool is_lagrangian = true;
 
     static double basis_function(unsigned int i,
 				 unsigned int* derivative,
-				 double* x) {
-      return 0.0;
+				 const double* x) {
+      typedef double (*bf_type)(const double*);
+      static const bf_type bf[3][3] = {{bf_0_1, bf_0_2, bf_0_3},
+				       {bf_10_1, bf_10_2, bf_10_3},
+				       {bf_01_1, bf_01_2, bf_01_3}};
+      if (derivative[0] + derivative[1] == 0) {
+	return bf[0][i](x);
+      } else if(derivative[0] + derivative[1] == 1) {
+	return bf[1 + derivative[1]][i](x);
+      } else {
+	return 0.0;
+      }
+    }
+
+    static double phi(unsigned int i, const double* x) {
+      unsigned int d[2] = {0, 0};
+      return basis_function(i, d, x);
+    }
+
+    static double dphi(unsigned int k, unsigned int i, const double* x) {
+      if (k >= 2)
+	throw std::string("finite_element::triangle_lagrange_p1::dphi: space dimension is 2,"
+			  " therefore k must be in {0, 1}.");
+      unsigned int d[2] = {0, 0};
+      d[k] = 1;
+      return basis_function(i, d, x);
     }
 
   protected:
-    static double bf_0_1(double* x) { return 1.0 - x[0] - x[1]; }
-    static double bf_0_2(double* x) { return x[0]; }
-    static double bf_0_3(double* x) { return x[1]; }
-    static double bf_10_1(double* x) { return -1.0; }
-    static double bf_10_2(double* x) { return  0.0; }
-    static double bf_10_3(double* x) { return  1.0; }
-    static double bf_01_1(double* x) { return -1.0; }
-    static double bf_01_2(double* x) { return  0.0; }
-    static double bf_01_3(double* x) { return  1.0; }
+    static double bf_0_1(const double* x) { return 1.0 - x[0] - x[1]; }
+    static double bf_0_2(const double* x) { return x[0]; }
+    static double bf_0_3(const double* x) { return x[1]; }
+    static double bf_10_1(const double* x) { return -1.0; }
+    static double bf_10_2(const double* x) { return  0.0; }
+    static double bf_10_3(const double* x) { return  1.0; }
+    static double bf_01_1(const double* x) { return -1.0; }
+    static double bf_01_2(const double* x) { return  0.0; }
+    static double bf_01_3(const double* x) { return  1.0; }
   };
 
   struct triangle_lagrange_p1_bubble: public triangle_lagrange_p1 {

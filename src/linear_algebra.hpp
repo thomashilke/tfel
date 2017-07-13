@@ -3,8 +3,6 @@
 
 #include <lapacke.h>
 
-#define nullptr NULL;
-
 /*
  *  Invert dense matrices in row major order of dimension n*n
  */

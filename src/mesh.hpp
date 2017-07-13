@@ -184,6 +184,11 @@ public:
       stream << std::endl;
     }
   }
+
+  unsigned int get_element_at(const double* x) const {
+    // TODO
+  }
+  
 private:
   array<double> vertices;
   array<unsigned int> elements;

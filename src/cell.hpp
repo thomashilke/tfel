@@ -9,6 +9,7 @@
 #include "meta.hpp"
 #include "linear_algebra.hpp"
 
+
 namespace cell {
   namespace detail {
     template<std::size_t n>

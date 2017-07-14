@@ -105,6 +105,11 @@ namespace exporter {
     template<>
     struct ensight_element_type_name<cell::triangle> { static constexpr const char* value = "tria3"; };
 
+
+    template<typename fe_type> struct variable_section_item;
+    template<> struct variable_section_item<finite_element::triangle_lagrange_p0> { static constexpr const char* value = "scalar per element: "; };
+    template<> struct variable_section_item<finite_element::triangle_lagrange_p1> { static constexpr const char* value = "scalar per node: "; };
+
     
     template<typename cell_type>
     void write_static_geometry_file(std::ostream& stream, const mesh<cell_type>& m, const std::string& mesh_name, const std::string& part_name) {
@@ -219,6 +224,76 @@ namespace exporter {
 									"mesh", "part1");
     ensight6_detail::write_static_variable_file<fe>(variable_file, v, var_name);
   }
+
+  template<typename fe>
+  class ensight6_transient {
+  public:
+    typedef fe fe_type;
+    typedef typename fe::cell_type cell_type;
+    typedef finite_element_space<fe> fes_type;
+    
+    ensight6_transient(const std::string& filename,
+		       const mesh<cell_type>& m,
+		       const std::string& variable_name)
+      : filename(filename),
+	variable_name(variable_name) {
+      std::string geometry_filename(filename + ".geom");
+      std::ofstream geometry_file(geometry_filename.c_str(), std::ios::out);
+      ensight6_detail::write_static_geometry_file<cell_type>(geometry_file,
+							     m, "mesh", "part1");
+    }
+
+    ~ensight6_transient() {
+      std::string case_filename(filename + ".case");
+      std::ofstream case_file(case_filename.c_str(), std::ios::out);
+      write_transient_case_file(case_file);
+    }
+    
+    void export_time_step(double time,
+			  const typename fes_type::element& var) {
+      std::ostringstream variable_filename;
+      variable_filename << filename << ".var." << variable_name << "."
+			<< std::setfill('0') << std::setw(6) << std::right
+			<< times.size();
+      
+      std::ofstream variable_file(variable_filename.str().c_str(), std::ios::out);
+      ensight6_detail::write_static_variable_file<fe_type>(variable_file, var, variable_name);
+
+      times.push_back(time);
+    }
+
+  private:
+    std::string filename;
+    std::string variable_name;
+    std::vector<double> times;
+
+  private:
+    void write_transient_case_file(std::ostream& stream) {
+      std::string geometry_filename(filename + ".geom");
+      std::ostringstream variable_filename_pattern;
+      variable_filename_pattern << filename << ".var." << variable_name << "."
+				<< std::string(6, '*');
+      
+      stream << "FORMAT\ntype: ensight\n\n";
+      stream << "GEOMETRY\n";
+      stream << "model: " << 1 << " " << geometry_filename << "\n\n";
+      stream << "VARIABLE\n";
+      stream << ensight6_detail::variable_section_item<fe_type>::value << " " << 1 << " "
+	     << variable_name
+	     << " " << variable_filename_pattern.str() << "\n\n";
+
+      stream << "TIME\n";
+      stream << "time set: 1\n";
+      stream << "number of steps: " << times.size() << '\n';
+      stream << "filename start number: " << 0 << '\n';
+      stream << "filename increment: " << 1 << '\n';
+      stream << "time values: ";
+      
+      for (auto t: times)
+	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+	       << t << '\n';
+    }
+  };
 }
 
 

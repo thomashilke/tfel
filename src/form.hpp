@@ -198,6 +198,12 @@ public:
   expression<form<0,0,0> > get_test_function() const { return form<0,0,0>(); }
 
   const array<double>& get_components() const { return f; }
+
+  void clear() {
+    std::fill(f.get_data(),
+	      f.get_data() + f.get_size(0),
+	      0.0);
+  }
   
   void show(std::ostream& stream) {
     stream << "rhs = [" << f.at(0);
@@ -351,6 +357,10 @@ public:
     typename trial_fes_type::element result(trial_fes, petsc_gmres_ilu->solve(f));
     delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
     return result;
+  }
+
+  void clear() {
+    a.clear();
   }
   
   void show(std::ostream& stream) {

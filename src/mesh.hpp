@@ -136,7 +136,7 @@ public:
     bool operator<(const subdomain_info& op) const { return subdomain < op.subdomain; }
   };
   
-  submesh<cell_type> get_boundary_submesh() {
+  submesh<cell_type> get_boundary_submesh() const {
     using ::cell::subdomain_type;
 
     typedef std::map<subdomain_info, unsigned int> map_type;

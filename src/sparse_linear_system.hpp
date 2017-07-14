@@ -15,6 +15,10 @@ public:
     elements[std::pair<std::size_t, std::size_t>(i, j)] += v;
   }
 
+  void clear() {
+    elements.clear();
+  }
+  
   void show(std::ostream& stream) const {
     auto p(stream.precision(2));
     array<double> profile{n_equation, n_unknown};

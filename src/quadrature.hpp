@@ -105,6 +105,13 @@ namespace quad {
   }
 };
 
+template<typename cell_type>
+struct default_quadrature;
+
+template<> struct default_quadrature<cell::point> { typedef quad::point::eval type; };
+template<> struct default_quadrature<cell::edge> { typedef quad::edge::gauss3 type; };
+template<> struct default_quadrature<cell::triangle> { typedef quad::triangle::qf2pT type; };
+
 template<typename Q, typename F>
 double integrate(const F& f, double a, double b, double n) {
   double result(0.0);

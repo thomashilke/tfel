@@ -163,14 +163,24 @@ private:
 template<typename fe>
 struct finite_element_space<fe>::element {
 public:
+  element(const finite_element_space<fe>& fes)
+    : coefficients{fes.get_dof_number()}, fes(fes) {}
+  
   element(const finite_element_space<fe>& fes,
-	  array<double>&& a): coefficients(a), fes(fes) {}
+	  array<double>&& a)
+    : coefficients(a), fes(fes) {}
+  
   element(const finite_element_space<fe>& fes,
-	  const array<double>& a): coefficients(a), fes(fes) {}
-  element(const element& e): coefficients(e.coefficients), fes(e.fes) {}
+	  const array<double>& a)
+    : coefficients(a), fes(fes) {}
+  
+  element(const element& e)
+    : coefficients(e.coefficients), fes(e.fes) {}
+  
   ~element() {}
 
   const finite_element_space<fe>& get_finite_element_space() const { return fes; }
+  
   const mesh<typename fe::cell_type>& get_mesh() const { return fes.get_mesh(); }
 
   const array<double>& get_components() const { return coefficients; }

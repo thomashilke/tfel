@@ -25,6 +25,7 @@ SOURCES = test/finite_element_space.cpp \
 	test/triangle_cell.cpp \
 	test/fes_cost.cpp \
 	test/laplacian_transient.cpp \
+	test/basic_finite_element_formulation.cpp \
 	src/quadrature.cpp \
 	src/linear_solver.cpp \
 	src/main.cpp \
@@ -44,7 +45,9 @@ BIN = bin/test_finite_element_space \
 	bin/test_triangle_cell \
 	bin/test_fes_cost \
 	bin/test_laplacian_transient \
+	bin/test_basic_finite_element_formulation \
 	bin/main
+
 bin/test_finite_element_space: build/test/finite_element_space.o build/src/fe.o
 bin/main: build/src/main.o build/src/quadrature.o build/src/cell.o build/src/mesh.o build/src/fe.o build/src/linear_solver.o
 bin/test_quadrature_1d: build/test/quadrature_1d.o build/src/quadrature.o
@@ -56,6 +59,7 @@ bin/test_l2_projection: build/test/l2_projection.o build/src/quadrature.o build/
 bin/test_triangle_cell: build/test/triangle_cell.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
 bin/test_fes_cost: build/test/fes_cost.o build/src/mesh.o build/src/quadrature.o
 bin/test_laplacian_transient: build/test/laplacian_transient.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
+bin/test_basic_finite_element_formulation: build/test/basic_finite_element_formulation.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
 
 LIB = 
 

@@ -31,7 +31,11 @@ public:
     for (unsigned int sd(0); sd < cell_type::n_subdomain_type; ++sd) {
       if(fe_type::n_dof_per_subdomain(sd)) {
 	subdomain_list.push_back(cell_type::get_subdomain_list(elements, sd));
-	std::set<subdomain_type>& subdomains(subdomain_list.back());
+
+	// Copy the set into a vector for fast access
+	std::vector<subdomain_type> subdomains(subdomain_list.back().size());
+	std::copy(subdomain_list.back().begin(), subdomain_list.back().end(),
+		  subdomains.begin());
 	
 	const std::size_t n(subdomains.size());
 	const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
@@ -43,7 +47,10 @@ public:
 	    subdomain_type subdomain(cell_type::get_subdomain(elements, k, sd, hat_j));
 	    // j is the global index of subdomain hat_j
 	    const std::size_t j(std::distance(subdomains.begin(),
-					      subdomains.find(subdomain)));
+					      std::lower_bound(subdomains.begin(),
+							       subdomains.end(),
+							       subdomain)));
+
 	    for (unsigned int hat_i(0); hat_i < hat_m; ++hat_i) {
 	      // for each local dof hat_i of subdomain hat_j
 	      dof_map.at(k, (hat_j * hat_m + hat_i) + local_dof_offset)

@@ -16,6 +16,7 @@ public:
   }
 
   void show(std::ostream& stream) const {
+    auto p(stream.precision(2));
     array<double> profile{n_equation, n_unknown};
     for (const auto& elem: elements)
       profile.at(elem.first.first, elem.first.second) = elem.second;
@@ -23,19 +24,23 @@ public:
     stream << "a = [";
     for (unsigned int i(0); i < n_equation - 1; ++i) {
       for (unsigned int j(0); j < n_unknown - 1; ++j)
-	stream << std::setw(4) << std::setprecision(12) << profile.at(i, j) << ", ";
-      stream << std::setw(4) << std::setprecision(12) << profile.at(i, n_unknown - 1) << "; " << std::endl;
+	stream << std::setw(4) << profile.at(i, j) << ", ";
+      stream << std::setw(4) << profile.at(i, n_unknown - 1) << "; " << std::endl;
       
     }
     for (unsigned int j(0); j < n_unknown - 1; ++j)
-      stream << std::setw(4) << std::setprecision(12) << profile.at(n_equation - 1, j) << ", ";
-    stream << std::setw(4) << std::setprecision(12) << profile.at(n_equation - 1, n_unknown - 1) << "];" << std::endl;
+      stream << std::setw(4) << profile.at(n_equation - 1, j) << ", ";
+    stream << std::setw(4) << profile.at(n_equation - 1, n_unknown - 1) << "];" << std::endl;
+
+    stream.precision(p);
   }
 
   std::size_t get_equation_number() const { return n_equation; }
   std::size_t get_equation_unknown() const { return n_unknown; }
 
   const std::map<std::pair<std::size_t, std::size_t>, double> get_elements() const { return elements; }
+
+  std::size_t get_element_number() const { return elements.size(); }
   
 private:
   std::size_t n_equation, n_unknown;

@@ -26,23 +26,52 @@ namespace linear_solver_impl {
   class solver_base {
   public:
     virtual ~solver_base() {}
+    virtual void preallocate(const int* nz) = 0;
     virtual void add_value(std::size_t i, std::size_t j, double v) = 0;
+    virtual void add_row(int i, std::size_t n, int* js, double* vs) = 0;
     virtual void assemble() = 0;
+    virtual void show() = 0;
     virtual array<double> solve(const array<double>& rhs) = 0;
   };
+
+  namespace petsc {
+    struct global_initialize {
+      static global_initialize& instance() {
+	if (not inst)
+	  inst = new global_initialize();
+	return *inst;
+      }
+
+      static void release() {
+	delete inst;
+	inst = nullptr;
+      }
+      
+    private:
+      global_initialize() {
+	PetscInitialize(nullptr, nullptr, nullptr, nullptr);
+      }
+      ~global_initialize() {
+	PetscFinalize();
+      }
+
+    private:
+      static global_initialize* inst;
+    };
+  }
   
   class petsc_gmres_ilu: public solver_base {
   public:
-    petsc_gmres_ilu(std::size_t problem_size) {
+    petsc_gmres_ilu(std::size_t problem_size): verbose(false) {
       PetscErrorCode ierr;
+
+      petsc::global_initialize::instance();
       
-      PetscInitialize(nullptr, nullptr, nullptr, nullptr);
       ierr = MatCreate(PETSC_COMM_WORLD, &A);CHKERRV(ierr);
       ierr = MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, problem_size, problem_size);CHKERRV(ierr);
-      ierr = MatSetFromOptions(A);CHKERRV(ierr);
-      ierr = MatSetUp(A);CHKERRV(ierr);
+      ierr = MatSetType(A, MATSEQAIJ);CHKERRV(ierr);
 
-      ierr = VecCreate(PETSC_COMM_WORLD, &x);CHKERRV(ierr);
+       ierr = VecCreate(PETSC_COMM_WORLD, &x);CHKERRV(ierr);
       ierr = VecSetSizes(x, PETSC_DECIDE, problem_size);CHKERRV(ierr);
       ierr = VecSetFromOptions(x);CHKERRV(ierr);
       ierr = VecDuplicate(x, &b);CHKERRV(ierr);
@@ -53,6 +82,18 @@ namespace linear_solver_impl {
       ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
       ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
       ierr = KSPSetTolerances(ksp, 1.e-5, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRV(ierr);
+
+      ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);CHKERRV(ierr);
+      PetscViewerSetType(v, PETSCVIEWERASCII);
+      ierr = PetscViewerAndFormatCreate(v, PETSC_VIEWER_DEFAULT, &vaf);CHKERRV(ierr);
+      if (verbose)
+	ierr = KSPMonitorSet(ksp,
+			     reinterpret_cast<PetscErrorCode (*)(KSP,
+								 PetscInt,
+								 PetscReal,
+								 void *)>(KSPMonitorTrueResidualNorm),
+			     vaf,
+			     nullptr);CHKERRV(ierr);
       ierr = KSPSetFromOptions(ksp);CHKERRV(ierr);
     }
 
@@ -63,18 +104,34 @@ namespace linear_solver_impl {
       ierr = VecDestroy(&x);CHKERRV(ierr);
       ierr = VecDestroy(&b);CHKERRV(ierr);
       ierr = KSPDestroy(&ksp);CHKERRV(ierr);
-      
-      PetscFinalize();
+    }
+
+    virtual void preallocate(const int* nz) {
+      PetscErrorCode ierr;
+
+      ierr = MatSeqAIJSetPreallocation(A, 0, nz);CHKERRV(ierr);
+      ierr = MatSetUp(A);CHKERRV(ierr);
     }
 
     void add_value(std::size_t i, std::size_t j, double v) {
       PetscErrorCode ierr;
       ierr = MatSetValue(A, i, j, v, ADD_VALUES);CHKERRV(ierr);
     }
+
+    void add_row(int i, std::size_t n, int* js, double* vs) {
+      PetscErrorCode ierr;
+      ierr = MatSetValues(A, 1, &i, n, js, vs, ADD_VALUES);CHKERRV(ierr);
+    }
+    
     void assemble() {
       PetscErrorCode ierr;
       ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
       ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+    }
+
+    void show() {
+      PetscErrorCode ierr;
+      ierr = MatView(A, v);CHKERRV(ierr);
     }
     
     virtual array<double> solve(const array<double>& rhs) {
@@ -96,11 +153,16 @@ namespace linear_solver_impl {
     }
     
   private:
+    const bool verbose;
+    
     Mat A;
     Vec x, b;
 
     KSP ksp;
     PC pc;
+
+    PetscViewer v;
+    PetscViewerAndFormat* vaf;
   };
 
   class lapack_dense_lu: public solver_base {
@@ -111,12 +173,16 @@ namespace linear_solver_impl {
       std::fill(data, data + problem_size * problem_size, 0.0);
     }
 
+    virtual void preallocate(const int* nz) {}
+	  
     void add_value(std::size_t i, std::size_t j, double v) {
       a.at(i, j) = v;
     }
 
+    void add_row(int i, std::size_t n, int* js, double* vs) {}
+
     void assemble() {}
-    
+    void show() {}
     virtual array<double> solve(const array<double>& /*rhs*/) {
       throw std::string("unimplemented");
     }

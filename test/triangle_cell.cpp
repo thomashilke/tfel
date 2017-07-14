@@ -13,11 +13,11 @@ double func(const double* x) {
   return std::sin(x[0] * M_PI) * std::sin(x[1] * M_PI);
 }
 
-int main(int , char**) {
+void projection(std::size_t n) {
   timer t;
   
   const bool enable_stdout_export(false);
-  const std::size_t n_x(100), n_y(100);
+  const std::size_t n_x(n), n_y(n);
   
   try {
     mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, n_x, n_y));
@@ -52,6 +52,15 @@ int main(int , char**) {
   } catch (const std::string& e) {
     std::cout << e << std::endl;
   }
-  
+}
+
+int main(int , char**) {
+  std::vector<std::size_t> ns{20, 20, 40, 80, 160, 320, 640, 1280};
+
+  for (auto n: ns) {
+    projection(n);
+    std::cout << std::endl;
+  }
+
   return 0;
 }

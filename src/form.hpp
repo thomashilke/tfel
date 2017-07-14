@@ -299,8 +299,50 @@ public:
 				      method::gmres,
 				      preconditioner::ilu,
 				      test_fes.get_dof_number()));
-    for (const auto& v: a.get_elements())
-      petsc_gmres_ilu->add_value(v.first.first, v.first.second, v.second);
+    if (true) {
+      // Convert to CRS format
+      std::vector<int>
+	row(a.get_equation_number() + 1),
+	col(a.get_elements().size());
+      std::vector<double>
+	val(a.get_elements().size());
+    
+      std::size_t row_id(0), val_id(0);
+      row[0] = row_id;
+      for (const auto& v: a.get_elements()) {
+	while (row_id < v.first.first) {
+	  ++row_id;
+	  row[row_id] = val_id;
+	}
+	col[val_id] = v.first.second;
+	val[val_id] = v.second;
+	++val_id;
+      }
+      row.back() = val_id;
+
+      // count the number of non-zero per row
+      std::vector<int> nnz(a.get_equation_number());
+      for (std::size_t n(0); n < a.get_equation_number(); ++n)
+	nnz[n] = row[n + 1] - row[n];
+      
+      petsc_gmres_ilu->preallocate(&nnz[0]);
+
+      if(true) {
+	// Assemble line by line
+	for (std::size_t row_id(0); row_id < row.size() - 1; ++row_id) {
+	  if (row[row_id + 1] > row[row_id])
+	    petsc_gmres_ilu->add_row(row_id,
+				     nnz[row_id],
+				     &col[row[row_id]],
+				     &val[row[row_id]]);
+	}
+      } else {
+	// Assemble element by element
+	for (const auto& v: a.get_elements())
+	  petsc_gmres_ilu->add_value(v.first.first, v.first.second, v.second);
+      }
+    }
+
     petsc_gmres_ilu->assemble();
 
     typename trial_fes_type::element result(trial_fes, petsc_gmres_ilu->solve(f));

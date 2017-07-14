@@ -186,7 +186,8 @@ public:
       for (unsigned int j(0); j < n_dof; ++j) {
 	double rhs_el(0.0);
 	for (unsigned int q(0); q < n_q; ++q) {
-	  rhs_el += volume * omega.at(q) * integration_proxy.f(k, &xq.at(q, 0), &xq_hat.at(q, 0),
+	  rhs_el += volume * omega.at(q) * integration_proxy.f(k, &xq.at(q, 0),
+							       &xq_hat.at(q, 0),
 							       &psi.at(q, j, 0));
 	}
 	f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_el;
@@ -291,8 +292,10 @@ public:
 
   typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) const {
     array<double> f(form.get_components());
-    for (const auto& i: test_fes.get_dirichlet_dof())
-      f.at(i) = 0.0;
+    for (const auto& i: test_fes.get_dirichlet_dof()) {
+      const auto x(trial_fes.get_dof_space_coordinate(i));
+      f.at(i) = trial_fes.boundary_value(&x.at(0, 0));
+    }
     
     linear_solver s;
     auto petsc_gmres_ilu(s.get_solver(solver::petsc,

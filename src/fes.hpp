@@ -17,7 +17,9 @@ public:
   finite_element_space(const mesh<cell_type>& m)
     : m(m),
       dof_map{m.get_element_number(),
-      fe_type::n_dof_per_element} {
+      fe_type::n_dof_per_element},
+      global_dof_to_local_dof{0},
+      f_bc(nullptr) {
     const array<unsigned int>& elements(m.get_elements());
     
     using cell::subdomain_type;
@@ -64,11 +66,19 @@ public:
     }
 
     dof_number = global_dof_offset;
+
+    global_dof_to_local_dof = array<unsigned int>{dof_number, 2};
+    for (std::size_t k(0); k < dof_map.get_size(0); ++k)
+      for (std::size_t n(0); n < dof_map.get_size(1); ++n) {
+	global_dof_to_local_dof.at(dof_map.at(k, n), 0) = k;
+	global_dof_to_local_dof.at(dof_map.at(k, n), 1) = n;
+      }
   }
 
   finite_element_space(const mesh<cell_type>& m, const submesh<cell_type>& dm)
     : finite_element_space(m) {
-
+    f_bc = default_f_bc;
+    
     using cell::subdomain_type;
     
     std::size_t global_dof_offset(0);
@@ -86,6 +96,12 @@ public:
 	global_dof_offset += hat_m * subdomain_list[sd].size();
       }
     }
+  }
+
+  finite_element_space(const mesh<cell_type>& m,
+		       const submesh<cell_type>& dm,
+		       double (*f_bc)(const double*)): finite_element_space(m, dm) {
+    this->f_bc = f_bc;
   }
 
   std::size_t get_dof_number() const { return dof_number; }
@@ -114,13 +130,34 @@ public:
 
   const mesh<cell_type>& get_mesh() const { return m; }
 
+  double boundary_value(const double* x) const { return f_bc(x); }
+
+  array<double> get_dof_space_coordinate(unsigned int i) const {
+    const std::size_t local_node_id(global_dof_to_local_dof.at(i, 1));
+    
+    array<double> x{1, cell_type::n_dimension};
+    std::copy(&fe_type::x[local_node_id][0],
+	      &fe_type::x[local_node_id][0] + cell_type::n_dimension,
+	      &x.at(0, 0));
+
+    return cell_type::map_points_to_space_coordinates(m.get_vertices(),
+						      m.get_elements(),
+						      global_dof_to_local_dof.at(i,0),
+						      x);
+  }
+  
 private:
   const mesh<cell_type>& m;
   array<unsigned int> dof_map;
+  array<unsigned int> global_dof_to_local_dof;
   std::size_t dof_number;
-
+  
+    
   std::unordered_set<unsigned int> dirichlet_dof;
   std::vector<std::set<cell::subdomain_type> > subdomain_list;
+
+  static double default_f_bc(const double* x) { return 0.0; }
+  double (*f_bc)(const double*);
 };
 
 template<typename fe>
@@ -150,6 +187,13 @@ public:
 
   double evaluate(const double* x_hat) const {
     // TODO
+  }
+
+  typename finite_element_space<fe>::element& operator=(const typename finite_element_space<fe>::element& e) {
+    if (&fes != &(e.fes))
+      throw std::string("Assigment of elements between different finite element spaces is not supported.");
+    coefficients = e.coefficients;
+    return *this;
   }
   
 private:

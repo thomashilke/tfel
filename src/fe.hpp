@@ -26,6 +26,9 @@ namespace finite_element {
     static const bool is_continuous = false;
     static const bool is_lagrangian = true;
 
+    // node coordinates
+    static constexpr double x[1][1] = {0.5};
+    
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
 				 const double* x) {
@@ -58,6 +61,8 @@ namespace finite_element {
     }
     static const bool is_continuous = true;
     static const bool is_lagrangian = true;
+
+    static constexpr double x[2][1] = {0.0, 1.0};
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -106,6 +111,8 @@ namespace finite_element {
     }
     static const bool is_continuous = true;
     static const bool is_lagrangian = false;
+
+    static constexpr double x[3][1] = {0.0, 1.0, 0.5};
     
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -166,6 +173,7 @@ namespace finite_element {
     }
     static const bool is_continuous = false;
     static const bool is_lagrangian = true;
+    static constexpr double x[1][2] = {{1.0 / 3.0, 1.0 / 3.0}};
 
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -194,24 +202,30 @@ namespace finite_element {
     typedef cell::triangle cell_type;
 
     static const std::size_t n_dof_per_element = 3;
-    static const std::size_t n_dof_per_subdomain(unsigned int i) {
+    static std::size_t n_dof_per_subdomain(unsigned int i) {
       static const std::size_t n_dof[] = {1, 0, 0};
       return n_dof[i];
     }
     static const bool is_continuous = true;
     static const bool is_lagrangian = true;
+    
+    static constexpr double x[3][2] = {{0.0, 0.0},
+				       {1.0, 0.0},
+				       {0.0, 1.0}};
 
     static double basis_function(unsigned int i,
-				 unsigned int* derivative,
+				 const unsigned int* derivative,
 				 const double* x) {
       typedef double (*bf_type)(const double*);
       static const bf_type bf[3][3] = {{bf_0_1, bf_0_2, bf_0_3},
 				       {bf_10_1, bf_10_2, bf_10_3},
 				       {bf_01_1, bf_01_2, bf_01_3}};
-      if (derivative[0] + derivative[1] == 0) {
+      if (derivative[0] == 0 and derivative[1] == 0) {
 	return bf[0][i](x);
-      } else if(derivative[0] + derivative[1] == 1) {
-	return bf[1 + derivative[1]][i](x);
+      } else if(derivative[0] == 1 and  derivative[1] == 0) {
+	return bf[1][i](x);
+      } else if (derivative[0] == 0 and  derivative[1] == 1) {
+	return bf[2][i](x);
       } else {
 	return 0.0;
       }
@@ -236,8 +250,8 @@ namespace finite_element {
     static double bf_0_2(const double* x) { return x[0]; }
     static double bf_0_3(const double* x) { return x[1]; }
     static double bf_10_1(const double* x) { return -1.0; }
-    static double bf_10_2(const double* x) { return  0.0; }
-    static double bf_10_3(const double* x) { return  1.0; }
+    static double bf_10_2(const double* x) { return  1.0; }
+    static double bf_10_3(const double* x) { return  0.0; }
     static double bf_01_1(const double* x) { return -1.0; }
     static double bf_01_2(const double* x) { return  0.0; }
     static double bf_01_3(const double* x) { return  1.0; }
@@ -247,7 +261,7 @@ namespace finite_element {
     using triangle_lagrange_p1::cell_type;
 
     static const std::size_t n_dof_per_element = 4;
-    static const std::size_t n_dof_per_subdomain(unsigned int i) {
+    static std::size_t n_dof_per_subdomain(unsigned int i) {
       static const std::size_t n_dof[] = {1, 0, 1};
       return n_dof[i];
     }

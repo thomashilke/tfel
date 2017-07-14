@@ -50,7 +50,7 @@ namespace cell {
       }
       
       unsigned int nodes[n];
-      short fill;
+      unsigned short fill;
     };
   }
   

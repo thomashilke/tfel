@@ -101,8 +101,8 @@ private:
   static const bool assemble_source = true;
   static const bool assemble_transport = true;
   
-  element_type solution;
   element_type source;
+  element_type solution;
 
 private:
   static double velocity_x(const double* x) {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   double delta_t(0.1);
   double t_end(M * delta_t);
   double D(0.001);
-  std::size_t n(200);
+  std::size_t n(50);
 
   double time(0.0);
   auto source_function([&](const double* x) -> double {

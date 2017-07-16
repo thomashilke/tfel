@@ -1,6 +1,8 @@
 #ifndef _PROJECTOR_H_
 #define _PROJECTOR_H_
 
+#include <functional>
+
 #include "form.hpp"
 #include "timer.hpp"
 
@@ -8,7 +10,7 @@ namespace projector {
 
   template<typename fe_type, typename quadrature_type>
   typename finite_element_space<fe_type>::element
-  l2(double (*fun)(const double*), const finite_element_space<fe_type>& fes) {
+  l2(const std::function<double(const double*)>& fun, const finite_element_space<fe_type>& fes) {
     timer t;
     typedef finite_element_space<fe_type> fes_type;
     bilinear_form<fes_type, fes_type> a(fes, fes); {
@@ -20,7 +22,7 @@ namespace projector {
     std::cout << std::setw(40) << std::right << "projector::l2::bilinear form: " << t.tic() << " [ms]\n";
     linear_form<fes_type> f(fes); {
       auto v(f.get_test_function());
-      f += integrate<quadrature_type>(fun * v, fes.get_mesh());
+      f += integrate<quadrature_type>(make_expr(fun) * v, fes.get_mesh());
     }
     std::cout << std::setw(40) << std::right << "projector::l2::linear form: " << t.tic() << " [ms]\n";
 

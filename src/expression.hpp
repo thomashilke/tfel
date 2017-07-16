@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <algorithm>
+#include <functional>
 
 #include "fes.hpp"
 
@@ -74,6 +75,28 @@ struct free_function {
 private:
   typedef double (*function_type)(const double*);
   function_type f;
+};
+
+
+struct std_function {
+  std_function(const std::function<double(const double*)>& f): f(f) {}
+
+  template<typename ... Ts>
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat,
+		    Ts ... ts) const {
+    return f(x);
+  }
+
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat) const {
+    return f(x);
+  }
+
+  static constexpr std::size_t rank = 0;
+
+private:
+  std::function<double(const double*)> f;
 };
 
 template<typename fe>
@@ -194,6 +217,7 @@ typedef expression<form<1, 0, 0> > trial_function_t;
 typedef expression<form<0, 0, 0> > test_function_t;
 typedef expression<free_function> free_function_t;
 typedef expression<constant> constant_t;
+typedef expression<std_function> std_function_t;
 
 template<typename fe>
 fe_function_t<fe> make_expr(const typename finite_element_space<fe>::element& u) {
@@ -204,6 +228,10 @@ free_function_t make_expr(double(*f)(const double*)) {
 }
 constant_t make_expr(double c) {
   return constant_t(constant(c));
+}
+
+std_function_t make_expr(const std::function<double(const double*)>& f) {
+  return std_function(f);
 }
 
 template<std::size_t d, typename expression>

@@ -27,7 +27,7 @@ namespace finite_element {
     static const bool is_lagrangian = true;
 
     // node coordinates
-    static constexpr double x[1][1] = {0.5};
+    static constexpr double x[1][1] = {{0.5}};
     
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -62,7 +62,7 @@ namespace finite_element {
     static const bool is_continuous = true;
     static const bool is_lagrangian = true;
 
-    static constexpr double x[2][1] = {0.0, 1.0};
+    static constexpr double x[2][1] = {{0.0}, {1.0}};
  
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,
@@ -112,7 +112,7 @@ namespace finite_element {
     static const bool is_continuous = true;
     static const bool is_lagrangian = false;
 
-    static constexpr double x[3][1] = {0.0, 1.0, 0.5};
+    static constexpr double x[3][1] = {{0.0}, {1.0}, {0.5}};
     
     static double basis_function(unsigned int i,
 				 unsigned int* derivatives,

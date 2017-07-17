@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 		}
 	      }
 
-	      a_el += 0.0;
+	      a_el += volume * omega.at(q) * 0.0;
 	    }
 	    sys.accumulate(fes.get_dof(dm.get_parent_element_id(k), j),
 			   fes.get_dof(dm.get_parent_element_id(k), i), a_el);

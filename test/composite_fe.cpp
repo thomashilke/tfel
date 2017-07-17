@@ -192,9 +192,14 @@ public:
   using cell_list = unique_t<transform<get_cell_type, typename cfe_type::fe_list> >;
   using cell_type = get_element_at_t<0, cell_list>;
 
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wunused-value"
+
   composite_finite_element_space(const mesh<cell_type>& m)
     : fe_instances((sizeof(fe_pack), m)...) {}
-
+  
+  #pragma clang diagnostic pop
+  
   template<std::size_t n>
   std::size_t get_dof_number() const {
     return std::get<n>(fe_instances).get_dof_number();

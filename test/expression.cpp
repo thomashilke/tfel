@@ -6,16 +6,6 @@
 
 #include "../src/expression.hpp"
 
-template<typename T>
-void print_type() {
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
-}
-
-template<typename T>
-void print_type(const T& e) {
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
-}
-
 double g(const double* x) {
   return std::exp(x[0]);
 }
@@ -53,10 +43,6 @@ void test_expression() {
   assert((_1 * _1 * _1)(k, &x, &x_hat, phi, psi) == phi[0] * phi[0] * phi[0]);
 }
 
-
-
-
-
 int main(int argc, char *argv[]) {
   trial_function_t psi((form<1,0,0>()));
   test_function_t phi((form<0,0,0>()));
@@ -69,9 +55,12 @@ int main(int argc, char *argv[]) {
   
   print_type<form<0, 0, 0>>();
   print_type<form<1, 0, 0>>();
-  print_type(mass);
-  print_type(dmass);
 
+  print_type(mass);
+  print_type(mass2);
+  print_type(mass21);
+  print_type(dmass);
+  
   argument<2>(1.0, 'c', 67ul);
   
   return 0;

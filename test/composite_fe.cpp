@@ -4,171 +4,26 @@
 #include <iostream>
 #include <typeinfo>
 
-#include <cxxabi.h>
 
 #include "../src/mesh.hpp"
 #include "../src/fe.hpp"
 #include "../src/fes.hpp"
-
-template<typename T>
-void print_type(std::string msg = "") {
-  int status(0);
-  char *name(abi::__cxa_demangle(typeid(T).name(), 0, 0, &status));
-  
-  std::cout << msg << name << std::endl;
-
-  delete name;
-  name = nullptr;
-}
-
-/*
-template<typename T, T v>
-struct integral_constant { static constexpr T value = v; };
-
-using true_type = bool_constant<true>;
-using false_type = bool_constant<false>;
-*/
+#include "../src/meta.hpp"
 
 
 /*
- *  TMP utilities
+ *  Metafunction: return the cell_type of a fe_type
  */
-using std::integral_constant;
-using std::true_type;
-using std::false_type;
-
-template<bool b>
-using bool_constant = integral_constant<bool, b>;
-
-template<typename T>
-struct is_type { typedef T type; };
-
-
-/*
- *  Type list definition
- */
-template<typename ... Ts> struct type_list {};
-
-
-/*
- * Type list utility size: return the number of elements in the list
- */
-template<typename TL>
-struct list_size;
-
-template<typename ... Ts>
-struct list_size<type_list<Ts...> >: integral_constant<std::size_t, sizeof...(Ts)> {};
-
-/*
- *  Type list utility append: append an element in front of a type list
- */
-template<typename T, typename TL>
-struct append;
-
-template<typename T, typename ... Ts>
-struct append<T, type_list<Ts...> >: is_type<type_list<T, Ts...> > {};
-
-template<typename T, typename TL>
-using append_t = typename append<T, TL>::type;
-  
-/*
- *  Type list utility get_element_at: access element of a type list
- */
-template<std::size_t n, typename ... T>
-struct get_element_at;
-
-template<typename T, typename ... Ts>
-struct get_element_at<0, type_list<T, Ts...> >: is_type<T> {};
-
-template<std::size_t n, typename T, typename ... Ts>
-struct get_element_at<n, type_list<T, Ts...> >: public get_element_at<n - 1, type_list<Ts...> > {};
-
-template<std::size_t n, typename ... Ts>
-using get_element_at_t = typename get_element_at<n, Ts...>::type;
-
-
-/*
- *  Type list utility is_member: check type membership of a type list
- */
-template<typename T, typename TL>
-struct is_member;
-
-template<typename T, typename ... Ts>
-struct is_member<T, type_list<T, Ts...> >: true_type {};
-
-template<typename T, typename U, typename ... Ts>
-struct is_member<T, type_list<U, Ts...> >: is_member<T, type_list<Ts...> > {};
-
-template<typename T>
-struct is_member<T, type_list<> >: false_type {};
-
-
-/*
- * Foldr meta algorithm
- */
-
-template<typename F, typename S, typename L>
-struct foldr;
-
-template<typename F, typename S, typename T, typename ... Ts>
-struct foldr<F, S, type_list<T, Ts...> >: is_type<typename F::template apply<T, typename foldr<F, S, type_list<Ts...> >::type >::type > {};
-
-template<typename F, typename S>
-struct foldr<F, S, type_list<> >: is_type<S> {};
-
-template<typename F, typename S, typename L>
-using foldr_t = typename foldr<F, S, L>::type;
-
-
-/*
- * Foldl meta algorithm
- */
-
-template<typename F, typename S, typename L>
-struct foldl;
-
-template<typename F, typename S, typename T, typename ... Ts>
-struct foldl<F, S, type_list<T, Ts...> >: is_type<typename foldl<F, typename F::template apply<S, T>::type, type_list<Ts...> >::type> {};
-
-template<typename F, typename S, typename T>
-struct foldl<F, S, type_list<T> >: is_type<typename F::template apply<S, T>::type> {};
-
-template<typename F, typename S, typename L>
-using foldl_t = typename foldl<F, S, L>::type;
-
-
-/*
- * Type list utility unique: generate a list of unique type from a type list
- */
-namespace unique_impl {
-  struct append_if_absent {
-    template<typename T, typename TL>
-    struct apply: std::conditional<is_member<T, TL>::value,
-				   is_type<TL>,
-				   is_type<append_t<T, TL> > >::type {};
-  };
-}
-
-template<typename TL>
-using unique_t = typename foldr<unique_impl::append_if_absent, type_list<>, TL>::type;
-
-
-template<typename F>
-struct transform_impl {
-  template<typename A, typename TL>
-  struct apply: is_type<append_t<typename F::template apply<A>::type, TL> > {};
-};
-
-template<typename F, typename TL>
-using transform = typename foldr<transform_impl<F>, type_list<>, TL>::type;
-
-struct identity {
-  template<typename T>
-  struct apply: is_type<T> {};
+struct get_cell_type {
+  template<typename fe_type>
+  struct apply: is_type<typename fe_type::cell_type> {};
 };
 
 
-
+/*
+ *  A composite finite element is simply a wrapper around a typelist
+ *  with an interface to access each of the finite element types in the list.
+ */
 template<typename ... fe_pack>
 struct composite_finite_element {
   using fe_list = type_list<fe_pack...>;
@@ -177,11 +32,12 @@ struct composite_finite_element {
   using fe_type = get_element_at_t<n, fe_list>;
 };
 
-struct get_cell_type {
-  template<typename fe_type>
-  struct apply: is_type<typename fe_type::cell_type> {};
-};
 
+/*
+ *  Declaration of a composite finite element space.
+ *  A composite finite element space is a wrapper around an std::tuple
+ *  where each component is a simple finite element space.
+ */
 template<typename cfe_type>
 class composite_finite_element_space;
 
@@ -244,6 +100,7 @@ private:
   std::tuple<finite_element_space<fe_pack>...> fe_instances;
 };
 
+
 void test_meta() {
   {
     using tl = type_list<double, char, int>;
@@ -258,7 +115,6 @@ void test_meta() {
     print_type<tl_element_2>("element 1: ");
     print_type<tl_element_3>("element 2: ");
 
-    
     print_type<tlt>("transformed by the identity: ");
     
     std::cout << is_member<int, tl>::value << std::endl;
@@ -271,7 +127,6 @@ void test_meta() {
     using tl = type_list<double, char, double>;
 
     print_type<unique_t<tl> >();
-
   }
 }
 
@@ -290,14 +145,17 @@ void test_cfe() {
   fes.show<1>(std::cout);
 }
 
+
 void test_cfes() {
   
 }
+
 
 int main(int argc, char *argv[]) {
 
   test_meta();
   test_cfe();
+  test_cfes();
   
   return 0;
 }

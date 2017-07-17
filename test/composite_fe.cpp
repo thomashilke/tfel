@@ -116,6 +116,9 @@ void test_meta() {
     print_type<tl_element_3>("element 2: ");
 
     print_type<tlt>("transformed by the identity: ");
+
+    using i_tl = reverse_list_t<make_index_list_t<tl> >;
+    print_type<i_tl>("index list generated from tl");
     
     std::cout << is_member<int, tl>::value << std::endl;
     std::cout << is_member<double, tl>::value << std::endl;

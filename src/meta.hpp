@@ -142,6 +142,18 @@ using foldl_t = typename foldl<F, S, L>::type;
 
 
 /*
+ * Type list utility reverse_list: return the list with the elements in reverse order
+ */
+struct append_to_list {
+  template<typename TL, typename A>
+  struct apply: is_type<append_t<A, TL> > {};
+};
+
+template<typename TL>
+using reverse_list_t = typename foldl<append_to_list, type_list<>, TL>::type;
+
+
+/*
  * Type list utility unique: generate a list of unique type from a type list
  */
 namespace unique_impl {
@@ -179,5 +191,23 @@ struct identity {
   struct apply: is_type<T> {};
 };
 
+
+/*
+ * Build a list of increasing indices of the same length
+ * as the type list TL
+ */
+struct enumerate_list_elements {
+  template<typename A, typename IL>
+  struct apply {
+    using type =
+      append_t<integral_constant<std::size_t, list_size<IL>::value>,
+	       IL>;
+  };
+};
+
+template<typename TL>
+using make_index_list_t = reverse_list_t<typename foldr<enumerate_list_elements,
+							type_list<>,
+							TL>::type>;
 
 #endif /* _META_H_ */

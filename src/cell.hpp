@@ -6,7 +6,6 @@
 
 #include <spikes/array.hpp>
 
-#include "meta.hpp"
 #include "linear_algebra.hpp"
 
 

@@ -28,7 +28,7 @@ public:
     std::size_t local_dof_offset(0);
 
     /*
-     * Take care of the dofs on the vertices
+     * Take care of the dofs on the different subdomains
      */
     for (unsigned int sd(0); sd < cell_type::n_subdomain_type; ++sd) {
       if(fe_type::n_dof_per_subdomain(sd)) {
@@ -160,6 +160,7 @@ private:
   double (*f_bc)(const double*);
 };
 
+
 template<typename fe>
 struct finite_element_space<fe>::element {
 public:
@@ -183,7 +184,7 @@ public:
   
   const mesh<typename fe::cell_type>& get_mesh() const { return fes.get_mesh(); }
 
-  const array<double>& get_components() const { return coefficients; }
+  const array<double>& get_coefficients() const { return coefficients; }
 
   double evaluate(std::size_t k, const double* x_hat) const {
     typedef fe fe_type;

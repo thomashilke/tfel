@@ -22,52 +22,46 @@ public:
     typedef typename T::cell_type cell_type;
 
     const auto& m(integration_proxy.m);
-    const std::size_t dim(m.get_embedding_space_dimension());
 
     // prepare the quadrature weights
     const std::size_t n_q(quadrature_type::n_point);
     array<double> omega{n_q};
     omega.set_data(&quadrature_type::w[0]);
 
-
     // storage for the point-wise basis function evaluation
-    const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
-    array<double> phi{n_q, n_test_dof, dim + 1};
+    using fe_list = type_list<test_fe_type, trial_fe_type>;
+    using unique_fe_list = unique_t<fe_list>;
+
+    const std::size_t test_fe_index(get_index_of_element<test_fe_type, unique_fe_list>::value);
+    const std::size_t trial_fe_index(get_index_of_element<trial_fe_type, unique_fe_list>::value);
+    fe_value_manager<unique_fe_list> fe_values((n_q));
 
 
     // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
+      // prepare the quadrature points
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
 									m.get_elements(),
 									k, xq_hat));
-      // prepare the basis function on the quadrature points
-      for (unsigned int q(0); q < n_q; ++q) {
-	for (std::size_t i(0); i < n_test_dof; ++i)
-	  phi.at(q, i, 0) = test_fe_type::phi(i, &xq_hat.at(q, 0));
-      }
-      
-      // prepare the basis function derivatives on the quadrature points
+      // prepare the basis function values
       const array<double> jmt(m.get_jmt(k));
-      for (unsigned int q(0); q < n_q; ++q) {
-	for (std::size_t i(0); i < n_test_dof; ++i) {
-	  for (std::size_t n(0); n < dim; ++n) {
-	    phi.at(q, i, 1 + n) = 0.0;
-	    for (std::size_t k(0); k < dim; ++k)
-	      phi.at(q, i, 1 + n) += jmt.at(n, k) * test_fe_type::dphi(k, i, &xq_hat.at(q, 0));
-	  }
-	}
-      }
+      fe_values.prepare(jmt, xq_hat);
+      
+      const array<double>& psi(fe_values.template get_values<test_fe_index>());
+      const array<double>& phi(fe_values.template get_values<trial_fe_index>());
 
       // evaluate the weak form
+      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
+      const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
       const double volume(m.get_cell_volume(k));
       for (unsigned int i(0); i < n_test_dof; ++i) {
-	for (unsigned int j(0); j < n_test_dof; ++j) {
+	for (unsigned int j(0); j < n_trial_dof; ++j) {
 	  double a_el(0.0);
 	  for (unsigned int q(0); q < n_q; ++q) {
 	    a_el += volume * omega.at(q) * integration_proxy.f(k,
 							       &xq.at(q, 0), &xq_hat.at(q, 0),
-							       &phi.at(q, i, 0),
+							       &psi.at(q, i, 0),
 							       &phi.at(q, j, 0));
 	  }
 	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), j),

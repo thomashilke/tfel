@@ -78,6 +78,19 @@ using append_t = typename append<T, TL>::type;
 
 
 /*
+ *  Type list utility cat_list: concatenate two lists
+ */
+template<typename TL1, typename TL2>
+struct cat_list;
+
+template<typename ... Ts1, typename ... Ts2>
+struct cat_list<type_list<Ts1...>, type_list<Ts2...> >: is_type<type_list<Ts1..., Ts2...> > {};
+
+template<typename TL1, typename TL2>
+using cat_list_t = typename cat_list<TL1, TL2>::type;
+
+
+/*
  *  Type list utility get_element_at: access element of a type list
  */
 template<std::size_t n, typename ... T>
@@ -87,10 +100,26 @@ template<typename T, typename ... Ts>
 struct get_element_at<0, type_list<T, Ts...> >: is_type<T> {};
 
 template<std::size_t n, typename T, typename ... Ts>
-struct get_element_at<n, type_list<T, Ts...> >: public get_element_at<n - 1, type_list<Ts...> > {};
+struct get_element_at<n, type_list<T, Ts...> >: get_element_at<n - 1, type_list<Ts...> > {};
 
 template<std::size_t n, typename ... Ts>
 using get_element_at_t = typename get_element_at<n, Ts...>::type;
+
+
+/*
+ *  Type list utility get_index_of_element: return the index of the element in the type list TL
+ */
+template<std::size_t n, typename T, typename TL>
+struct get_index_of_element_impl;
+
+template<std::size_t n, typename T, typename U, typename ... Ts>
+struct get_index_of_element_impl<n, T, type_list<U, Ts...> >: get_index_of_element_impl<n + 1, T, type_list<Ts...> > {};
+
+template<std::size_t n, typename T, typename ... Ts>
+struct get_index_of_element_impl<n, T, type_list<T, Ts...> >: integral_constant<std::size_t, n> {};
+
+template<typename T, typename TL>
+using get_index_of_element = get_index_of_element_impl<0, T, TL>;
 
 
 /*

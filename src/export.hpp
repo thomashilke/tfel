@@ -28,7 +28,7 @@ namespace exporter {
     for (const auto& node: nodes) {
       unsigned int vertex_id(*node.begin());
       for (unsigned int i(0); i < m.get_embedding_space_dimension(); ++i)
-	file << m.get_vertices().at(vertex_id, i) << " " << v.get_components().at(dof_id);
+	file << m.get_vertices().at(vertex_id, i) << " " << v.get_coefficients().at(dof_id);
       file << '\n';
       ++dof_id;
     }
@@ -151,11 +151,11 @@ namespace exporter {
 								      const typename finite_element_space<finite_element::edge_lagrange_p0>::element& v,
 								      const std::string& var_name) {
       stream << var_name;
-      for (std::size_t k(0); k < v.get_components().get_size(0); ++k) {
+      for (std::size_t k(0); k < v.get_coefficients().get_size(0); ++k) {
 	if (k % 6 == 0)
 	  stream << '\n';
 	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
-	       << v.get_components().at(v.get_finite_element_space().get_dof(k, 0));
+	       << v.get_coefficients().at(v.get_finite_element_space().get_dof(k, 0));
       }
     }
 
@@ -164,11 +164,11 @@ namespace exporter {
 									  const typename finite_element_space<finite_element::triangle_lagrange_p0>::element& v,
 									  const std::string& var_name) {
       stream << var_name;
-      for (std::size_t k(0); k < v.get_components().get_size(0); ++k) {
+      for (std::size_t k(0); k < v.get_coefficients().get_size(0); ++k) {
 	if (k % 6 == 0)
 	  stream << '\n';
 	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
-	       << v.get_components().at(v.get_finite_element_space().get_dof(k, 0));
+	       << v.get_coefficients().at(v.get_finite_element_space().get_dof(k, 0));
       }
     }
 
@@ -179,11 +179,11 @@ namespace exporter {
 								      const typename finite_element_space<finite_element::edge_lagrange_p1>::element& v,
 								      const std::string& var_name) {
       stream << var_name;
-      for (std::size_t n(0); n < v.get_components().get_size(0); ++n) {
+      for (std::size_t n(0); n < v.get_coefficients().get_size(0); ++n) {
 	if (n % 6 == 0)
 	  stream << '\n';
 	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
-	       << v.get_components().at(n);
+	       << v.get_coefficients().at(n);
       }
     }
 
@@ -192,11 +192,11 @@ namespace exporter {
 									  const typename finite_element_space<finite_element::triangle_lagrange_p1>::element& v,
 									  const std::string& var_name) {
       stream << var_name;
-      for (std::size_t n(0); n < v.get_components().get_size(0); ++n) {
+      for (std::size_t n(0); n < v.get_coefficients().get_size(0); ++n) {
 	if (n % 6 == 0)
 	  stream << '\n';
 	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
-	       << v.get_components().at(n);
+	       << v.get_coefficients().at(n);
       }
     }
   }

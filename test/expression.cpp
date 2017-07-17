@@ -5,11 +5,12 @@
 #include <cmath>
 
 #include "../src/expression.hpp"
+#include "../src/meta.hpp"
+
 
 double g(const double* x) {
   return std::exp(x[0]);
 }
-
 
 void test_expression() {
   const std::size_t k(0);
@@ -43,6 +44,21 @@ void test_expression() {
   assert((_1 * _1 * _1)(k, &x, &x_hat, phi, psi) == phi[0] * phi[0] * phi[0]);
 }
 
+void test_expression_call_wrapper() {
+  std::size_t k(0);
+  const double x(0.5), x_hat(0.5);
+  const double phi[2] = {std::sin(x), std::cos(x)};
+  const double psi[2] = {x * x, 2.0 * x};
+
+  const double* psi_phi[2] = {phi, psi};
+  
+  test_function_t _1((form<0,0,0>()));
+  trial_function_t _2((form<1,0,0>()));
+
+  std::cout << "wrapped call: " << expression_call_wrapper<0, 2>::call(_1, psi_phi, k, &x, &x_hat) << std::endl;
+  std::cout << "std call: " << _1(k, &x, &x_hat, phi, psi) << std::endl;
+}
+
 int main(int argc, char *argv[]) {
   trial_function_t psi((form<1,0,0>()));
   test_function_t phi((form<0,0,0>()));
@@ -62,6 +78,8 @@ int main(int argc, char *argv[]) {
   print_type(dmass);
   
   argument<2>(1.0, 'c', 67ul);
+
+  test_expression_call_wrapper();
   
   return 0;
 }

@@ -325,4 +325,26 @@ operator-(const expression<left>& l, const expression<right>& r) {
 }
 
 
+template<std::size_t n, std::size_t n_max>
+struct expression_call_wrapper {
+  template<typename form_t, typename ... As>
+  static double call(form_t form, const double** arg_array, std::size_t k, As ... as) {
+    return expression_call_wrapper<n + 1, n_max>::template call<form_t,
+								As...,
+								const double*>(form,
+									       arg_array + 1,
+									       k,
+									       as...,
+									       *arg_array);
+  }
+};
+
+template<std::size_t n_max>
+struct expression_call_wrapper<n_max, n_max> {
+  template<typename form_t, typename ... As>
+  static double call(form_t form, const double** arg_array, std::size_t k, As ... as) {
+    return form(k, as...);
+  }
+};
+
 #endif /* _INTEGRAND_EXPRESSION_H_ */

@@ -11,7 +11,8 @@
 #include "expression.hpp"
 #include "sparse_linear_system.hpp"
 #include "linear_solver.hpp"
-
+#include "meta.hpp"
+#include "fe_value_manager.hpp"
 
 template<typename cell_t, typename quadrature_t, typename form_t>
 struct mesh_integration_proxy {

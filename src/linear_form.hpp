@@ -6,7 +6,7 @@ class linear_form {
 public:
   linear_form(const test_fes_type& te_fes)
     : test_fes(te_fes), f{te_fes.get_dof_number()} {
-    std::fill(f.get_data(), f.get_data() + te_fes.get_dof_number(), 0.0);
+    f.fill(0.0);
   }
 
   template<typename T>
@@ -70,9 +70,9 @@ public:
     }
   }
 
-  expression<form<0,0,0> > get_test_function() const { return form<0,0,0>(); }
+  expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
 
-  const array<double>& get_components() const { return f; }
+  const array<double>& get_coefficients() const { return f; }
 
   void clear() {
     std::fill(f.get_data(),

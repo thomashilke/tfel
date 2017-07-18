@@ -55,6 +55,32 @@ template<typename ... Ts> struct type_list {};
 
 
 /*
+ *  Type list utility tail: return the tail of the list
+ */
+template<typename TL>
+struct tail;
+
+template<typename T, typename ... Ts>
+struct tail<type_list<T, Ts...> >: is_type<type_list<Ts...> > {};
+
+template<typename TL>
+using tail_t = typename tail<TL>::type;
+
+
+/*
+ *  Type list utility head: return the head of the list
+ */
+template<typename TL>
+struct head;
+
+template<typename T, typename ... Ts>
+struct head<type_list<T, Ts...> >: is_type<T> {};
+
+template<typename TL>
+using head_t = typename head<TL>::type;
+
+
+/*
  * Type list utility size: return the number of elements in the list
  */
 template<typename TL>
@@ -238,5 +264,126 @@ template<typename TL>
 using make_index_list_t = reverse_list_t<typename foldr<enumerate_list_elements,
 							type_list<>,
 							TL>::type>;
+
+
+/*
+ *  Represent a list of compile-time integer values
+ */
+template<typename T, T ... ts>
+struct integral_sequence {};
+
+
+/*
+ *  Concatenate two integral_sequences
+ */
+template<typename IS1, typename IS2>
+struct concat_integral_sequence;
+
+template<typename T, T ... ts1, T ... ts2>
+struct concat_integral_sequence<integral_sequence<T, ts1...>,
+				integral_sequence<T, ts2...> >
+  : is_type<integral_sequence<T, ts1..., ts2...> > {};
+
+
+/*
+ *  Generate an integral sequence of length n, starting from 0
+ */
+template<typename IC>
+struct make_integral_sequence;
+
+template<typename T, T n>
+struct make_integral_sequence<integral_constant<T, n> > {
+  using type = typename concat_integral_sequence<typename make_integral_sequence<integral_constant<T, n-1> >::type,
+						 integral_sequence<T, n - 1> >::type;
+};
+
+template<typename T>
+struct make_integral_sequence<integral_constant<T, 0> >: is_type<integral_sequence<T> > {};
+
+template<typename T, T n>
+using make_integral_sequence_t = typename make_integral_sequence<integral_constant<T, n> >::type;
+
+
+
+/*
+ *  Convert an integral_sequence to a list of integral_constant's
+ */
+template<typename IS>
+struct sequence_to_list;
+
+template<typename T, T t, T ... ts>
+struct sequence_to_list<integral_sequence<T, t, ts...> >
+  : is_type< append_t<integral_constant<T, t>,
+		      typename sequence_to_list<integral_sequence<T, ts...> >::type> > {};
+
+template<typename T, T t>
+struct sequence_to_list<integral_sequence<T, t> >
+  : is_type<type_list<integral_constant<T, t> > > {};
+
+template<typename IS>
+using sequence_to_list_t = typename sequence_to_list<IS>::type;
+
+
+template<typename T, T n>
+using make_integral_list_t = sequence_to_list_t<make_integral_sequence_t<T, n> >;
+
+/*
+ *  Wrap all types in a type_list with the template T
+ */
+template<template<typename...> class T>
+struct wrap_impl {
+  template<typename U>
+  struct apply {
+    using type = T<U>;
+  };
+};
+
+template<template<typename...> class T, typename TL>
+using wrap_t = transform<wrap_impl<T>, TL>;
+
+
+
+/*
+ *  Append an integral constant IC to every element (which are type_lists) of the list ICLL
+ */
+template<typename IC>
+struct append_to_each_element_impl {
+  template<typename ICL, typename ICLL>
+  struct apply {
+    using type = append_t<append_t<IC, ICL>, ICLL>;
+  };
+};
+
+template<typename IC, typename ICLL>
+using append_to_each_element_t = typename foldr<append_to_each_element_impl<IC>,type_list<>, ICLL>::type;
+
+
+/*
+ * Flatten a list of lists
+ */
+struct flatten_impl {
+  template<typename L1, typename L2>
+  struct apply {
+    using type = cat_list_t<L1, L2>;
+  };
+};
+
+template<typename L>
+using flatten_list_t = typename foldr<flatten_impl, type_list<>, L>::type;
+
+/*
+ *  Generate the tensor product of two list of integral_constants
+ */
+template<typename IL>
+struct tensor_product_impl {
+  template<typename IC, typename ICLL>
+  struct apply {
+    using type = append_t<append_to_each_element_t<IC, wrap_t<type_list, IL> >, ICLL>;
+  };
+};
+
+template<typename IL1, typename IL2>
+using tensor_product_of_lists_t = flatten_list_t<typename foldr<tensor_product_impl<IL1>, type_list<>, IL2>::type>;
+
 
 #endif /* _META_H_ */

@@ -19,7 +19,7 @@ public:
       dof_map{m.get_element_number(),
       fe_type::n_dof_per_element},
       global_dof_to_local_dof{0},
-      f_bc(nullptr) {
+      f_bc(default_f_bc) {
     const array<unsigned int>& elements(m.get_elements());
     
     using cell::subdomain_type;
@@ -79,7 +79,19 @@ public:
     : finite_element_space(m) {
     f_bc = default_f_bc;
     
+    set_dirichlet_boundary_condition(dm);
+  }
+
+  finite_element_space(const mesh<cell_type>& m,
+		       const submesh<cell_type>& dm,
+		       double (*f_bc)(const double*)): finite_element_space(m, dm) {
+    this->f_bc = f_bc;
+  }
+
+  void set_dirichlet_boundary_condition(const submesh<cell_type>& dm) {
     using cell::subdomain_type;
+
+    dirichlet_dof.clear();
     
     std::size_t global_dof_offset(0);
     for (std::size_t sd(0); sd < submesh<cell_type>::cell_type::n_subdomain_type; ++sd) {
@@ -95,13 +107,7 @@ public:
 	}
 	global_dof_offset += hat_m * subdomain_list[sd].size();
       }
-    }
-  }
-
-  finite_element_space(const mesh<cell_type>& m,
-		       const submesh<cell_type>& dm,
-		       double (*f_bc)(const double*)): finite_element_space(m, dm) {
-    this->f_bc = f_bc;
+    }    
   }
 
   std::size_t get_dof_number() const { return dof_number; }

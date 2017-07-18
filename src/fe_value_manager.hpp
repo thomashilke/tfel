@@ -6,20 +6,22 @@
 #include "meta.hpp"
 
 
-template<template<typename> class F, typename TL, typename ... As>
+template<template<typename> class F, typename TL>
 struct call_for_each;
 
-template<template<typename> class F, typename T, typename ... Ts, typename ... As>
-struct call_for_each<F, type_list<T, Ts...>, As...> {
-  static void call(As ... as) {
+template<template<typename> class F, typename T, typename ... Ts>
+struct call_for_each<F, type_list<T, Ts...> > {
+  template<typename ... As>
+  static void call(As&& ... as) {
     F<T>::call(as...);
-    call_for_each<F, type_list<Ts...>, As...>::call(as...);
+    call_for_each<F, type_list<Ts...> >::call(std::forward<As>(as)...);
   }
 };
 
-template<template<typename> class F, typename ... As>
-struct call_for_each<F, type_list<>, As...> {
-  static void call(As ... as) {}
+template<template<typename> class F>
+struct call_for_each<F, type_list<> > {
+  template<typename ... As>
+  static void call(As&& ... as) {}
 };
   
 
@@ -54,22 +56,25 @@ struct fe_value_manager<type_list<fe_pack...> > {
 
   void prepare(const array<double>& jmt,
 	       const array<double>& xq) {
-    using index_sequence = make_index_list_t<fe_list>;
-    call_for_each<prepare_impl, index_sequence,
-		  values_type&,
-		  const array<double>&,
-		  const array<double>&>::call(values, jmt, xq);
+    using index_sequence = make_integral_list_t<std::size_t, sizeof...(fe_pack)>;
+    call_for_each<prepare_impl, index_sequence
+		  >::call(values, jmt, xq);
   }
 
   void clear() {
-    using index_sequence = make_index_list_t<fe_list>;
-    call_for_each<clear_impl, index_sequence, values_type&>::call(values);
+    using index_sequence = make_integral_list_t<std::size_t, sizeof...(fe_pack)>;
+    call_for_each<clear_impl, index_sequence>::call(values);
   }
   
   template<std::size_t n>
   const array<double>& get_values() const {
     return std::get<n>(values);
   }
+
+  fe_value_manager(const fe_value_manager& ) = delete;
+  fe_value_manager& operator=(const fe_value_manager&) = delete;
+  fe_value_manager(fe_value_manager&& ) = delete;
+  fe_value_manager& operator=(fe_value_manager&&) = delete;
   
 private:
   template<typename A, typename B> struct return_2nd: is_type<B> {};

@@ -43,7 +43,7 @@ argument(Ts... ts) {
 }
 
 
-template<std::size_t arg, std::size_t order, std::size_t derivative>
+template<std::size_t arg, std::size_t rnk, std::size_t derivative>
 struct form {
   template<typename ... Ts>
   double operator()(unsigned int k,
@@ -52,7 +52,7 @@ struct form {
     return argument<arg>(ts...)[derivative];
   }
 
-  static constexpr std::size_t rank = arg + 1;
+  static constexpr std::size_t rank = rnk;
 };
 
 struct free_function {
@@ -237,12 +237,12 @@ std_function_t make_expr(const std::function<double(const double*)>& f) {
 template<std::size_t d, typename expression>
 struct differentiate;
 
-template<std::size_t d, std::size_t arg>
-struct differentiate<d, form<arg, 0, 0> > {
-  typedef form<arg, 1, d> type;
+template<std::size_t d, std::size_t arg, std::size_t rnk>
+struct differentiate<d, form<arg, rnk, 0> > {
+  typedef form<arg, rnk, d> type;
   
   static
-  type initialize(const expression<form<arg, 0, 0> >&) { return type(); }
+  type initialize(const expression<form<arg, rnk, 0> >&) { return type(); }
 };
 
 template<std::size_t d, typename left, typename right>

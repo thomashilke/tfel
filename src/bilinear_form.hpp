@@ -71,11 +71,11 @@ public:
     }
   }
 
-  expression<form<0,0,0> > get_test_function() const { return form<0,0,0>(); }
-  expression<form<1,0,0> > get_trial_function() const { return form<1,0,0>(); }
+  expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
+  expression<form<1,2,0> > get_trial_function() const { return form<1,2,0>(); }
 
   typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) const {
-    array<double> f(form.get_components());
+    array<double> f(form.get_coefficients());
     for (const auto& i: test_fes.get_dirichlet_dof()) {
       const auto x(trial_fes.get_dof_space_coordinate(i));
       f.at(i) = trial_fes.boundary_value(&x.at(0, 0));

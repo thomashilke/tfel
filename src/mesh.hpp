@@ -13,11 +13,12 @@
 template<typename cell>
 class mesh;
 
-template<typename cell>
+
+template<typename p_cell_type, typename cell_t = typename p_cell_type::boundary_cell_type>
 class submesh {
 public:
-  typedef cell parent_cell_type;
-  typedef typename cell::boundary_cell_type cell_type;
+  typedef p_cell_type parent_cell_type;
+  typedef cell_t cell_type;
 
   submesh(const mesh<parent_cell_type>& parent,
 	  const array<unsigned int>& el,
@@ -135,6 +136,14 @@ public:
 
     bool operator<(const subdomain_info& op) const { return subdomain < op.subdomain; }
   };
+
+  submesh<cell_type, ::cell::point> get_point_submesh() const {
+    array<unsigned int> el_id{1}, sd_id{1}, el{1, 1};
+    el_id.at(0) = 0;
+    sd_id.at(0) = 0;
+    el.at(0, 0) = elements.at(0, 0);
+    return  submesh<cell_type, ::cell::point>(*this, el, el_id, sd_id);
+  }
   
   submesh<cell_type> get_boundary_submesh() const {
     using ::cell::subdomain_type;

@@ -88,7 +88,8 @@ public:
     this->f_bc = f_bc;
   }
 
-  void set_dirichlet_boundary_condition(const submesh<cell_type>& dm) {
+  template<typename c_cell_type>
+  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm) {
     using cell::subdomain_type;
 
     dirichlet_dof.clear();
@@ -110,6 +111,13 @@ public:
     }    
   }
 
+  template<typename c_cell_type>
+  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
+					double (*f_bc)(const double*)) {
+    this->f_bc = f_bc;
+    this->set_dirichlet_boundary_condition(dm);
+  }
+  
   std::size_t get_dof_number() const { return dof_number; }
 
   unsigned int get_dof(std::size_t k, std::size_t i) const {

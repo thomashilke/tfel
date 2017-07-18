@@ -1,29 +1,7 @@
 
 #include <functional>
 
-#include "../src/mesh.hpp"
-#include "../src/fe.hpp"
-#include "../src/fes.hpp"
-#include "../src/quadrature.hpp"
-#include "../src/projector.hpp"
-#include "../src/export.hpp"
-#include "../src/timer.hpp"
-#include "../src/expression.hpp"
-
-template<typename fe>
-class basic_fe_formulation {
-public:
-  typedef fe fe_type;
-  typedef typename fe_type::cell_type cell_type;
-  typedef finite_element_space<fe_type> fes_type;
-  typedef typename fes_type::element element_type;
-  typedef typename default_quadrature<cell_type>::type volume_quadrature_type;
-  typedef typename default_quadrature<typename cell_type::boundary_cell_type>::type boundary_quadrature_type;
-
-  virtual ~basic_fe_formulation() {}
-  
-private:
-};
+#include "../src/basic_fe_formulation.hpp"
 
 
 template<typename fe>

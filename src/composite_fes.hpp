@@ -51,9 +51,15 @@ public:
   
   #pragma clang diagnostic pop
 
-  template<std::size_t n>
-  void set_dirichlet_boundary_condition(const submesh<cell_type>& dm) {
+  template<std::size_t n, typename c_cell_type>
+  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm) {
     std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm);
+  }
+
+  template<std::size_t n, typename c_cell_type>
+  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
+					double (*f_bc)(const double*)) {
+    std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm, f_bc);
   }
   
   std::size_t get_total_dof_number() const {
@@ -154,6 +160,17 @@ struct composite_finite_element_space<composite_finite_element<fe_pack...> >::el
 	      &cf.at(0));
     return typename finite_element_space<get_element_at_t<n, fe_list> >::element(cfes.template get_finite_element_space<n>(),
 										 cf);
+  }
+
+  typename composite_finite_element_space<composite_finite_element<fe_pack...> >::element&
+  operator=(const typename composite_finite_element_space<composite_finite_element<fe_pack...> >::element& e) {
+    if (&cfes != &(e.cfes))
+      throw std::string("Assigment of elements between different finite element spaces is not supported.");
+    coefficients = e.coefficients;
+    dof_numbers = e.dof_numbers;
+    dof_offsets = e.dof_offsets;
+
+    return *this;
   }
 
 private:

@@ -26,18 +26,6 @@ public:
   static const std::size_t n_trial_component = trial_cfe_type::n_component;
 
 
-  template<typename IC>
-  struct handle_dirichlet_dof_equations {
-    static const std::size_t m = IC::value;
-    static void call(const bilinear_form_type& bilinear_form, sparse_linear_system& a) {
-      for (const auto& i: bilinear_form.test_cfes.template get_dirichlet_dof<m>()) {
-	a.accumulate(bilinear_form.test_global_dof_offset[m] + i,
-		     bilinear_form.test_global_dof_offset[m] + i,
-		     1.0);
-      }      
-    }
-  };
-  
   bilinear_form(const test_cfes_type& te_cfes,
 		const trial_cfes_type& tr_cfes)
     : test_cfes(te_cfes), trial_cfes(tr_cfes),
@@ -65,9 +53,6 @@ public:
     std::partial_sum(trial_global_dof_number,
 		     trial_global_dof_number + n_trial_component - 1,
 		     trial_global_dof_offset.begin() + 1);
-
-    // we need to specify the equation for the dirichlet dof
-    call_for_each<handle_dirichlet_dof_equations, make_integral_list_t<std::size_t, n_test_component> >::call(*this, a);
   }
 
 
@@ -180,6 +165,17 @@ public:
     return form<n + n_test_component, 2, 0>();
   }
 
+  template<typename IC>
+  struct handle_dirichlet_dof_equations {
+    static const std::size_t m = IC::value;
+    static void call(const bilinear_form_type& bilinear_form, sparse_linear_system& a) {
+      for (const auto& i: bilinear_form.test_cfes.template get_dirichlet_dof<m>()) {
+	a.accumulate(bilinear_form.test_global_dof_offset[m] + i,
+		     bilinear_form.test_global_dof_offset[m] + i,
+		     1.0);
+      }      
+    }
+  };
   
   template<typename IC>
   struct handle_dirichlet_dof_values {
@@ -192,7 +188,10 @@ public:
     }
   };
     
-  typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) const {
+  typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) {
+    // we need to specify the equation for the dirichlet dof
+    call_for_each<handle_dirichlet_dof_equations, make_integral_list_t<std::size_t, n_test_component> >::call(*this, a);
+    
     array<double> f(form.get_coefficients());
     call_for_each<handle_dirichlet_dof_values, make_integral_list_t<std::size_t, n_test_component> >::call(*this, f);
     

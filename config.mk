@@ -30,6 +30,7 @@ SOURCES = test/finite_element_space.cpp \
 	src/quadrature.cpp \
 	src/linear_solver.cpp \
 	test/composite_fe.cpp \
+	test/stokes_2d.cpp \
 	src/main.cpp \
 	src/cell.cpp \
 	src/mesh.cpp \
@@ -50,6 +51,7 @@ BIN = bin/test_finite_element_space \
 	bin/test_basic_finite_element_formulation \
 	bin/test_composite_fe \
 	bin/test_quadrature_2d \
+	bin/test_stokes_2d \
 	bin/main
 
 bin/test_finite_element_space: build/test/finite_element_space.o build/src/fe.o
@@ -66,6 +68,7 @@ bin/test_laplacian_transient: build/test/laplacian_transient.o build/src/mesh.o 
 bin/test_basic_finite_element_formulation: build/test/basic_finite_element_formulation.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
 bin/test_composite_fe: build/test/composite_fe.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 bin/test_quadrature_2d: build/test/quadrature_2d.o build/src/quadrature.o build/src/mesh.o
+bin/test_stokes_2d: build/test/stokes_2d.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 
 LIB = 
 

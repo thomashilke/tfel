@@ -386,4 +386,22 @@ template<typename IL1, typename IL2>
 using tensor_product_of_lists_t = flatten_list_t<typename foldr<tensor_product_impl<IL1>, type_list<>, IL2>::type>;
 
 
+/*
+ *  Helper function to fill an array with the return value of a set of calls to template functions
+ */
+template<typename R, typename F, std::size_t n, std::size_t n_max>
+struct fill_array_with_return_values {
+  template<typename ... As>
+  static void fill(R* ptr, As... as) {
+    *ptr = F::template call<n>(as...);
+    fill_array_with_return_values<R, F, n + 1, n_max>::template fill<As...>(ptr + 1, as...);
+  }
+};
+
+template<typename R, typename F, std::size_t n_max>
+struct fill_array_with_return_values<R, F, n_max, n_max> {
+  template<typename ... As>
+  static void fill(R* ptr, As... as) {}
+};
+
 #endif /* _META_H_ */

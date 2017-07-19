@@ -23,7 +23,7 @@ public:
   stokes_2d(const mesh<cell_type>& m, double mu)
     : viscosity(mu),
       m(m), dm(m.get_boundary_submesh()),
-      pressure_point_m(m.get_point_submesh()),
+      pressure_point_m(m.get_point_submesh(m.get_element_number() / 2)),
       fes(m),
       v_fes(fes.get_finite_element_space<0>()),
       p_fes(fes.get_finite_element_space<2>()),
@@ -71,7 +71,8 @@ private:
 private:
   void assemble_bilinear_form() {
 
-    const double epsilon(1.0/100.0);
+    const double h(1.0 / 100.0);
+    const double stab_coefficient(10.0);
     
     const auto u_0(a.get_trial_function<0>());
     const auto u_1(a.get_trial_function<1>());
@@ -83,9 +84,9 @@ private:
 
     a += integrate<volume_quadrature_type>(  viscosity * (  d<1>(u_0)*d<1>(v_0) + d<2>(u_0)*d<2>(v_0)
 							  + d<1>(u_1)*d<1>(v_1) + d<2>(u_1)*d<2>(v_1))
-							  - p * (d<1>(v_0) + d<2>(v_1))
-							  - q * (d<1>(u_0) + d<2>(u_1))
-							  + epsilon * (d<1>(p) * d<1>(q) + d<2>(p) * d<2>(q)),
+					     - p * (d<1>(v_0) + d<2>(v_1))
+					     - q * (d<1>(u_0) + d<2>(u_1))
+					     - stab_coefficient * (h * h) * (d<1>(p) * d<1>(q) + d<2>(p) * d<2>(q)),
 					   m);
   }
 
@@ -115,8 +116,8 @@ int main(int argc, char *argv[]) {
   mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
 
   stokes_2d s2d(m, 1.0);
-  s2d.solve();
-
+  //s2d.solve();
+  return 0;
   const auto solution(s2d.get_solution());
   exporter::ensight6<stokes_2d::velocity_fe_type>("stokes_u_0", solution.get_component<0>(), "u_0");
   exporter::ensight6<stokes_2d::velocity_fe_type>("stokes_u_1", solution.get_component<1>(), "u_1");

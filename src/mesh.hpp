@@ -137,11 +137,11 @@ public:
     bool operator<(const subdomain_info& op) const { return subdomain < op.subdomain; }
   };
 
-  submesh<cell_type, ::cell::point> get_point_submesh() const {
+  submesh<cell_type, ::cell::point> get_point_submesh(std::size_t k = 0) const {
     array<unsigned int> el_id{1}, sd_id{1}, el{1, 1};
-    el_id.at(0) = 0;
+    el_id.at(0) = k;
     sd_id.at(0) = 0;
-    el.at(0, 0) = elements.at(0, 0);
+    el.at(0, 0) = elements.at(k, 0);
     return  submesh<cell_type, ::cell::point>(*this, el, el_id, sd_id);
   }
   

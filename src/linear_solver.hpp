@@ -62,7 +62,7 @@ namespace linear_solver_impl {
   
   class petsc_gmres_ilu: public solver_base {
   public:
-    petsc_gmres_ilu(std::size_t problem_size): verbose(false) {
+    petsc_gmres_ilu(std::size_t problem_size): verbose(true) {
       PetscErrorCode ierr;
 
       petsc::global_initialize::instance();
@@ -81,6 +81,7 @@ namespace linear_solver_impl {
       ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
       ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
       ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
+      ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
       ierr = KSPSetTolerances(ksp, 1.e-5, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRV(ierr);
 
       ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);CHKERRV(ierr);

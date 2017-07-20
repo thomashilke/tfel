@@ -36,68 +36,53 @@ namespace exporter {
 
 
   namespace ensight6_detail {
-    template<typename fe>
+    enum class variable_type {nodal, elemental};
+    
+    template<typename fes_element_type>
+    struct variable_type_from_element {
+    private:
+      using fe_list = type_list<finite_element::edge_lagrange_p0,
+				finite_element::edge_lagrange_p1,
+				finite_element::edge_lagrange_p1_bubble,
+				finite_element::triangle_lagrange_p0,
+				finite_element::triangle_lagrange_p1,
+				finite_element::triangle_lagrange_p1_bubble>;
+      static constexpr variable_type variable_types[] = {variable_type::elemental, variable_type::nodal, variable_type::nodal,
+							 variable_type::elemental, variable_type::nodal, variable_type::nodal};
+      using fe_type = typename fes_element_type::fe_type;
+
+    public:
+      static constexpr variable_type value = variable_types[get_index_of_element<fe_type, fe_list>::value];
+    };
+    
     void write_static_case_file(std::ostream& stream,
 				const std::string& geometry_filename,
-				const std::string& variable_name,
-				const std::string& variable_filename);
-
-    template<>
-    void write_static_case_file<finite_element::edge_lagrange_p1>(std::ostream& stream,
-								  const std::string& geometry_filename,
-								  const std::string& variable_name,
-								  const std::string& variable_filename) {
+				const std::vector<std::string>& var_filenames,
+				const std::vector<std::string>& var_names,
+				const std::vector<variable_type>& var_types) {
       stream << "FORMAT\ntype: ensight\n\n";
       stream << "GEOMETRY\n";
       stream << "model: " << geometry_filename << "\n\n";
       stream << "VARIABLE\n";
-      stream << "scalar per node: " << variable_name
-	     << " " << variable_filename << '\n';
+      for (std::size_t i(0); i < var_names.size(); ++i) {
+	if (var_types[i] == variable_type::nodal) {
+	  stream << "scalar per node: " << var_names[i]
+		 << " " << var_filenames[i] << '\n';
+	} else if (var_types[i] == variable_type::elemental) {
+	  stream << "scalar per element: " << var_names[i]
+		 << " " << var_filenames[i] << '\n';
+	}
+      }
     }
-
-    template<>
-    void write_static_case_file<finite_element::edge_lagrange_p0>(std::ostream& stream,
- 								  const std::string& geometry_filename,
-								  const std::string& variable_name,
-								  const std::string& variable_filename) {
-      stream << "FORMAT\ntype: ensight\n\n";
-      stream << "GEOMETRY\n";
-      stream << "model: " << geometry_filename << "\n\n";
-      stream << "VARIABLE\n";
-      stream << "scalar per element: " << variable_name
-	     << " " << variable_filename << '\n';
-    }
-
-    template<>
-    void write_static_case_file<finite_element::triangle_lagrange_p1>(std::ostream& stream,
-								      const std::string& geometry_filename,
-								      const std::string& variable_name,
-								      const std::string& variable_filename) {
-      stream << "FORMAT\ntype: ensight\n\n";
-      stream << "GEOMETRY\n";
-      stream << "model: " << geometry_filename << "\n\n";
-      stream << "VARIABLE\n";
-      stream << "scalar per node: " << variable_name
-	     << " " << variable_filename << '\n';
-
-    }
-
-    template<>
-    void write_static_case_file<finite_element::triangle_lagrange_p0>(std::ostream& stream,
-								      const std::string& geometry_filename,
-								      const std::string& variable_name,
-								      const std::string& variable_filename) {
-      stream << "FORMAT\ntype: ensight\n\n";
-      stream << "GEOMETRY\n";
-      stream << "model: " << geometry_filename << "\n\n";
-      stream << "VARIABLE\n";
-      stream << "scalar per element: " << variable_name
-	     << " " << variable_filename << '\n';
-
-    }
-
+      
     template<typename cell_type>
-    struct ensight_element_type_name;
+    struct ensight_element_type_name {
+    private:
+      using cell_list = type_list<cell::point, cell::edge, cell::triangle>;
+      static constexpr const char* values[] = {"point", "bar2", "tria3"};
+    public:
+      static constexpr const char* value = values[get_index_of_element<cell_type, cell_list>::value];
+    };
     
     template<>
     struct ensight_element_type_name<cell::edge> { static constexpr const char* value = "bar2"; };
@@ -110,9 +95,10 @@ namespace exporter {
     template<> struct variable_section_item<finite_element::triangle_lagrange_p0> { static constexpr const char* value = "scalar per element: "; };
     template<> struct variable_section_item<finite_element::triangle_lagrange_p1> { static constexpr const char* value = "scalar per node: "; };
 
-    
+
     template<typename cell_type>
-    void write_static_geometry_file(std::ostream& stream, const mesh<cell_type>& m, const std::string& mesh_name, const std::string& part_name) {
+    void write_static_geometry_file(std::ostream& stream, const std::string& mesh_name, const std::string& part_name,
+				    const mesh<cell_type>& m) {
       stream << mesh_name << "\n\n";
       stream << "node id off\n";
       stream << "element id off\n";
@@ -140,17 +126,29 @@ namespace exporter {
 	stream << '\n';
       }
     }
+    
+    template<typename fes_element_type, typename ... As>
+    void write_static_geometry_file(std::ostream& stream, const std::string& mesh_name, const std::string& part_name,
+				    const fes_element_type& v, As&& ...) {
+      using cell_type = typename fes_element_type::fe_type::cell_type;
+      const mesh<cell_type>& m(v.get_mesh());
+      write_static_geometry_file(stream, mesh_name, part_name, m);
+    }
 
-    template<typename fe>
+
+    template<typename fes_element_type>
     void write_static_variable_file(std::ostream& stream,
-				    const typename finite_element_space<fe>::element& v,
+				    const fes_element_type& v,
 				    const std::string& var_name);
 
     template<>
-    void write_static_variable_file<finite_element::edge_lagrange_p0>(std::ostream& stream,
-								      const typename finite_element_space<finite_element::edge_lagrange_p0>::element& v,
-								      const std::string& var_name) {
-      stream << var_name;
+    void write_static_variable_file<finite_element_space<finite_element::edge_lagrange_p0>::element>
+    (std::ostream& stream,
+     const finite_element_space<finite_element::edge_lagrange_p0>::element& v,
+     const std::string& var_name) {
+      stream << var_name << '\n';
+      stream << "part" << std::setw(8) << std::right << 1 << '\n';
+      stream << ensight_element_type_name<cell::edge>::value;
       for (std::size_t k(0); k < v.get_coefficients().get_size(0); ++k) {
 	if (k % 6 == 0)
 	  stream << '\n';
@@ -160,10 +158,13 @@ namespace exporter {
     }
 
     template<>
-    void write_static_variable_file<finite_element::triangle_lagrange_p0>(std::ostream& stream,
-									  const typename finite_element_space<finite_element::triangle_lagrange_p0>::element& v,
-									  const std::string& var_name) {
-      stream << var_name;
+    void write_static_variable_file<finite_element_space<finite_element::triangle_lagrange_p0>::element>
+    (std::ostream& stream,
+     const typename finite_element_space<finite_element::triangle_lagrange_p0>::element& v,
+     const std::string& var_name) {
+      stream << var_name << '\n';
+      stream << "part" << std::setw(8) << std::right << 1 << '\n';
+      stream << ensight_element_type_name<cell::triangle>::value;
       for (std::size_t k(0); k < v.get_coefficients().get_size(0); ++k) {
 	if (k % 6 == 0)
 	  stream << '\n';
@@ -175,9 +176,10 @@ namespace exporter {
 
     
     template<>
-    void write_static_variable_file<finite_element::edge_lagrange_p1>(std::ostream& stream,
-								      const typename finite_element_space<finite_element::edge_lagrange_p1>::element& v,
-								      const std::string& var_name) {
+    void write_static_variable_file<finite_element_space<finite_element::edge_lagrange_p1>::element>
+    (std::ostream& stream,
+     const typename finite_element_space<finite_element::edge_lagrange_p1>::element& v,
+     const std::string& var_name) {
       stream << var_name;
       for (std::size_t n(0); n < v.get_coefficients().get_size(0); ++n) {
 	if (n % 6 == 0)
@@ -188,9 +190,10 @@ namespace exporter {
     }
 
     template<>
-    void write_static_variable_file<finite_element::triangle_lagrange_p1>(std::ostream& stream,
-									  const typename finite_element_space<finite_element::triangle_lagrange_p1>::element& v,
-									  const std::string& var_name) {
+    void write_static_variable_file<finite_element_space<finite_element::triangle_lagrange_p1>::element>
+    (std::ostream& stream,
+     const typename finite_element_space<finite_element::triangle_lagrange_p1>::element& v,
+     const std::string& var_name) {
       stream << var_name;
       for (std::size_t n(0); n < v.get_coefficients().get_size(0); ++n) {
 	if (n % 6 == 0)
@@ -199,30 +202,74 @@ namespace exporter {
 	       << v.get_coefficients().at(n);
       }
     }
+
+
+    template<>
+    void write_static_variable_file<finite_element_space<finite_element::triangle_lagrange_p1_bubble>::element>
+    (std::ostream& stream,
+     const typename finite_element_space<finite_element::triangle_lagrange_p1_bubble>::element& v,
+     const std::string& var_name) {
+      stream << var_name;
+      for (std::size_t n(0); n < v.get_mesh().get_vertex_number(); ++n) {
+	if (n % 6 == 0)
+	  stream << '\n';
+	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+	       << v.get_coefficients().at(n);
+      }
+    }
+
+
+    template<typename fes_element_type, typename ... As>
+    void write_static_variable_file_dispatch(std::vector<std::string>::iterator filename_it,
+					     std::vector<std::string>::iterator name_it,
+					     std::vector<variable_type>::iterator vt_it,
+					     const std::string& filename,
+					     const fes_element_type& v, const std::string& var_name,
+					     As&& ... as) {
+      const std::string variable_filename(filename + ".var." + var_name);
+      std::ofstream variable_file(variable_filename.c_str(), std::ios::out);
+      
+      write_static_variable_file(variable_file, v, var_name);
+      *filename_it = variable_filename;
+      *name_it = var_name;
+      *vt_it = variable_type_from_element<fes_element_type>::value;
+      
+      write_static_variable_file_dispatch(filename_it + 1, name_it + 1, vt_it + 1, filename, std::forward<As>(as)...);
+    }
+
+    void write_static_variable_file_dispatch(std::vector<std::string>::iterator filename_it,
+					     std::vector<std::string>::iterator name_it,
+					     std::vector<variable_type>::iterator vt_it,
+					     const std::string& filename) {}
   }
+
+
   
-  template<typename fe>
-  void ensight6(const std::string& filename,
-		const typename finite_element_space<fe>::element& v,
-		const std::string& var_name) {
+  template<typename ... As>
+  void ensight6(const std::string& filename, 
+		As&& ... as) {
     const std::string
       case_filename(filename + ".case"),
-      geometry_filename(filename + ".geom"),
-      variable_filename(filename + ".var." + var_name);
+      geometry_filename(filename + ".geom");
+
+    std::vector<std::string> var_filenames(sizeof...(As)/2);
+    std::vector<std::string> var_names(sizeof...(As)/2);
+    std::vector<ensight6_detail::variable_type> var_types(sizeof...(As)/2);
     
     std::ofstream
       case_file(case_filename.c_str(), std::ios::out),
-      geometry_file(geometry_filename.c_str(), std::ios::out),
-      variable_file(variable_filename.c_str(), std::ios::out);
+      geometry_file(geometry_filename.c_str(), std::ios::out);
 
-    ensight6_detail::write_static_case_file<fe>(case_file,
-						geometry_filename,
-						var_name,
-						variable_filename);
-    ensight6_detail::write_static_geometry_file<typename fe::cell_type>(geometry_file,
-									v.get_mesh(),
-									"mesh", "part1");
-    ensight6_detail::write_static_variable_file<fe>(variable_file, v, var_name);
+    ensight6_detail::write_static_variable_file_dispatch(var_filenames.begin(), var_names.begin(), var_types.begin(),
+							 filename, std::forward<As>(as)...);
+
+    ensight6_detail::write_static_case_file(case_file,
+					    geometry_filename,
+					    var_filenames,
+					    var_names,
+					    var_types);
+    
+    ensight6_detail::write_static_geometry_file(geometry_file, "mesh", "part1", std::forward<As>(as)...);
   }
 
   template<typename fe>
@@ -240,7 +287,7 @@ namespace exporter {
       std::string geometry_filename(filename + ".geom");
       std::ofstream geometry_file(geometry_filename.c_str(), std::ios::out);
       ensight6_detail::write_static_geometry_file<cell_type>(geometry_file,
-							     m, "mesh", "part1");
+							     "mesh", "part1", m);
     }
 
     ~ensight6_transient() {
@@ -257,7 +304,7 @@ namespace exporter {
 			<< times.size();
       
       std::ofstream variable_file(variable_filename.str().c_str(), std::ios::out);
-      ensight6_detail::write_static_variable_file<fe_type>(variable_file, var, variable_name);
+      ensight6_detail::write_static_variable_file(variable_file, var, variable_name);
 
       times.push_back(time);
     }

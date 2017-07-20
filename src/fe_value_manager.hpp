@@ -34,7 +34,7 @@ struct get_cell_type {
 };
 
 
-template<typename FE_LIST>
+template<typename fe_list>
 struct fe_value_manager;
 
 template<typename ... fe_pack>

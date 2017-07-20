@@ -1,6 +1,8 @@
 #ifndef _COMPOSITE_FES_H_
 #define _COMPOSITE_FES_H_
 
+#include "composite_fe.hpp"
+
 
 /*
  *  Declaration of a composite finite element space.

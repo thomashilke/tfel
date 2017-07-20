@@ -5,42 +5,8 @@
 #include <algorithm>
 #include <functional>
 
+#include "meta.hpp"
 #include "fes.hpp"
-
-template<std::size_t n, typename ... Ts> struct get_type;
-
-template<std::size_t n, typename T, typename ... Ts>
-struct get_type<n, T, Ts...> { typedef typename get_type<n - 1, Ts...>::type type; };
-
-template<typename T, typename ... Ts>
-struct get_type<0, T, Ts...> { typedef T type; };
-
-
-template<std::size_t n, typename ... Ts> struct get_arg;
-
-template<std::size_t n, typename T, typename ... Ts>
-struct get_arg<n, T, Ts...> {
-  static
-  typename get_type<n, T, Ts...>::type
-  get(T t, Ts ... ts) { return get_arg<n - 1, Ts...>::get(ts...); }
-};
-
-template<typename T, typename ... Ts>
-struct get_arg<0, T, Ts...> {
-  static T get(T t, Ts ... ts) { return t; }
-};
-
-template<typename T>
-struct get_arg<0, T> {
-  static T get(T t) { return t; }
-};
-
-
-template<std::size_t n, typename ... Ts>
-typename get_type<n, Ts...>::type
-argument(Ts... ts) {
-  return get_arg<n, Ts...>::get(ts...);
-}
 
 
 template<std::size_t arg, std::size_t rnk, std::size_t derivative>
@@ -49,6 +15,7 @@ struct form {
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
 		    Ts ... ts) const {
+    static_assert(sizeof...(Ts) >= arg, "");
     return argument<arg>(ts...)[derivative];
   }
 
@@ -213,8 +180,6 @@ struct composition {
 template<typename fe>
 using fe_function_t = expression<finite_element_function<fe> >;
 
-typedef expression<form<1, 0, 0> > trial_function_t;
-typedef expression<form<0, 0, 0> > test_function_t;
 typedef expression<free_function> free_function_t;
 typedef expression<constant> constant_t;
 typedef expression<std_function> std_function_t;
@@ -328,12 +293,11 @@ operator-(const expression<left>& l, const expression<right>& r) {
 template<std::size_t n, std::size_t n_max>
 struct expression_call_wrapper {
   template<typename form_t, typename ... As>
-  static double call(form_t form, const double** arg_array, std::size_t k, As ... as) {
+  static double call(form_t form, const double** arg_array, As ... as) {
     return expression_call_wrapper<n + 1, n_max>::template call<form_t,
 								As...,
 								const double*>(form,
 									       arg_array + 1,
-									       k,
 									       as...,
 									       *arg_array);
   }
@@ -342,8 +306,8 @@ struct expression_call_wrapper {
 template<std::size_t n_max>
 struct expression_call_wrapper<n_max, n_max> {
   template<typename form_t, typename ... As>
-  static double call(form_t form, const double** arg_array, std::size_t k, As ... as) {
-    return form(k, as...);
+  static double call(form_t form, const double** arg_array, As ... as) {
+    return form(as...);
   }
 };
 

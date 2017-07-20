@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   const element_type c_init(projector::l2<fe_type,
 			                  q_type>(initial_condition,
 						  fes));
-  exporter::ensight6<fe_type>("initial_condition", c_init, "c_init");
+  exporter::ensight6("initial_condition", c_init, "c_init");
 
 
   const std::size_t M(100);

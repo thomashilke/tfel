@@ -117,8 +117,8 @@ void test_cfe() {
 
   const fes_type::element x(a.solve(f));
 
-  exporter::ensight6<fe_0_type>("laplacien_0", x.get_component<0>(), "solution");
-  exporter::ensight6<fe_1_type>("laplacien_1", x.get_component<1>(), "solution");
+  exporter::ensight6("laplacien_0", x.get_component<0>(), "solution");
+  exporter::ensight6("laplacien_1", x.get_component<1>(), "solution");
 }
 
 

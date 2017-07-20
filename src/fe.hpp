@@ -279,7 +279,10 @@ namespace finite_element {
     static const bool is_continuous = true;
     static const bool is_lagrangian = false;
 
-    static constexpr double x[4][2] = {{}, {}, {}, {}};
+    static constexpr double x[4][2] = {{0.0, 0.0},
+				       {1.0, 0.0},
+				       {0.0, 1.0},
+				       {1.0 / 3.0, 1.0 / 3.0}};
     
     static double basis_function(unsigned int i,
 				 const unsigned int* derivative,
@@ -292,9 +295,9 @@ namespace finite_element {
       if (derivative[0] == 0 and derivative[1] == 0) {
 	return bf[0][i](x);
       } else if (derivative[0] == 1 and derivative[1] == 0) {
-	return bf[1][i](x);;
+	return bf[1][i](x);
       } else if (derivative[0] == 0 and derivative[1] == 1) {
-	return bf[1][i](x);;
+	return bf[2][i](x);
       } else {
 	throw std::string("triangle_lagrange_p1_bubble: unsupported derivative order.");
       }
@@ -315,13 +318,13 @@ namespace finite_element {
     }
 
   protected:
-    static double bf_0_4(const double* x) { return bf_0_1(x) * bf_0_2(x) * bf_0_3(x); }
-    static double bf_10_4(const double* x) { return (bf_10_1(x) * bf_0_2(x) * bf_0_3(x)
-						     + bf_0_1(x) * bf_10_2(x) * bf_0_3(x)
-						     + bf_0_1(x) * bf_0_2(x) * bf_10_3(x)); }
-    static double bf_01_4(const double* x) { return (bf_01_1(x) * bf_0_2(x) * bf_0_3(x)
-						     + bf_0_1(x) * bf_01_2(x) * bf_0_3(x)
-						     + bf_0_1(x) * bf_0_2(x) * bf_01_3(x)); }
+    static double bf_0_4(const double* x) { return 27.0 * bf_0_1(x) * bf_0_2(x) * bf_0_3(x); }
+    static double bf_10_4(const double* x) { return 27.0 * (bf_10_1(x) * bf_0_2(x) * bf_0_3(x)
+							    + bf_0_1(x) * bf_10_2(x) * bf_0_3(x)
+							    + bf_0_1(x) * bf_0_2(x) * bf_10_3(x)); }
+    static double bf_01_4(const double* x) { return 27.0 * (bf_01_1(x) * bf_0_2(x) * bf_0_3(x)
+							    + bf_0_1(x) * bf_01_2(x) * bf_0_3(x)
+							    + bf_0_1(x) * bf_0_2(x) * bf_01_3(x)); }
   };
 }
 

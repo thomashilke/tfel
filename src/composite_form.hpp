@@ -1,6 +1,9 @@
 #ifndef _COMPOSITE_FORM_H_
 #define _COMPOSITE_FORM_H_
 
+#include "composite_fes.hpp"
+#include "form.hpp"
+
 
 template<typename fe_list, std::size_t n, std::size_t m, typename unique_fe_list>
 struct select_function_valuation_impl {

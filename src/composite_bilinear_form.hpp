@@ -170,6 +170,7 @@ public:
     static const std::size_t m = IC::value;
     static void call(const bilinear_form_type& bilinear_form, sparse_linear_system& a) {
       for (const auto& i: bilinear_form.test_cfes.template get_dirichlet_dof<m>()) {
+	//std::cout << "bc block " << m << ", dof " << i << ", global dof " << bilinear_form.test_global_dof_offset[m] + i << std::endl;
 	a.accumulate(bilinear_form.test_global_dof_offset[m] + i,
 		     bilinear_form.test_global_dof_offset[m] + i,
 		     1.0);
@@ -181,9 +182,9 @@ public:
   struct handle_dirichlet_dof_values {
     static const std::size_t m = IC::value;
     static void call(const bilinear_form_type& bilinear_form, array<double>& f) {
-      for (const auto& i: bilinear_form.test_cfes.template get_dirichlet_dof<m>()) {
+      for (const auto& i: bilinear_form.trial_cfes.template get_dirichlet_dof<m>()) {
 	const auto x(bilinear_form.trial_cfes.template get_dof_space_coordinate<m>(i));
-	f.at(bilinear_form.test_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
+	f.at(bilinear_form.trial_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
       }      
     }
   };
@@ -248,7 +249,7 @@ public:
     petsc_gmres_ilu->assemble();
     //petsc_gmres_ilu->show();
 
-    typename trial_cfes_type::element result(trial_cfes, petsc_gmres_ilu->solve(f));
+    typename trial_cfes_type::element result(trial_cfes, (petsc_gmres_ilu->solve(f)));
     delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
     return result;
   }
@@ -269,7 +270,7 @@ private:
 
   template<std::size_t m, std::size_t n>
   void accumulate_in_block(std::size_t i, std::size_t j, double value) {
-    if (test_cfes.template get_dirichlet_dof<m>().count(i) == 0)
+    if (trial_cfes.template get_dirichlet_dof<m>().count(i) == 0)
       a.accumulate(i + test_global_dof_offset[m],
 		   j + trial_global_dof_offset[n],
 		   value);

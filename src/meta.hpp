@@ -404,4 +404,24 @@ struct fill_array_with_return_values<R, F, n_max, n_max> {
   static void fill(R* ptr, As... as) {}
 };
 
+/*
+ *  Helper function to access the n-th value of a function parameter pack
+ */
+template<std::size_t n, typename T, typename ... Ts>
+struct get_arg {
+  using return_type = get_element_at_t<n - 1, type_list<Ts...> >;
+  static return_type call(T t, Ts ... ts) { return get_arg<n - 1, Ts...>::call(ts...); }
+};
+
+template<typename T, typename ... Ts>
+struct get_arg<0, T, Ts...> {
+  static T call(T t, Ts ... ts) { return t; }
+};
+
+template<std::size_t n, typename ... Ts>
+get_element_at_t<n, type_list<Ts...> >
+argument(Ts ... ts) {
+  return get_arg<n, Ts...>::call(ts...);
+}
+
 #endif /* _META_H_ */

@@ -178,6 +178,8 @@ private:
 template<typename fe>
 struct finite_element_space<fe>::element {
 public:
+  using fe_type = fe;
+  
   element(const finite_element_space<fe>& fes)
     : coefficients{fes.get_dof_number()}, fes(fes) {}
   

@@ -71,21 +71,32 @@ namespace linear_solver_impl {
       ierr = MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, problem_size, problem_size);CHKERRV(ierr);
       ierr = MatSetType(A, MATSEQAIJ);CHKERRV(ierr);
 
-       ierr = VecCreate(PETSC_COMM_WORLD, &x);CHKERRV(ierr);
-      ierr = VecSetSizes(x, PETSC_DECIDE, problem_size);CHKERRV(ierr);
-      ierr = VecSetFromOptions(x);CHKERRV(ierr);
-      ierr = VecDuplicate(x, &b);CHKERRV(ierr);
+      ierr = VecCreate(PETSC_COMM_WORLD, &b);CHKERRV(ierr);
+      ierr = VecSetSizes(b, PETSC_DECIDE, problem_size);CHKERRV(ierr);
+      ierr = VecSetFromOptions(b);CHKERRV(ierr);
 
       ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);CHKERRV(ierr);
       ierr = KSPSetOperators(ksp, A, A);CHKERRV(ierr);
-      ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
+      //ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
+      ierr = KSPSetType(ksp,KSPPREONLY);CHKERRV(ierr);
+      //ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRV(ierr);
+
       ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
-      ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
-      ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
-      ierr = KSPSetTolerances(ksp, 1.e-5, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRV(ierr);
+
+      ierr = PCSetType(pc,PCLU);CHKERRV(ierr);
+      //ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
+      //ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
+
+      //ierr = PCFactorSetAllowDiagonalFill(pc, PETSC_TRUE);CHKERRV(ierr);
+      //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRV(ierr);
+      
+
+      ierr = KSPSetTolerances(ksp, 1.e-8, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRV(ierr);
+      //ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESClassicalGramSchmidtOrthogonalization);CHKERRV(ierr);
 
       ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);CHKERRV(ierr);
-      PetscViewerSetType(v, PETSCVIEWERASCII);
+      ierr = PetscViewerSetType(v, PETSCVIEWERASCII);CHKERRV(ierr);
+      ierr = PetscViewerPushFormat(v, PETSC_VIEWER_ASCII_MATLAB);CHKERRV(ierr);
       ierr = PetscViewerAndFormatCreate(v, PETSC_VIEWER_DEFAULT, &vaf);CHKERRV(ierr);
       if (verbose)
 	ierr = KSPMonitorSet(ksp,
@@ -143,6 +154,7 @@ namespace linear_solver_impl {
       ierr = VecAssemblyBegin(b);CHKERRCONTINUE(ierr);
       ierr = VecAssemblyBegin(b);CHKERRCONTINUE(ierr);
 
+      ierr = VecDuplicate(b, &x);CHKERRCONTINUE(ierr);
       ierr = KSPSolve(ksp, b, x);CHKERRCONTINUE(ierr);
 
       array<double> result{rhs.get_size(0)};

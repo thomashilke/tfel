@@ -45,7 +45,7 @@ void projection(std::size_t n) {
 	}
     }
 
-    exporter::ensight6<fe_type>("l2projection", func_h, "func_h");
+    exporter::ensight6("l2projection", func_h, "func_h");
     std::cout << std::setw(40) << "ensight export: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     

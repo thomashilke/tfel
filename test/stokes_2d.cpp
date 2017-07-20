@@ -1,7 +1,7 @@
 #include "../src/basic_fe_formulation.hpp"
 
-using stokes_2d_fe = composite_finite_element<finite_element::triangle_lagrange_p1,
-					      finite_element::triangle_lagrange_p1,
+using stokes_2d_fe = composite_finite_element<finite_element::triangle_lagrange_p1_bubble,
+					      finite_element::triangle_lagrange_p1_bubble,
 					      finite_element::triangle_lagrange_p1>;
 
 class stokes_2d
@@ -23,17 +23,16 @@ public:
   stokes_2d(const mesh<cell_type>& m, double mu)
     : viscosity(mu),
       m(m), dm(m.get_boundary_submesh()),
-      pressure_point_m(m.get_point_submesh(m.get_element_number() / 2)),
+      pressure_point_m(m.get_point_submesh(m.get_element_number() / 2 + 50)),
       fes(m),
       v_fes(fes.get_finite_element_space<0>()),
       p_fes(fes.get_finite_element_space<2>()),
       a(fes, fes), f(fes),
       source(fes.get_finite_element_space<0>()),
       solution(fes) {
-    
-    fes.set_dirichlet_boundary_condition<0, cell::edge>(dm, u_0_bc);
-    fes.set_dirichlet_boundary_condition<1, cell::edge>(dm, u_1_bc);
-    fes.set_dirichlet_boundary_condition<2, cell::point>(pressure_point_m);
+
+    static_assert(std::is_same<fe_type::fe_type<0>, fe_type::fe_type<1> >::value,
+		  "Velocity finite element space must be the same.");
     
     assemble_bilinear_form();
     assemble_linear_form();
@@ -43,13 +42,9 @@ public:
     source = projector::l2<velocity_fe_type, volume_quadrature_type>(src, v_fes);
   }
 
-  void solve() {
-    solution = a.solve(f);
-  }
+  void solve() { solution = a.solve(f); }
   
-  const element_type& get_solution() const {
-    return solution;
-  }
+  const element_type& get_solution() const { return solution; }
 
 private:
   double viscosity;
@@ -69,10 +64,18 @@ private:
   fes_type::element solution;
 
 private:
+  static double u_0_bc(const double* x) { return x[1] > 0.999 ? std::sin(x[0] * M_PI) : 0.0; }
+  static double u_1_bc(const double* x) { return 0.0; }
+  static double p_bc(const double* x) { return 0.0; }
+  
   void assemble_bilinear_form() {
 
-    const double h(1.0 / 100.0);
-    const double stab_coefficient(10.0);
+    const double h(1.0 / 200.0);
+    const double stab_coefficient(1.0);
+
+    fes.set_dirichlet_boundary_condition<0>(dm, u_0_bc);
+    fes.set_dirichlet_boundary_condition<1>(dm, u_1_bc);
+    fes.set_dirichlet_boundary_condition<2>(pressure_point_m, p_bc);
     
     const auto u_0(a.get_trial_function<0>());
     const auto u_1(a.get_trial_function<1>());
@@ -81,47 +84,49 @@ private:
     const auto v_0(a.get_test_function<0>());
     const auto v_1(a.get_test_function<1>());
     const auto q(a.get_test_function<2>());
+    
+    if (true) // formulation de Stokes
+      a += integrate<quad::triangle::qf5pT>(viscosity * (d<1>(u_0)*d<1>(v_0) + d<2>(u_0)*d<2>(v_0) +
+							 d<1>(u_1)*d<1>(v_1) + d<2>(u_1)*d<2>(v_1)) + 
+					    p * (d<1>(v_0) + d<2>(v_1)) + 
+					    q * (d<1>(u_0) + d<2>(u_1))
+					    , m);
 
-    a += integrate<volume_quadrature_type>(  viscosity * (  d<1>(u_0)*d<1>(v_0) + d<2>(u_0)*d<2>(v_0)
-							  + d<1>(u_1)*d<1>(v_1) + d<2>(u_1)*d<2>(v_1))
-					     - p * (d<1>(v_0) + d<2>(v_1))
-					     - q * (d<1>(u_0) + d<2>(u_1))
-					     - stab_coefficient * (h * h) * (d<1>(p) * d<1>(q) + d<2>(p) * d<2>(q)),
-					   m);
+    // stabilisation de la formulation de Stokes P_1 - P_1
+    if (not std::is_same<velocity_fe_type, finite_element::triangle_lagrange_p1_bubble>::value)
+      a += integrate<quad::triangle::qf5pT>( - h * h * stab_coefficient * (d<1>(p)*d<1>(q) + d<2>(p)*d<2>(q)), m);
+
+    return;
   }
 
   static double f_0(const double* x) { return 0.0; }
   static double f_1(const double* x) { return 0.0; }
-  static double f_2(const double* x) { return 0.0; }
-
-  static double u_0_bc(const double* x) { return x[0]; }
-  static double u_1_bc(const double* x) { return -x[1]; }
   
   void assemble_linear_form() {
     const auto v_0(f.get_test_function<0>());
     const auto v_1(f.get_test_function<1>());
     const auto q(f.get_test_function<2>());
 
-    f += integrate<volume_quadrature_type>(  f_0 * v_0
-					   + f_1 * v_1
-					   , m);
+    f += integrate<quad::triangle::qf5pT>(f_0 * v_0 +
+					  f_1 * v_1
+					  , m);
   }
 };
-
 
 
 int main(int argc, char *argv[]) {
   using cell_type = cell::triangle;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
+  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 200, 200));
 
   stokes_2d s2d(m, 1.0);
-  //s2d.solve();
-  return 0;
+  s2d.solve();
+
   const auto solution(s2d.get_solution());
-  exporter::ensight6<stokes_2d::velocity_fe_type>("stokes_u_0", solution.get_component<0>(), "u_0");
-  exporter::ensight6<stokes_2d::velocity_fe_type>("stokes_u_1", solution.get_component<1>(), "u_1");
-  exporter::ensight6<stokes_2d::velocity_fe_type>("stokes_p", solution.get_component<2>(), "p");
+  exporter::ensight6("stokes_p",
+		     solution.get_component<0>(), "u0",
+		     solution.get_component<1>(), "u1",
+		     solution.get_component<2>(), "p");
   
   return 0;
 }

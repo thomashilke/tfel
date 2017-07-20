@@ -200,8 +200,12 @@ public:
     // TODO
   }
 
-  double get_h() const {
+  double get_h_max() const {
     return h_max;
+  }
+
+  double get_element_diameter(std::size_t k) const {
+    return h.at(k);
   }
   
 private:
@@ -228,6 +232,7 @@ private:
   void compute_element_diameter() {
     for (std::size_t k(0); k < get_element_number(); ++k)
       h.at(k) = cell_type::element_diameter(vertices, elements, k);
+
 
     h_max = *std::max_element(&h.at(0),
 			      &h.at(0) + get_element_number());

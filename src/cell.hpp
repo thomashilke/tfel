@@ -423,8 +423,8 @@ namespace cell {
 				   const array<unsigned int>& elements,
 				   std::size_t k) {
       double longest_side(0.0);
-      for (unsigned int i(0); i < 2 - 1; ++i)
-	for (unsigned int j(i + 1); j < 2; ++j) {
+      for (unsigned int i(0); i < 3 - 1; ++i)
+	for (unsigned int j(i + 1); j < 3; ++j) {
 	  double side_length(0.0);
 	  for (unsigned int n(0); n < 2; ++n)
 	    side_length += std::pow(  vertices.at(elements.at(k, i), n)

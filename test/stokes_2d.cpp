@@ -1,4 +1,6 @@
 #include "../src/basic_fe_formulation.hpp"
+#include "../src/element_diameter.hpp"
+
 
 using stokes_2d_fe = composite_finite_element<finite_element::triangle_lagrange_p1_bubble,
 					      finite_element::triangle_lagrange_p1_bubble,
@@ -72,8 +74,7 @@ private:
   
   void assemble_bilinear_form() {
 
-    const double h(m.get_h());
-    std::cout << "h is " << h << std::endl;
+    const double h(m.get_h_max());
     const double stab_coefficient(1.0);
 
     fes.set_dirichlet_boundary_condition<0>(dm, u_0_bc);
@@ -119,7 +120,7 @@ private:
 int main(int argc, char *argv[]) {
   using cell_type = cell::triangle;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
+  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 50, 50));
 
   stokes_2d s2d(m, 0.1);
   s2d.solve();
@@ -129,6 +130,12 @@ int main(int argc, char *argv[]) {
 		     solution.get_component<0>(), "u0",
 		     solution.get_component<1>(), "u1",
 		     solution.get_component<2>(), "p");
+
+  {
+    finite_element_space<finite_element::triangle_lagrange_p0> fes(m);
+    const auto h(build_element_diameter_function(m, fes));
+    exporter::ensight6("diam", h, "h");
+  }
   
   return 0;
 }

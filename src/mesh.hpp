@@ -104,7 +104,7 @@ public:
        unsigned int n_vertices, unsigned int n_components,
        const unsigned int* elements, unsigned int n_elements)
     : vertices{n_vertices, n_components},
-      elements{n_elements, cell_type::n_vertex_per_element} {
+      elements{n_elements, cell_type::n_vertex_per_element}, h{n_elements} {
     (this->vertices).set_data(vertices);
     (this->elements).set_data(elements);
 
@@ -112,6 +112,8 @@ public:
     // elements list.
     if(not check_elements_admissibility())
       sort_elements();
+
+    compute_element_diameter();
   }
 
   std::size_t get_embedding_space_dimension() const { return vertices.get_size(1); }
@@ -197,10 +199,16 @@ public:
   unsigned int get_element_at(const double* x) const {
     // TODO
   }
+
+  double get_h() const {
+    return h_max;
+  }
   
 private:
   array<double> vertices;
   array<unsigned int> elements;
+  array<double> h;
+  double h_max;
 
   bool check_elements_admissibility() {
     for (unsigned int k(0); k < elements.get_size(0); ++k)
@@ -214,7 +222,15 @@ private:
   void sort_elements() {
     for (unsigned int k(0); k < elements.get_size(0); ++k)
       std::sort(&elements.at(k, 0),
-		&elements.at(k, cell::n_vertex_per_element - 1));
+		&elements.at(k, cell_type::n_vertex_per_element - 1));
+  }
+
+  void compute_element_diameter() {
+    for (std::size_t k(0); k < get_element_number(); ++k)
+      h.at(k) = cell_type::element_diameter(vertices, elements, k);
+
+    h_max = *std::max_element(&h.at(0),
+			      &h.at(0) + get_element_number());
   }
 };
 

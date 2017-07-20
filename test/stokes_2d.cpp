@@ -64,13 +64,16 @@ private:
   fes_type::element solution;
 
 private:
-  static double u_0_bc(const double* x) { return x[1] > 0.999 ? std::sin(x[0] * M_PI) : 0.0; }
+  static double u_0_bc(const double* x)
+  //{ return x[1] > 0.999 ? std::sin(x[0] * M_PI) : 0.0; }
+  { return x[1] > 0.999 and x[0] != 0.0 and x[0] != 1.0? 1.0 : 0.0; }
   static double u_1_bc(const double* x) { return 0.0; }
   static double p_bc(const double* x) { return 0.0; }
   
   void assemble_bilinear_form() {
 
-    const double h(1.0 / 200.0);
+    const double h(m.get_h());
+    std::cout << "h is " << h << std::endl;
     const double stab_coefficient(1.0);
 
     fes.set_dirichlet_boundary_condition<0>(dm, u_0_bc);
@@ -105,7 +108,6 @@ private:
   void assemble_linear_form() {
     const auto v_0(f.get_test_function<0>());
     const auto v_1(f.get_test_function<1>());
-    const auto q(f.get_test_function<2>());
 
     f += integrate<quad::triangle::qf5pT>(f_0 * v_0 +
 					  f_1 * v_1
@@ -117,9 +119,9 @@ private:
 int main(int argc, char *argv[]) {
   using cell_type = cell::triangle;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 200, 200));
+  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
 
-  stokes_2d s2d(m, 1.0);
+  stokes_2d s2d(m, 0.1);
   s2d.solve();
 
   const auto solution(s2d.get_solution());

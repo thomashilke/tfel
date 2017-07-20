@@ -116,6 +116,12 @@ namespace cell {
       
       return hat_xs;
     }
+
+    static double element_diameter(const array<double>& vertices,
+				   const array<unsigned int>& elements,
+				   std::size_t k) {
+      return 0.0;
+    }
   };
   
   struct edge {
@@ -242,6 +248,13 @@ namespace cell {
       }
       
       return hat_xs;
+    }
+
+    static double element_diameter(const array<double>& vertices,
+				   const array<unsigned int>& elements,
+				   std::size_t k) {
+      return std::abs(vertices.at(elements.at(k, 0), 0)
+		      - vertices.at(elements.at(k, 1), 0));
     }
 
   };
@@ -404,6 +417,23 @@ namespace cell {
       std::swap(jmt.at(0, 1), jmt.at(1, 0));
       
       return jmt;
+    }
+
+    static double element_diameter(const array<double>& vertices,
+				   const array<unsigned int>& elements,
+				   std::size_t k) {
+      double longest_side(0.0);
+      for (unsigned int i(0); i < 2 - 1; ++i)
+	for (unsigned int j(i + 1); j < 2; ++j) {
+	  double side_length(0.0);
+	  for (unsigned int n(0); n < 2; ++n)
+	    side_length += std::pow(  vertices.at(elements.at(k, i), n)
+				    - vertices.at(elements.at(k, j), n), 2);
+	  side_length = std::sqrt(side_length);
+
+	  longest_side = std::max(longest_side, side_length);
+	}
+      return longest_side;
     }
   };
 

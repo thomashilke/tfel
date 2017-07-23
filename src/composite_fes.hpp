@@ -54,15 +54,26 @@ public:
   #pragma clang diagnostic pop
 
   template<std::size_t n, typename c_cell_type>
-  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm) {
-    std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm);
+  void set_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm) {
+    std::get<n>(fe_instances).set_dirichlet_boundary(dm);
+  }
+
+  template<std::size_t n>
+  void set_dirichlet_condition(const std::function<double(const double*)>& f_bc) {
+    std::get<n>(fe_instances).set_dirichlet_condition(f_bc);
   }
 
   template<std::size_t n, typename c_cell_type>
   void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
-					double (*f_bc)(const double*)) {
+					const std::function<double(const double*)>& f_bc) {
     std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm, f_bc);
   }
+  
+  /*template<std::size_t n, typename c_cell_type>
+  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
+					double (*f_bc)(const double*)) {
+    std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm, std::function<double(const double*)>(f_bc));
+    }*/
   
   std::size_t get_total_dof_number() const {
     return dof_number_sum_impl<cfe_type, 0, cfe_type::n_component>::call(*this);

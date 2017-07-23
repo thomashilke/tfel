@@ -1,6 +1,10 @@
+#ifndef _ELEMENT_DIAMETER_H_
+#define _ELEMENT_DIAMETER_H_
+
 #include "mesh.hpp"
 #include "fes.hpp"
 #include "fe.hpp"
+
 
 template<typename cell_type>
 struct per_element_fe_type {
@@ -21,3 +25,7 @@ build_element_diameter_function(const mesh<cell_type>& m,
     
   return typename finite_element_space<typename per_element_fe_type<cell_type>::type>::element(fes, coef);
 }
+
+
+#endif /* _ELEMENT_DIAMETER_H_ */
+

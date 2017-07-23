@@ -78,18 +78,17 @@ public:
   finite_element_space(const mesh<cell_type>& m, const submesh<cell_type>& dm)
     : finite_element_space(m) {
     f_bc = default_f_bc;
-    
-    set_dirichlet_boundary_condition(dm);
+    set_dirichlet_boundary(dm);
   }
 
   finite_element_space(const mesh<cell_type>& m,
 		       const submesh<cell_type>& dm,
 		       double (*f_bc)(const double*)): finite_element_space(m, dm) {
-    this->f_bc = f_bc;
+    this->f_bc = std::function<double(const double*)>(f_bc);
   }
 
   template<typename c_cell_type>
-  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm) {
+  void set_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm) {
     using cell::subdomain_type;
 
     dirichlet_dof.clear();
@@ -111,12 +110,23 @@ public:
     }    
   }
 
+  void set_dirichlet_condition(const std::function<double(const double*)>& f_bc) {
+    this->f_bc = f_bc;
+  }
+
   template<typename c_cell_type>
   void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
-					double (*f_bc)(const double*)) {
-    this->f_bc = f_bc;
-    this->set_dirichlet_boundary_condition(dm);
+					const std::function<double(const double*)>& f_bc) {
+    this->set_dirichlet_condition(f_bc);
+    //this->f_bc = f_bc;
+    this->set_dirichlet_boundary(dm);
   }
+  
+  /*template<typename c_cell_type>
+  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
+					double (*f_bc)(const double*)) {
+    set_dirichlet_boundary_condition(dm, std::function<double(const double*)>(f_bc));
+    }*/
   
   std::size_t get_dof_number() const { return dof_number; }
 
@@ -171,7 +181,7 @@ private:
   std::vector<std::set<cell::subdomain_type> > subdomain_list;
 
   static double default_f_bc(const double* x) { return 0.0; }
-  double (*f_bc)(const double*);
+  std::function<double(const double*)> f_bc;
 };
 
 

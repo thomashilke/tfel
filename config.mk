@@ -32,6 +32,10 @@ SOURCES = test/finite_element_space.cpp \
 	test/composite_fe.cpp \
 	test/stokes_2d.cpp \
 	test/l2_p1_bubble_projection.cpp \
+	src/protocols/stokes_2d/driven_cavity.cpp \
+	src/protocols/stationary_advection_diffusion_2d/step.cpp \
+	src/protocols/transient_advection_diffusion_2d/rotating_hill.cpp \
+	src/protocols/steady_advection_1d/stabilisation.cpp \
 	src/main.cpp \
 	src/cell.cpp \
 	src/mesh.cpp \
@@ -54,6 +58,10 @@ BIN = bin/test_finite_element_space \
 	bin/test_quadrature_2d \
 	bin/test_stokes_2d \
 	bin/test_l2_p1_bubble_projection \
+	bin/prot_stoke_2d_driven_cavity \
+	bin/prot_stationary_advection_diffusion_2d_step \
+	bin/prot_transient_advection_diffusion_2d_rotating_hill \
+	bin/prot_steady_advection_1d_stabilisation \
 	bin/main
 
 bin/test_finite_element_space: build/test/finite_element_space.o build/src/fe.o
@@ -72,6 +80,10 @@ bin/test_composite_fe: build/test/composite_fe.o build/src/fe.o build/src/mesh.o
 bin/test_quadrature_2d: build/test/quadrature_2d.o build/src/quadrature.o build/src/mesh.o
 bin/test_stokes_2d: build/test/stokes_2d.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 bin/test_l2_p1_bubble_projection: build/test/l2_p1_bubble_projection.o build/src/fe.o build/src/linear_solver.o build/src/quadrature.o build/src/mesh.o
+bin/prot_stoke_2d_driven_cavity: build/src/protocols/stokes_2d/driven_cavity.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
+bin/prot_stationary_advection_diffusion_2d_step: build/src/protocols/stationary_advection_diffusion_2d/step.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
+bin/prot_transient_advection_diffusion_2d_rotating_hill: build/src/protocols/transient_advection_diffusion_2d/rotating_hill.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
+bin/prot_steady_advection_1d_stabilisation: build/src/protocols/steady_advection_1d/stabilisation.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 
 LIB = 
 

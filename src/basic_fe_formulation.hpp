@@ -2,17 +2,22 @@
 #define BASIC_FE_FORMULATION_H
 
 #include "mesh.hpp"
+#include "quadrature.hpp"
+
+#include "expression.hpp"
+
 #include "fe.hpp"
 #include "fes.hpp"
-#include "quadrature.hpp"
-#include "projector.hpp"
-#include "export.hpp"
-#include "timer.hpp"
-#include "expression.hpp"
+#include "form.hpp"
 
 #include "composite_fe.hpp"
 #include "composite_fes.hpp"
 #include "composite_form.hpp"
+
+#include "projector.hpp"
+#include "export.hpp"
+#include "timer.hpp"
+#include "element_diameter.hpp"
 
 
 template<typename fe>

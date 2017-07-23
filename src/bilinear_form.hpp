@@ -7,10 +7,7 @@ public:
   bilinear_form(const test_fes_type& te_fes,
 		const trial_fes_type& tr_fes)
     : test_fes(te_fes), trial_fes(tr_fes),
-      a(te_fes.get_dof_number(), tr_fes.get_dof_number()) {
-    for (const auto& i: test_fes.get_dirichlet_dof())
-      a.accumulate(i, i, 1.0);
-  }
+      a(te_fes.get_dof_number(), tr_fes.get_dof_number()) {}
 
   template<typename T>
   void operator+=(const T& integration_proxy) {
@@ -74,7 +71,12 @@ public:
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
   expression<form<1,2,0> > get_trial_function() const { return form<1,2,0>(); }
 
-  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) const {
+  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) {
+    // Add the identity equations for each dirichlet dof
+    for (const auto& i: test_fes.get_dirichlet_dof())
+      a.accumulate(i, i, 1.0);
+
+    // Add the value of the dirichlet dof in the right hand side
     array<double> f(form.get_coefficients());
     for (const auto& i: test_fes.get_dirichlet_dof()) {
       const auto x(trial_fes.get_dof_space_coordinate(i));

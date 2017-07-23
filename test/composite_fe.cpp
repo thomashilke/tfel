@@ -90,8 +90,8 @@ void test_cfe() {
   submesh<cell_type> dm(m.get_boundary_submesh());
   fes_type fes(m);
 
-  fes.set_dirichlet_boundary_condition<0>(dm);
-  fes.set_dirichlet_boundary_condition<1>(dm);
+  fes.set_dirichlet_boundary<0>(dm);
+  fes.set_dirichlet_boundary<1>(dm);
   
   //fes.show<0>(std::cout);
   //fes.show<1>(std::cout);

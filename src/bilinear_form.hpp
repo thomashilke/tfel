@@ -7,7 +7,9 @@ public:
   bilinear_form(const test_fes_type& te_fes,
 		const trial_fes_type& tr_fes)
     : test_fes(te_fes), trial_fes(tr_fes),
-      a(te_fes.get_dof_number(), tr_fes.get_dof_number()) {}
+      a(te_fes.get_dof_number(), tr_fes.get_dof_number()) {
+    clear();
+  }
 
   template<typename T>
   void operator+=(const T& integration_proxy) {
@@ -61,8 +63,9 @@ public:
 							       &psi.at(q, i, 0),
 							       &phi.at(q, j, 0));
 	  }
-	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), j),
-		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), i), a_el);
+	  //std::cout << "elem " << k << ", contribution (" << i << "," << j << "): " << a_el << std::endl;
+	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
+		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), j), a_el);
 	}
       }
     }
@@ -71,17 +74,18 @@ public:
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
   expression<form<1,2,0> > get_trial_function() const { return form<1,2,0>(); }
 
-  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) {
-    // Add the identity equations for each dirichlet dof
-    for (const auto& i: test_fes.get_dirichlet_dof())
-      a.accumulate(i, i, 1.0);
-
+  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) const {
     // Add the value of the dirichlet dof in the right hand side
     array<double> f(form.get_coefficients());
     for (const auto& i: test_fes.get_dirichlet_dof()) {
       const auto x(trial_fes.get_dof_space_coordinate(i));
       f.at(i) = trial_fes.boundary_value(&x.at(0, 0));
     }
+    /*std::cout << "f = [";
+    for (std::size_t k(0); k < f.get_size(0); ++k) {
+      std::cout << f.at(k) << std::endl;
+    }
+    std::cout << "];\n";*/
     
     linear_solver s;
     auto petsc_gmres_ilu(s.get_solver(solver::petsc,
@@ -133,7 +137,8 @@ public:
     }
 
     petsc_gmres_ilu->assemble();
-
+    //petsc_gmres_ilu->show();
+    
     typename trial_fes_type::element result(trial_fes, petsc_gmres_ilu->solve(f));
     delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
     return result;
@@ -141,6 +146,9 @@ public:
 
   void clear() {
     a.clear();
+    // Add the identity equations for each dirichlet dof
+    for (const auto& i: test_fes.get_dirichlet_dof())
+      a.accumulate(i, i, 1.0);
   }
   
   void show(std::ostream& stream) {

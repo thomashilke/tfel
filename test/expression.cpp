@@ -173,19 +173,45 @@ void test_valuation_selection() {
   }
 }
 
+/*void test_derivative_evalutation() {
+  std::size_t nq(1);
+
+  array<double> xq{1, 1};
+  xq.at(0, 0) = 1.0/5.0;
+
+  array<double> jmt{1, 1};
+  jmt.at(0, 0) = 1.0;
+  
+  using fe = finite_element::edge_lagrange_p1;
+  using fe_list = type_list<fe>;
+  
+  fe_value_manager<fe_list> values(nq);
+  values.clear();
+  values.prepare(jmt, xq);
+
+  expression<form<0,1,0> > v(form<0,1,0>());
+  expression<form<1,1,0> > u(form<1,2,0>());
+  const auto expr(d<1>(u) * v);
+
+  std::cout << expr(0, &xq.at(0,0), &xq.at(0,0),
+		    values.get_values<0>().at(0, i, 0),
+		    values.get_values<0>().at(0, j, 0)) << std::endl;
+  
+		    }*/
+
 void test_expression_call_wrapper() {
   std::size_t k(0);
   const double x(0.5), x_hat(0.5);
   const double phi[2] = {std::sin(x), std::cos(x)};
   const double psi[2] = {x * x, 2.0 * x};
 
-  const double* psi_phi[2] = {phi, psi};
+  const double* psi_phi[2] = {psi, phi};
   
   test_function_t _1((form<0,0,0>()));
   trial_function_t _2((form<1,0,0>()));
 
   std::cout << "wrapped call: " << expression_call_wrapper<0, 2>::call(_1, psi_phi, k, &x, &x_hat) << std::endl;
-  std::cout << "std call: " << _1(k, &x, &x_hat, phi, psi) << std::endl;
+  std::cout << "std call: " << _1(k, &x, &x_hat, psi, phi) << std::endl;
 }
 
 void test_basis_function() {

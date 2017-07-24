@@ -10,9 +10,9 @@
 
 namespace projector {
 
-  template<typename fe_type, typename quadrature_type>
+  template<typename fe_type, typename quadrature_type, typename expr_t>
   typename finite_element_space<fe_type>::element
-  l2(const std::function<double(const double*)>& fun, const finite_element_space<fe_type>& fes) {
+  l2(const expression<expr_t>& expr, const finite_element_space<fe_type>& fes) {
     timer t;
     typedef finite_element_space<fe_type> fes_type;
     bilinear_form<fes_type, fes_type> a(fes, fes); {
@@ -24,11 +24,17 @@ namespace projector {
     std::cout << std::setw(40) << std::right << "projector::l2::bilinear form: " << t.tic() << " [ms]\n";
     linear_form<fes_type> f(fes); {
       auto v(f.get_test_function());
-      f += integrate<quadrature_type>(make_expr(fun) * v, fes.get_mesh());
+      f += integrate<quadrature_type>(expr * v, fes.get_mesh());
     }
     std::cout << std::setw(40) << std::right << "projector::l2::linear form: " << t.tic() << " [ms]\n";
 
     return a.solve(f);
+  }
+  
+  template<typename fe_type, typename quadrature_type>
+  typename finite_element_space<fe_type>::element
+  l2(const std::function<double(const double*)>& fun, const finite_element_space<fe_type>& fes) {
+    return l2<fe_type, quadrature_type>(make_expr(fun), fes);
   }
 
   template<typename fe_type>

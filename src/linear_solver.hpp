@@ -77,15 +77,15 @@ namespace linear_solver_impl {
 
       ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);CHKERRV(ierr);
       ierr = KSPSetOperators(ksp, A, A);CHKERRV(ierr);
-      //ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
-      ierr = KSPSetType(ksp,KSPPREONLY);CHKERRV(ierr);
+      ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
+      //ierr = KSPSetType(ksp,KSPPREONLY);CHKERRV(ierr);
       //ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRV(ierr);
 
       ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
 
-      ierr = PCSetType(pc,PCLU);CHKERRV(ierr);
-      //ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
-      //ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
+      //ierr = PCSetType(pc,PCLU);CHKERRV(ierr);
+      ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
+      ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
 
       //ierr = PCFactorSetAllowDiagonalFill(pc, PETSC_TRUE);CHKERRV(ierr);
       //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRV(ierr);

@@ -5,10 +5,27 @@
 #include <map>
 #include <vector>
 #include <ostream>
+#include <cassert>
 
 #include <spikes/array.hpp>
 
 #include "cell.hpp"
+
+
+template<typename T>
+T dotp(const array<T>& a, const array<T>& b) {
+  assert(a.get_rank() == 1);
+  assert(b.get_rank() == 1);
+  assert(a.get_size(0) == b.get_size(0));
+  
+  T result = {};
+
+  for (std::size_t k(0); k < a.get_size(0); ++k)
+    result += a.at(k) * b.at(k);
+  
+  return result;
+}
+
 
 template<typename cell>
 class mesh;
@@ -44,8 +61,7 @@ public:
   const array<double>& get_vertices() const { return m.get_vertices(); }
   const array<unsigned int>& get_elements() const { return elements; }
   
-  template<typename F>
-  submesh<parent_cell_type> query_elements(F f) const {
+  submesh<parent_cell_type> query_elements(const std::function<bool(const double*)>& f) const {
     std::vector<bool> selected_elements(get_element_number(), false);
     
     const array<double>& vertices(m.get_vertices());
@@ -53,28 +69,27 @@ public:
       for (std::size_t n(0); n < vertices.get_size(1); ++n)
 	selected_elements.at(k) = selected_elements.at(k) || f(&vertices.at(elements.at(k, n), 0));
     }
-
-        const std::size_t n_elements(std::count(selected_elements.begin(),
-						selected_elements.end(),
-						true));
-
-    array<unsigned int> el_id{n_elements};
-    array<unsigned int> sd_id{n_elements};
-    array<unsigned int> el{n_elements, cell_type::n_vertex_per_element};
-
-    for (std::size_t n(0), m(0); n < get_element_number(); ++n) {
-      if (selected_elements[n]) {
-	el_id.at(m) = parent_element_id.at(n);
-	sd_id.at(m) = parent_subdomain_id.at(n);
-	std::copy(&elements.at(n, 0),
-		  &elements.at(n, 0) + cell_type::n_vertex_per_element,
-		  &el.at(m, 0));
-	++m;
-      }
-    }
     
-    return submesh<parent_cell_type>(m, el, el_id, sd_id);
+    return submesh_from_selection(selected_elements);
   }
+
+  submesh<parent_cell_type> inflow_boundary(const std::function<array<double>(const double*)>& b) const {
+    std::vector<bool> selected_elements(get_element_number(), false);
+
+    for (std::size_t k(0); k < get_element_number(); ++k)
+      for (std::size_t n(0); n < get_vertices().get_size(1); ++n) {
+	const auto normal(cell_type::normal(m.get_vertices(), elements, k));
+	const auto b_val(b(&m.get_vertices().at(elements.at(k, n), 0)));
+	const double dot_product(dotp(normal, b_val));
+	const bool is_inflow_element(dot_product < 0.0);
+
+	selected_elements.at(k) = selected_elements.at(k) || is_inflow_element;
+      }
+
+
+    return submesh_from_selection(selected_elements);
+  }
+  
 
   void show(std::ostream& stream) const {
     for (std::size_t k(0); k < get_element_number(); ++k) {
@@ -93,6 +108,31 @@ private:
   array<unsigned int> elements;
   array<unsigned int> parent_element_id;
   array<unsigned int> parent_subdomain_id;
+
+private:
+  submesh<parent_cell_type> submesh_from_selection(const std::vector<bool>& selected_elements) const {
+    const std::size_t n_elements(std::count(selected_elements.begin(),
+					    selected_elements.end(),
+					    true));
+
+    array<unsigned int> el_id{n_elements};
+    array<unsigned int> sd_id{n_elements};
+    array<unsigned int> el{n_elements, cell_type::n_vertex_per_element};
+
+    for (std::size_t n(0), m(0); n < get_element_number(); ++n) {
+      if (selected_elements[n]) {
+	el_id.at(m) = parent_element_id.at(n);
+	sd_id.at(m) = parent_subdomain_id.at(n);
+	std::copy(&elements.at(n, 0),
+		  &elements.at(n, 0) + cell_type::n_vertex_per_element,
+		  &el.at(m, 0));
+	++m;
+      }
+    }
+    
+    return submesh<parent_cell_type>(m, el, el_id, sd_id);
+  }
+  
 };
 
 template<typename cell>

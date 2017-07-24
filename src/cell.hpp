@@ -257,6 +257,18 @@ namespace cell {
 		      - vertices.at(elements.at(k, 1), 0));
     }
 
+    static array<double> normal(const array<double>& vertices,
+				const array<unsigned int>& elements,
+				std::size_t k) {
+      if (vertices.get_size(1) != 2)
+	throw std::string("cell::edge: normal is only defined for edges embedded in 2d space");
+
+      array<double> n{2};
+      n.at(0) =    (vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1));
+      n.at(1) =  - (vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0));
+
+      return n;
+    }
   };
     
   struct triangle {

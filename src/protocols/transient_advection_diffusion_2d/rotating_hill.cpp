@@ -18,11 +18,11 @@ double shift_scale_bell(const double* x, double width, double x_0, double x_1) {
 
 struct vortex {
   static double b_0(const double* x) {
-    return - (x[1] - 0.5) * M_PI;
+    return - (x[1] - 0.5) * M_PI / 2.0;
   }
 
-  static double b_1(const double* x) {
-    return (x[0] - 0.5) * M_PI;
+  static double b_1(const double* x){
+    return (x[0] - 0.5) * M_PI / 2.0;
   }
 };
 
@@ -39,7 +39,7 @@ struct kim_moin {
 
 
 double u_bc(const double* x) {
-  return 0.0;
+  return 1.0;
 }
 
 double exact_solution(double time, const double* x) {
@@ -50,23 +50,37 @@ double exact_solution(double time, const double* x) {
 
 
 int main(int argc, char *argv[]) {
-  const double diffusivity(1e-7);
-  const double t_end(0.5);
-  const std::size_t M(16), N(16);
+  const double diffusivity(0.0);
+  const double t_end(2.0);
+  const std::size_t M(2000), N(64);
   const double delta_t(t_end / M);
     
   
   using cell_type = cell::triangle;
   mesh<cell_type> m(gen_square_mesh(1.0, 1.0, N, N));
+  submesh<cell_type> dm(m.get_boundary_submesh());
+
+  {
+    submesh<cell_type> inflow_boundary(dm.inflow_boundary([&](const double* x) -> array<double> {
+      array<double> b{2};
+      b.at(0) = vortex::b_0(x);
+      b.at(1) = vortex::b_1(x);
+      return b;
+    }));
+  }
+
+  submesh<cell_type> inflow_boundary(dm.query_elements([](const double* x) {
+	return x[1] < 0.0001;
+      }));
   
   using fe_type = finite_element::triangle_lagrange_p1;
   transient_advection_diffusion<fe_type> tad(m, delta_t, diffusivity);
+  tad.set_boundary_value(u_bc);
   tad.set_advection_velocity(vortex::b_0, vortex::b_1);
   tad.set_initial_condition([](const double* x) {
-      return shift_scale_bell(x, 0.10, 0.5, 0.75);
+      return shift_scale_bell(x, 1.0 / 8.0, 0.5, 0.75);
     });
 
-  tad.set_boundary_value(u_bc);
 
   exporter::ensight6_transient<fe_type>
     ens("transient_advection_diffusion_rotating_hill",

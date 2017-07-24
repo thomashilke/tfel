@@ -53,6 +53,8 @@ public:
     std::partial_sum(trial_global_dof_number,
 		     trial_global_dof_number + n_trial_component - 1,
 		     trial_global_dof_offset.begin() + 1);
+
+    clear();
   }
 
 
@@ -178,21 +180,7 @@ public:
     }
   };
   
-  template<typename IC>
-  struct handle_dirichlet_dof_values {
-    static const std::size_t m = IC::value;
-    static void call(const bilinear_form_type& bilinear_form, array<double>& f) {
-      for (const auto& i: bilinear_form.trial_cfes.template get_dirichlet_dof<m>()) {
-	const auto x(bilinear_form.trial_cfes.template get_dof_space_coordinate<m>(i));
-	f.at(bilinear_form.trial_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
-      }      
-    }
-  };
-    
-  typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) {
-    // we need to specify the equation for the dirichlet dof
-    call_for_each<handle_dirichlet_dof_equations, make_integral_list_t<std::size_t, n_test_component> >::call(*this, a);
-    
+  typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) const {
     array<double> f(form.get_coefficients());
     call_for_each<handle_dirichlet_dof_values, make_integral_list_t<std::size_t, n_test_component> >::call(*this, f);
     
@@ -254,8 +242,24 @@ public:
     return result;
   }
 
+
+  template<typename IC>
+  struct handle_dirichlet_dof_values {
+    static const std::size_t m = IC::value;
+    static void call(const bilinear_form_type& bilinear_form, array<double>& f) {
+      for (const auto& i: bilinear_form.trial_cfes.template get_dirichlet_dof<m>()) {
+	const auto x(bilinear_form.trial_cfes.template get_dof_space_coordinate<m>(i));
+	f.at(bilinear_form.trial_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
+      }      
+    }
+  };
+
   
-  void clear();
+  void clear() {
+    a.clear();
+    // we need to specify the equation for the dirichlet dof
+    call_for_each<handle_dirichlet_dof_equations, make_integral_list_t<std::size_t, n_test_component> >::call(*this, a);
+  }
 
   void show(std::ostream& stream);
   

@@ -22,9 +22,10 @@ public:
 				const submesh<cell_type>& dm,
 				double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
-      m(m), dm(dm), fes(m, dm),
+      m(m), dm(dm), fes(m, dm), p0_fes(m),
       a(fes, fes), f(fes),
       solution(fes),
+      bk_norm(p0_fes), h(build_element_diameter_function<cell_type>(m, p0_fes)),
       b_0(null_function), b_1(null_function), src(null_function) {}
 
   transient_advection_diffusion(const mesh<cell_type>& m, double delta_t, double diffusivity)
@@ -42,6 +43,20 @@ public:
 			      const std::function<double(const double*)>& b_1) {
     this->b_0 = b_0;
     this->b_1 = b_1;
+
+    const auto bk_0 = projector::l2<finite_element::triangle_lagrange_p0,
+				    volume_quadrature_type>(b_0, p0_fes);
+    const auto bk_1 = projector::l2<finite_element::triangle_lagrange_p0,
+				    volume_quadrature_type>(b_1, p0_fes);
+
+    using p0_fe = finite_element::triangle_lagrange_p0;
+    bk_norm = projector::l2<finite_element::triangle_lagrange_p0,
+			    volume_quadrature_type>(compose(std::sqrt, make_expr<p0_fe>(bk_0) * make_expr<p0_fe>(bk_0)
+							    + make_expr<p0_fe>(bk_1) * make_expr<p0_fe>(bk_1)), p0_fes);
+
+    exporter::ensight6("supg_stab", bk_0, "bk_0", bk_1, "bk_1",
+		       bk_norm, "bk_norm", h, "h");
+    
     assemble_bilinear_form();
   }
 
@@ -61,18 +76,22 @@ public:
 private:
   const double delta_t;
   const double diffusivity;
-  const double supg_delta = 1.0;
+  const double supg_delta = 0.25;
 
   
   const mesh<cell_type>& m;
   const submesh<cell_type> dm;
   
   fes_type fes;
+  finite_element_space<finite_element::triangle_lagrange_p0> p0_fes;
 
   bilinear_form<fes_type, fes_type> a;
   linear_form<fes_type> f;
 
   element_type solution;
+  finite_element_space<finite_element::triangle_lagrange_p0>::element bk_norm;
+  finite_element_space<finite_element::triangle_lagrange_p0>::element h;
+
   
   std::function<double(const double*)> b_0, b_1, src;
 
@@ -84,6 +103,7 @@ private:
 
 private:
   static double null_function(const double* x) { return 0.0; }
+  static double inv(double x) { return 1.0 / x; }
   
   void assemble_bilinear_form() {
     a.clear();
@@ -96,16 +116,15 @@ private:
       a += integrate<volume_quadrature_type>((1.0 / delta_t) * u * v, m);
     
     if (assemble_advection_diffusion)
-      a += integrate<volume_quadrature_type>(diffusivity * (d<1>(u) * d<1>(v) + d<2>(u) * d<2>(v)) +
+      a += integrate<volume_quadrature_type>(//diffusivity * (d<1>(u) * d<1>(v) + d<2>(u) * d<2>(v)) +
 					     make_expr(b_0) * d<1>(u) * v +
 					     make_expr(b_1) * d<2>(u) * v
 					     , m);
     
     if (diffusion_stabilisation) {
-
-      const double h(1.0/3.0);
-      const double b_norm(1.0);
-      a += integrate<volume_quadrature_type>(h * b_norm * (d<1>(u) * d<1>(v) + d<2>(u) * d<2>(v))
+      a += integrate<volume_quadrature_type>(make_expr<finite_element::triangle_lagrange_p0>(h) *
+					     make_expr<finite_element::triangle_lagrange_p0>(bk_norm) * 
+					     (d<1>(u) * d<1>(v) + d<2>(u) * d<2>(v))
 					     , m);
     }
 
@@ -114,13 +133,10 @@ private:
 	throw std::string("stationary advection diffusion 2d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
-      const double b_norm(1.0);
-      
-      finite_element_space<finite_element::triangle_lagrange_p0> p0_fes(m);
-      const auto h(build_element_diameter_function(m, p0_fes));
-
-      a += integrate<volume_quadrature_type>(supg_delta / b_norm * make_expr<finite_element::triangle_lagrange_p0>(h) *
-					     (make_expr(b_0) * d<1>(u) + make_expr(b_1) * d<2>(u)) *
+      a += integrate<volume_quadrature_type>(supg_delta *
+					     compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm)) *
+					     make_expr<finite_element::triangle_lagrange_p0>(h) *
+					     ((1.0 / delta_t) * u + make_expr(b_0) * d<1>(u) + make_expr(b_1) * d<2>(u)) *
 					     (make_expr(b_0) * d<1>(v) + make_expr(b_1) * d<2>(v))
 					     , m);
     }
@@ -139,13 +155,10 @@ private:
       f += integrate<volume_quadrature_type>(make_expr(src) * v, m);
 
     if (supg_stabilisation) {
-      const double b_norm(1.0);
-      
-      finite_element_space<finite_element::triangle_lagrange_p0> p0_fes(m);
-      const auto h(build_element_diameter_function(m, p0_fes));
-
-      f += integrate<volume_quadrature_type>(supg_delta / b_norm * make_expr<finite_element::triangle_lagrange_p0>(h) *
-					     make_expr(src) *
+      f += integrate<volume_quadrature_type>(supg_delta
+					     * compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm))
+					     * make_expr<finite_element::triangle_lagrange_p0>(h) *
+					     ((1.0 / delta_t) * make_expr<fe_type>(solution) + make_expr(src)) *
 					     (make_expr(b_0) * d<1>(v) + make_expr(b_1) * d<2>(v))
 					     , m);
     }

@@ -62,7 +62,7 @@ namespace linear_solver_impl {
   
   class petsc_gmres_ilu: public solver_base {
   public:
-    petsc_gmres_ilu(std::size_t problem_size): verbose(true) {
+    petsc_gmres_ilu(std::size_t problem_size): verbose(false) {
       PetscErrorCode ierr;
 
       petsc::global_initialize::instance();

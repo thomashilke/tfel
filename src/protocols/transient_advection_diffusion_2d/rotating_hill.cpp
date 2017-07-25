@@ -2,7 +2,7 @@
 
 
 double bell(double r_sqr) {
-  const double epsilon(1e-5);
+  const double epsilon(1.0e-5);
   if (std::abs(r_sqr) < 1.0 - epsilon) {
     return std::exp(1.0 - 1.0 / (1.0 - r_sqr));
   } else {
@@ -43,16 +43,31 @@ double u_bc(const double* x) {
 }
 
 double exact_solution(double time, const double* x) {
-  double xp[] = {std::cos(-M_PI * time) * x[0] + std::sin(-M_PI * time) * x[1],
-		 -std::sin(-M_PI * time) * x[0] + std::cos(-M_PI * time) * x[1]};
-  return shift_scale_bell(xp, 0.10, 0.5, 0.75);
+  double xp[] = {std::cos(-M_PI/2.0 * time) * (x[0] - 0.5) - std::sin(-M_PI/2.0 * time) * (x[1] - 0.5) + 0.5,
+		 std::sin(-M_PI/2.0 * time) * (x[0] - 0.5) + std::cos(-M_PI/2.0 * time) * (x[1] - 0.5) + 0.5};
+  return shift_scale_bell(xp, 1.0 / 8.0, 0.5, 0.75);
 }
 
+double sqr(double x) { return x * x; }
+
+double error(std::size_t M, std::size_t N);
 
 int main(int argc, char *argv[]) {
+  std::vector<std::size_t>
+    Ms{64, 181, 512, 1449, 4096},
+    Ns{16,  32,  64,  128,  256};
+
+  std::cout << "# delta_t h l2_error" << std::endl;
+  for (std::size_t i(0); i < Ms.size(); ++i) {
+    std::size_t N(Ns[i]), M(Ms[i]);
+    const double err(error(M, N));
+    std::cout << 1.0 / M << " " << 1.0 / N << " " << err << std::endl;
+  }
+}
+
+double error(std::size_t M, std::size_t N) {
   const double diffusivity(0.0);
-  const double t_end(2.0);
-  const std::size_t M(2000), N(64);
+  const double t_end(1.0);
   const double delta_t(t_end / M);
     
   
@@ -82,18 +97,26 @@ int main(int argc, char *argv[]) {
     });
 
 
-  exporter::ensight6_transient<fe_type>
+  /*exporter::ensight6_transient<fe_type>
     ens("transient_advection_diffusion_rotating_hill",
-	m, "solution");
+    m, "solution");*/
 
   double time(0.0);
-  ens.export_time_step(time, tad.get_solution());
+  //ens.export_time_step(time, tad.get_solution());
   for (std::size_t k(0); k < M; ++k) {
-    std::cout << "step " << k << std::endl;
+    std::cerr << "step " << k << std::endl;
     time += delta_t;
     tad.step();
-    ens.export_time_step(time, tad.get_solution());
+    //ens.export_time_step(time, tad.get_solution());
   }
+
+
+  finite_element_space<fe_type> fes(m);
+  exporter::ensight6("exact_sol"
+		     , projector::lagrange<fe_type>([=](const double* x) -> double { return exact_solution(time, x) ;}, fes)
+		     , "solution");
   
-  return 0;
+  return std::sqrt(integrate<quad::triangle::qf5pT>(compose(sqr,
+							    (make_expr(std::bind(exact_solution, time, std::placeholders::_1))
+							     - make_expr<fe_type>(tad.get_solution()))), m));
 }

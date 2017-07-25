@@ -36,7 +36,8 @@ public:
   }
 
   void set_initial_condition(const std::function<double(const double*)>& ic) {
-    solution = projector::l2<fe_type, volume_quadrature_type>(ic, fes);
+    solution = projector::lagrange<fe_type>(ic, fes);
+    //solution = projector::l2<fe_type, volume_quadrature_type>(ic, fes);
   }
   
   void set_advection_velocity(const std::function<double(const double*)>& b_0,
@@ -76,7 +77,7 @@ public:
 private:
   const double delta_t;
   const double diffusivity;
-  const double supg_delta = 0.25;
+  const double supg_delta = 1.0;
 
   
   const mesh<cell_type>& m;
@@ -116,7 +117,7 @@ private:
       a += integrate<volume_quadrature_type>((1.0 / delta_t) * u * v, m);
     
     if (assemble_advection_diffusion)
-      a += integrate<volume_quadrature_type>(//diffusivity * (d<1>(u) * d<1>(v) + d<2>(u) * d<2>(v)) +
+      a += integrate<volume_quadrature_type>(diffusivity * (d<1>(u) * d<1>(v) + d<2>(u) * d<2>(v)) +
 					     make_expr(b_0) * d<1>(u) * v +
 					     make_expr(b_1) * d<2>(u) * v
 					     , m);
@@ -133,7 +134,7 @@ private:
 	throw std::string("stationary advection diffusion 2d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
-      a += integrate<volume_quadrature_type>(supg_delta *
+      a += integrate<volume_quadrature_type>(delta_t * supg_delta *
 					     compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm)) *
 					     make_expr<finite_element::triangle_lagrange_p0>(h) *
 					     ((1.0 / delta_t) * u + make_expr(b_0) * d<1>(u) + make_expr(b_1) * d<2>(u)) *
@@ -155,7 +156,7 @@ private:
       f += integrate<volume_quadrature_type>(make_expr(src) * v, m);
 
     if (supg_stabilisation) {
-      f += integrate<volume_quadrature_type>(supg_delta
+      f += integrate<volume_quadrature_type>(delta_t * supg_delta
 					     * compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm))
 					     * make_expr<finite_element::triangle_lagrange_p0>(h) *
 					     ((1.0 / delta_t) * make_expr<fe_type>(solution) + make_expr(src)) *

@@ -6,6 +6,7 @@
 #include <vector>
 #include <ostream>
 #include <cassert>
+#include <functional>
 
 #include <spikes/array.hpp>
 

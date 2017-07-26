@@ -46,6 +46,7 @@ SOURCES = \
 	src/core/fe.cpp
 
 HEADERS = \
+	include/tfel/tfel.hpp \
 	include/tfel/core/basic_fe_formulation.hpp \
 	include/tfel/core/bilinear_form.hpp \
 	include/tfel/core/cell.hpp \

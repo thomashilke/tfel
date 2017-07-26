@@ -4,11 +4,11 @@
 #include <cassert>
 #include <cmath>
 
-#include "../src/expression.hpp"
-#include "../src/meta.hpp"
-#include "../src/fe_value_manager.hpp"
-#include "../src/fe.hpp"
-#include "../src/composite_form.hpp"
+#include "../src/core/expression.hpp"
+#include "../src/core/meta.hpp"
+#include "../src/core/fe_value_manager.hpp"
+#include "../src/core/fe.hpp"
+#include "../src/core/composite_form.hpp"
 
 typedef expression<form<1, 0, 0> > trial_function_t;
 typedef expression<form<0, 0, 0> > test_function_t;

@@ -1,4 +1,4 @@
-#include "../src/linear_solver.hpp"
+#include "../src/core/linear_solver.hpp"
 
 int main(int argc, char *argv[]) {
   linear_solver s;

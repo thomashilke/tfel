@@ -1,8 +1,8 @@
 #ifndef _FRM_STOKES_2D_H_
 #define _FRM_STOKES_2D_H_
 
-#include "../basic_fe_formulation.hpp"
-#include "../element_diameter.hpp"
+#include "../core/basic_fe_formulation.hpp"
+#include "../core/element_diameter.hpp"
 
 
 /*
@@ -59,7 +59,8 @@ public:
     fes.template set_dirichlet_boundary<0>(dm);
     fes.template set_dirichlet_boundary<1>(dm);
     fes.template set_dirichlet_boundary<2>(pressure_point_m);
-
+    a.clear();
+    
     // The dirichlet dof must be known when assembling the system.
     // The values are relevent only when solving, though.
     assemble_bilinear_form();
@@ -112,6 +113,8 @@ private:
   static double null_function(const double* x) { return 0.0; }
   
   void assemble_bilinear_form() {
+    a.clear();
+    
     const auto u_0(a.template get_trial_function<0>());
     const auto u_1(a.template get_trial_function<1>());
     const auto p(a.template get_trial_function<2>());

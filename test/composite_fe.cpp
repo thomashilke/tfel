@@ -5,20 +5,20 @@
 #include <typeinfo>
 
 
-#include "../src/mesh.hpp"
-#include "../src/fe.hpp"
-#include "../src/fes.hpp"
-#include "../src/meta.hpp"
-#include "../src/fe_value_manager.hpp"
-#include "../src/form.hpp"
-#include "../src/quadrature.hpp"
-#include "../src/export.hpp"
-#include "../src/fes.hpp"
+#include "../src/core/mesh.hpp"
+#include "../src/core/fe.hpp"
+#include "../src/core/fes.hpp"
+#include "../src/core/meta.hpp"
+#include "../src/core/fe_value_manager.hpp"
+#include "../src/core/form.hpp"
+#include "../src/core/quadrature.hpp"
+#include "../src/core/export.hpp"
+#include "../src/core/fes.hpp"
 
 
-#include "../src/composite_fe.hpp"
-#include "../src/composite_fes.hpp"
-#include "../src/composite_form.hpp"
+#include "../src/core/composite_fe.hpp"
+#include "../src/core/composite_fes.hpp"
+#include "../src/core/composite_form.hpp"
 
 
 void test_meta() {

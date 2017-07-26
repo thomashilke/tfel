@@ -1,7 +1,7 @@
 #ifndef _TRANSIENT_DIFFUSION_2D_H_
 #define _TRANSIENT_DIFFUSION_2D_H_
 
-#include "../basic_fe_formulation.hpp"
+#include "../core/basic_fe_formulation.hpp"
 
 
 template<typename fe>

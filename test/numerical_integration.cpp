@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include "../src/quadrature.hpp"
+#include "../src/core/quadrature.hpp"
 
 double f_1(double x) {
   return x;

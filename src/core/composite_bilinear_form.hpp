@@ -167,18 +167,18 @@ public:
     return form<n + n_test_component, 2, 0>();
   }
 
+  
   template<typename IC>
-  struct handle_dirichlet_dof_equations {
+  struct handle_dirichlet_dof_values {
     static const std::size_t m = IC::value;
-    static void call(const bilinear_form_type& bilinear_form, sparse_linear_system& a) {
-      for (const auto& i: bilinear_form.test_cfes.template get_dirichlet_dof<m>()) {
-	//std::cout << "bc block " << m << ", dof " << i << ", global dof " << bilinear_form.test_global_dof_offset[m] + i << std::endl;
-	a.accumulate(bilinear_form.test_global_dof_offset[m] + i,
-		     bilinear_form.test_global_dof_offset[m] + i,
-		     1.0);
+    static void call(const bilinear_form_type& bilinear_form, array<double>& f) {
+      for (const auto& i: bilinear_form.trial_cfes.template get_dirichlet_dof<m>()) {
+	const auto x(bilinear_form.trial_cfes.template get_dof_space_coordinate<m>(i));
+	f.at(bilinear_form.trial_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
       }      
     }
   };
+
   
   typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) const {
     array<double> f(form.get_coefficients());
@@ -245,12 +245,14 @@ public:
 
 
   template<typename IC>
-  struct handle_dirichlet_dof_values {
+  struct handle_dirichlet_dof_equations {
     static const std::size_t m = IC::value;
-    static void call(const bilinear_form_type& bilinear_form, array<double>& f) {
-      for (const auto& i: bilinear_form.trial_cfes.template get_dirichlet_dof<m>()) {
-	const auto x(bilinear_form.trial_cfes.template get_dof_space_coordinate<m>(i));
-	f.at(bilinear_form.trial_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
+    static void call(const bilinear_form_type& bilinear_form, sparse_linear_system& a) {
+      for (const auto& i: bilinear_form.test_cfes.template get_dirichlet_dof<m>()) {
+	//std::cout << "bc block " << m << ", dof " << i << ", global dof " << bilinear_form.test_global_dof_offset[m] + i << std::endl;
+	a.accumulate(bilinear_form.test_global_dof_offset[m] + i,
+		     bilinear_form.test_global_dof_offset[m] + i,
+		     1.0);
       }      
     }
   };

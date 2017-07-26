@@ -83,15 +83,15 @@ namespace linear_solver_impl {
 	ierr = PCSetType(pc,PCLU);CHKERRV(ierr);
       } else if (ilu) {
 	ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
-	//ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRV(ierr);
+	ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRV(ierr);
 	ierr = KSPSetTolerances(ksp, 1.e-8, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRV(ierr);
-	//ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESClassicalGramSchmidtOrthogonalization);CHKERRV(ierr);
+	ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESClassicalGramSchmidtOrthogonalization);CHKERRV(ierr);
 
 	ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
 	ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
 	ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
-	//ierr = PCFactorSetAllowDiagonalFill(pc, PETSC_TRUE);CHKERRV(ierr);
-	//ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRV(ierr);
+	ierr = PCFactorSetAllowDiagonalFill(pc, PETSC_TRUE);CHKERRV(ierr);
+	ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRV(ierr);
       }
 
       ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);CHKERRV(ierr);
@@ -182,9 +182,9 @@ namespace linear_solver_impl {
     }
     
   private:
-    const bool verbose = false;
-    const bool lu = true;
-    const bool ilu = false;
+    const bool verbose = true;
+    const bool lu = false;
+    const bool ilu = true;
     
     Mat A;
     Vec x, b;

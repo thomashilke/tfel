@@ -4,10 +4,12 @@ CXX = mpicxx
 DEPS_BIN = g++
 DEPSFLAGS = -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR) $(shell mpicxx --showme:compile)
 CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++11 -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR)
-LDFLAGS += -Wall -Wextra -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR)
-LDLIBS = -lpetsc -llapacke
+LDFLAGS += -Wall -Wextra -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR) -L./lib/
+LDLIBS = -lpetsc -llapacke -Wl,--whole-archive -ltfel -Wl,--no-whole-archive
 AR = ar
 ARFLAGS = rc
+MKDIR = mkdir
+MKDIRFLAGS = -p
 
 PREFIX = ~/.local/
 BIN_DIR = bin/
@@ -15,7 +17,8 @@ INCLUDE_DIR = include/
 LIB_DIR = lib/
 
 
-SOURCES = test/finite_element_space.cpp \
+SOURCES = \
+	test/finite_element_space.cpp \
 	test/quadrature_1d.cpp \
 	test/expression.cpp \
 	test/system_assembly.cpp \
@@ -27,8 +30,8 @@ SOURCES = test/finite_element_space.cpp \
 	test/laplacian_transient.cpp \
 	test/basic_finite_element_formulation.cpp \
 	test/quadrature_2d.cpp \
-	src/quadrature.cpp \
-	src/linear_solver.cpp \
+	src/core/quadrature.cpp \
+	src/core/linear_solver.cpp \
 	test/composite_fe.cpp \
 	test/stokes_2d.cpp \
 	test/l2_p1_bubble_projection.cpp \
@@ -38,13 +41,45 @@ SOURCES = test/finite_element_space.cpp \
 	src/protocols/transient_advection_diffusion_2d/front.cpp \
 	src/protocols/steady_advection_1d/stabilisation.cpp \
 	src/main.cpp \
-	src/cell.cpp \
-	src/mesh.cpp \
-	src/fe.cpp
+	src/core/cell.cpp \
+	src/core/mesh.cpp \
+	src/core/fe.cpp
 
-HEADERS = 
+HEADERS = \
+	include/tfel/core/basic_fe_formulation.hpp \
+	include/tfel/core/bilinear_form.hpp \
+	include/tfel/core/cell.hpp \
+	include/tfel/core/composite_bilinear_form.hpp \
+	include/tfel/core/composite_fe.hpp \
+	include/tfel/core/composite_fes.hpp \
+	include/tfel/core/composite_form.hpp \
+	include/tfel/core/composite_linear_form.hpp \
+	include/tfel/core/element_diameter.hpp \
+	include/tfel/core/errors.hpp \
+	include/tfel/core/export.hpp \
+	include/tfel/core/expression.hpp \
+	include/tfel/core/fe.hpp \
+	include/tfel/core/fes.hpp \
+	include/tfel/core/fe_value_manager.hpp \
+	include/tfel/core/form.hpp \
+	include/tfel/core/linear_algebra.hpp \
+	include/tfel/core/linear_form.hpp \
+	include/tfel/core/linear_solver.hpp \
+	include/tfel/core/mesh.hpp \
+	include/tfel/core/meta.hpp \
+	include/tfel/core/projector.hpp \
+	include/tfel/core/quadrature.hpp \
+	include/tfel/core/sparse_linear_system.hpp \
+	include/tfel/core/timer.hpp \
+	include/tfel/formulations/stationary_advection_diffusion_2d.hpp \
+	include/tfel/formulations/steady_advection_1d.hpp \
+	include/tfel/formulations/stokes_2d.hpp \
+	include/tfel/formulations/transient_advection_diffusion_2d.hpp \
+	include/tfel/formulations/transient_diffusion_2d.hpp
 
-BIN = bin/test_finite_element_space \
+
+BIN = \
+	bin/test_finite_element_space \
 	bin/test_expression \
 	bin/test_quadrature_1d \
 	bin/test_system_assembly \
@@ -66,28 +101,33 @@ BIN = bin/test_finite_element_space \
 	bin/prot_steady_advection_1d_stabilisation \
 	bin/main
 
-bin/test_finite_element_space: build/test/finite_element_space.o build/src/fe.o
-bin/main: build/src/main.o build/src/quadrature.o build/src/cell.o build/src/mesh.o build/src/fe.o build/src/linear_solver.o
-bin/test_quadrature_1d: build/test/quadrature_1d.o build/src/quadrature.o
+bin/test_finite_element_space: build/test/finite_element_space.o 
+bin/main: build/src/main.o 
+bin/test_quadrature_1d: build/test/quadrature_1d.o
 bin/test_expression: build/test/expression.o
-bin/test_system_assembly: build/test/system_assembly.o build/src/quadrature.o build/src/mesh.o build/src/fe.o
-bin/test_linear_solver: build/test/linear_solver.o build/src/fe.o build/src/linear_solver.o
-bin/test_square_mesh: build/test/square_mesh.o build/src/mesh.o
-bin/test_l2_projection: build/test/l2_projection.o build/src/quadrature.o build/src/cell.o build/src/mesh.o build/src/fe.o build/src/linear_solver.o
-bin/test_triangle_cell: build/test/triangle_cell.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
-bin/test_fes_cost: build/test/fes_cost.o build/src/mesh.o build/src/quadrature.o
-bin/test_laplacian_transient: build/test/laplacian_transient.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
-bin/test_basic_finite_element_formulation: build/test/basic_finite_element_formulation.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o build/src/fe.o
-bin/test_composite_fe: build/test/composite_fe.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
-bin/test_quadrature_2d: build/test/quadrature_2d.o build/src/quadrature.o build/src/mesh.o
-bin/test_stokes_2d: build/test/stokes_2d.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
-bin/test_l2_p1_bubble_projection: build/test/l2_p1_bubble_projection.o build/src/fe.o build/src/linear_solver.o build/src/quadrature.o build/src/mesh.o
-bin/prot_stoke_2d_driven_cavity: build/src/protocols/stokes_2d/driven_cavity.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
-bin/prot_stationary_advection_diffusion_2d_step: build/src/protocols/stationary_advection_diffusion_2d/step.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
-bin/prot_transient_advection_diffusion_2d_rotating_hill: build/src/protocols/transient_advection_diffusion_2d/rotating_hill.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
-bin/prot_transient_advection_diffusion_2d_front: build/src/protocols/transient_advection_diffusion_2d/front.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
-bin/prot_steady_advection_1d_stabilisation: build/src/protocols/steady_advection_1d/stabilisation.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
+bin/test_system_assembly: build/test/system_assembly.o
+bin/test_linear_solver: build/test/linear_solver.o
+bin/test_square_mesh: build/test/square_mesh.o
+bin/test_l2_projection: build/test/l2_projection.o
+bin/test_triangle_cell: build/test/triangle_cell.o
+bin/test_fes_cost: build/test/fes_cost.o
+bin/test_laplacian_transient: build/test/laplacian_transient.o
+bin/test_basic_finite_element_formulation: build/test/basic_finite_element_formulation.o
+bin/test_composite_fe: build/test/composite_fe.o
+bin/test_quadrature_2d: build/test/quadrature_2d.o
+bin/test_stokes_2d: build/test/stokes_2d.o
+bin/test_l2_p1_bubble_projection: build/test/l2_p1_bubble_projection.o
+bin/prot_stoke_2d_driven_cavity: build/src/protocols/stokes_2d/driven_cavity.o
+bin/prot_stationary_advection_diffusion_2d_step: build/src/protocols/stationary_advection_diffusion_2d/step.o
+bin/prot_transient_advection_diffusion_2d_rotating_hill: build/src/protocols/transient_advection_diffusion_2d/rotating_hill.o
+bin/prot_transient_advection_diffusion_2d_front: build/src/protocols/transient_advection_diffusion_2d/front.o
+bin/prot_steady_advection_1d_stabilisation: build/src/protocols/steady_advection_1d/stabilisation.o
 
-LIB = 
+LIB = lib/libtfel.a
 
-#lib/...: ...
+lib/libtfel.a: \
+	build/src/core/fe.o \
+	build/src/core/mesh.o \
+	build/src/core/quadrature.o \
+	build/src/core/cell.o \
+	build/src/core/linear_solver.o

@@ -1,9 +1,9 @@
 
-#include "../src/fes.hpp"
-#include "../src/fe.hpp"
-#include "../src/mesh.hpp"
-#include "../src/cell.hpp"
-#include "../src/timer.hpp"
+#include "../src/core/fes.hpp"
+#include "../src/core/fe.hpp"
+#include "../src/core/mesh.hpp"
+#include "../src/core/cell.hpp"
+#include "../src/core/timer.hpp"
 
 void build_fes(std::size_t n) {
   const mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, n, n));

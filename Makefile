@@ -8,11 +8,11 @@ DEPS = $(patsubst %.cpp,build/%.deps,$(SOURCES))
 .PHONY = all deps clean install
 .DEFAULT_GOAL = all
 
-all: $(BIN) $(LIB) $(HEADERS)
+all: $(LIB) $(BIN) $(HEADERS)
 
 -include $(DEPS)
 
-$(HEADERS): include/lexer/%: src/%
+$(HEADERS): include/tfel/%: src/%
 	@echo "[INST]" $(<:src/%=%)
 	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@cp $< $(dir $@)

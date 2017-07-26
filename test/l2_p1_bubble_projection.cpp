@@ -1,6 +1,6 @@
 
-#include "../src/projector.hpp"
-#include "../src/export.hpp"
+#include "../src/core/projector.hpp"
+#include "../src/core/export.hpp"
 
 double f(const double* x) {
   return std::sin(x[0] * M_PI) + std::sin(x[1] * M_PI);

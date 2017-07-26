@@ -3,10 +3,10 @@
 
 #include <spikes/array.hpp>
 
-#include "../src/cell.hpp"
-#include "../src/fe.hpp"
-#include "../src/mesh.hpp"
-#include "../src/fes.hpp"
+#include "../src/core/cell.hpp"
+#include "../src/core/fe.hpp"
+#include "../src/core/mesh.hpp"
+#include "../src/core/fes.hpp"
 
 void test_triangle_lagrange_p1() {
   double vertices[] = { 0.0, 0.0,

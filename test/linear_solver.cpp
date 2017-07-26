@@ -1,10 +1,11 @@
-#include "../src/linear_solver.hpp"
+#include "../src/core/linear_solver.hpp"
 
 int main(int argc, char *argv[]) {
   linear_solver s;
 
   unsigned int n(10000);
-  auto petsc_gmres_ilu(s.get_solver(solver::petsc, method::gmres, preconditioner::ilu, n));
+  auto petsc_gmres_ilu(s.get_solver(solver::petsc, method::gmres, preconditioner::ilu));
+  petsc_gmres_ilu->set_size(n);
 
   const double h(1.0 / n);
   

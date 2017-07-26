@@ -1,5 +1,5 @@
-#include "../src/projector.hpp"
-#include "../src/export.hpp"
+#include "../src/core/projector.hpp"
+#include "../src/core/export.hpp"
 
 double func(const double* x) {
   return std::sin(x[0] * M_PI);

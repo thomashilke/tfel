@@ -7,13 +7,13 @@
 
 #include <spikes/array.hpp>
 
-#include "../src/cell.hpp"
-#include "../src/fe.hpp"
-#include "../src/mesh.hpp"
-#include "../src/fes.hpp"
-#include "../src/quadrature.hpp"
-#include "../src/timer.hpp"
-#include "../src/sparse_linear_system.hpp"
+#include "../src/core/cell.hpp"
+#include "../src/core/fe.hpp"
+#include "../src/core/mesh.hpp"
+#include "../src/core/fes.hpp"
+#include "../src/core/quadrature.hpp"
+#include "../src/core/timer.hpp"
+#include "../src/core/sparse_linear_system.hpp"
 
 
 int main(int argc, char *argv[]) {

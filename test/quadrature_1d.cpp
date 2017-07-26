@@ -2,7 +2,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "../src/quadrature.hpp"
+#include "../src/core/quadrature.hpp"
 
 template<typename Q>
 double error(unsigned int n) {

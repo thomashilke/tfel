@@ -449,6 +449,81 @@ namespace cell {
     }
   };
 
+  struct tetrahedron {
+    static const std::size_t n_dimension = 3;
+    static const std::size_t n_vertex_per_element = 4;
+    static const std::size_t n_subdomain_type = 4;
+    static const std::size_t n_subdomain_of_type[4];
+    static const bool is_simplicial = true;
+
+    typedef triangle boundary_cell_type;
+
+    static std::size_t n_subdomain(unsigned int i) {
+      static const std::size_t n_sub[] = {4, 6, 3, 1};
+      return n_sub[i];
+    }
+
+    static subdomain_type get_subdomain(const array<unsigned int>& elements,
+					std::size_t k,
+					std::size_t sd, std::size_t j) {
+      switch (sd) {
+      case 0: return get_vertex(elements, k, j);
+      case 1: return get_edge(elements, k, j);
+      case 2: return get_triangle(elements, k, j);
+      case 3: return get_element(elements, k, j);
+      }
+      throw std::string("invalid subdomain id");
+    }
+      
+
+    static subdomain_type get_vertex(const array<unsigned int>& elements,
+				     std::size_t k,
+				     std::size_t j);
+    static subdomain_type get_edge(const array<unsigned int>& elements,
+				   std::size_t k,
+				   std::size_t j);
+    static subdomain_type get_triangle(const array<unsigned int>& elements,
+				       std::size_t k,
+				       std::size_t j);
+    static subdomain_type get_element(const array<unsigned int>& elements,
+				      std::size_t k,
+				      std::size_t j);
+
+    static std::set<subdomain_type> get_subdomain_list(const array<unsigned int>& elements,
+					     std::size_t sd) {
+      switch (sd) {
+      case 0: return get_vertex_list(elements);
+      case 1: return get_edge_list(elements);
+      case 2: return get_triangle_list(elements);
+      case 3: return get_element_list(elements);
+      }
+      throw std::string("invalid subdomain id");
+    }
+    
+    static std::set<subdomain_type> get_vertex_list(const array<unsigned int>& elements);
+    static std::set<subdomain_type> get_edge_list(const array<unsigned int>& elements);
+    static std::set<subdomain_type> get_triangle_list(const array<unsigned int>& elements);
+    static std::set<subdomain_type> get_element_list(const array<unsigned int>& elements);
+
+    static array<double> map_points_to_space_coordinates(const array<double>& vertices,
+							 const array<unsigned int>& elements,
+							 std::size_t k,
+							 const array<double>& xs);
+
+    static double get_cell_volume(const array<double>& vertices,
+				  const array<unsigned int>& elements,
+				  unsigned int k);
+
+    static array<double> get_jmt(const array<double>& vertices,
+				 const array<unsigned int>& elements,
+				 unsigned int k);
+
+    static double element_diameter(const array<double>& vertices,
+				   const array<unsigned int>& elements,
+				   unsigned int k);
+    
+  };
+
 }
 
 #endif /* _CELL_H_ */

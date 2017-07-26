@@ -2,11 +2,11 @@
 #include <cmath>
 #include <iostream>
 
-#include "../src/mesh.hpp"
-#include "../src/quadrature.hpp"
-#include "../src/cell.hpp"
-#include "../src/expression.hpp"
-#include "../src/form.hpp"
+#include "../src/core/mesh.hpp"
+#include "../src/core/quadrature.hpp"
+#include "../src/core/cell.hpp"
+#include "../src/core/expression.hpp"
+#include "../src/core/form.hpp"
 
 double f_2(const double* x) {
   return std::sin(x[0]) + std::sin(x[1]);

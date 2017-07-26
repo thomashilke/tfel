@@ -1,7 +1,7 @@
 #ifndef _STEADY_ADVECTION_1D_H_
 #define _STEADY_ADVECTION_1D_H_
 
-#include "../basic_fe_formulation.hpp"
+#include "../core/basic_fe_formulation.hpp"
 
 
 /*

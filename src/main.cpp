@@ -7,17 +7,17 @@
 
 #include <spikes/array.hpp>
 
-#include "cell.hpp"
-#include "fe.hpp"
-#include "mesh.hpp"
-#include "fes.hpp"
-#include "quadrature.hpp"
-#include "expression.hpp"
-#include "timer.hpp"
-#include "sparse_linear_system.hpp"
-#include "form.hpp"
-#include "linear_solver.hpp"
-#include "export.hpp"
+#include "core/cell.hpp"
+#include "core/fe.hpp"
+#include "core/mesh.hpp"
+#include "core/fes.hpp"
+#include "core/quadrature.hpp"
+#include "core/expression.hpp"
+#include "core/timer.hpp"
+#include "core/sparse_linear_system.hpp"
+#include "core/form.hpp"
+#include "core/linear_solver.hpp"
+#include "core/export.hpp"
 
 double sqr(double x) { return std::pow(x, 2); }
 

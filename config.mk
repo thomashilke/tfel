@@ -35,6 +35,7 @@ SOURCES = test/finite_element_space.cpp \
 	src/protocols/stokes_2d/driven_cavity.cpp \
 	src/protocols/stationary_advection_diffusion_2d/step.cpp \
 	src/protocols/transient_advection_diffusion_2d/rotating_hill.cpp \
+	src/protocols/transient_advection_diffusion_2d/front.cpp \
 	src/protocols/steady_advection_1d/stabilisation.cpp \
 	src/main.cpp \
 	src/cell.cpp \
@@ -61,6 +62,7 @@ BIN = bin/test_finite_element_space \
 	bin/prot_stoke_2d_driven_cavity \
 	bin/prot_stationary_advection_diffusion_2d_step \
 	bin/prot_transient_advection_diffusion_2d_rotating_hill \
+	bin/prot_transient_advection_diffusion_2d_front \
 	bin/prot_steady_advection_1d_stabilisation \
 	bin/main
 
@@ -83,6 +85,7 @@ bin/test_l2_p1_bubble_projection: build/test/l2_p1_bubble_projection.o build/src
 bin/prot_stoke_2d_driven_cavity: build/src/protocols/stokes_2d/driven_cavity.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 bin/prot_stationary_advection_diffusion_2d_step: build/src/protocols/stationary_advection_diffusion_2d/step.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 bin/prot_transient_advection_diffusion_2d_rotating_hill: build/src/protocols/transient_advection_diffusion_2d/rotating_hill.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
+bin/prot_transient_advection_diffusion_2d_front: build/src/protocols/transient_advection_diffusion_2d/front.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 bin/prot_steady_advection_1d_stabilisation: build/src/protocols/steady_advection_1d/stabilisation.o build/src/fe.o build/src/mesh.o build/src/quadrature.o build/src/linear_solver.o
 
 LIB = 

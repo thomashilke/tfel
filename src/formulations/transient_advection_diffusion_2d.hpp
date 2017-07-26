@@ -66,8 +66,11 @@ public:
   }
   
   void step() {
+    timer t;
     assemble_linear_form();
+    std::cerr << "assemble_linear_form(): " << t.tic() << std::endl;
     solution = a.solve(f);
+    std::cerr << "bilinear_form::solve(f): " << t.tic() << std::endl;
   }
 
   element_type get_solution() const {
@@ -134,7 +137,8 @@ private:
 	throw std::string("stationary advection diffusion 2d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
-      a += integrate<volume_quadrature_type>(delta_t * supg_delta *
+      a += integrate<volume_quadrature_type>(//delta_t *
+					     supg_delta *
 					     compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm)) *
 					     make_expr<finite_element::triangle_lagrange_p0>(h) *
 					     ((1.0 / delta_t) * u + make_expr(b_0) * d<1>(u) + make_expr(b_1) * d<2>(u)) *
@@ -156,9 +160,10 @@ private:
       f += integrate<volume_quadrature_type>(make_expr(src) * v, m);
 
     if (supg_stabilisation) {
-      f += integrate<volume_quadrature_type>(delta_t * supg_delta
-					     * compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm))
-					     * make_expr<finite_element::triangle_lagrange_p0>(h) *
+      f += integrate<volume_quadrature_type>(//delta_t *
+					     supg_delta *
+					     compose(inv, make_expr<finite_element::triangle_lagrange_p0>(bk_norm)) *
+					     make_expr<finite_element::triangle_lagrange_p0>(h) *
 					     ((1.0 / delta_t) * make_expr<fe_type>(solution) + make_expr(src)) *
 					     (make_expr(b_0) * d<1>(v) + make_expr(b_1) * d<2>(v))
 					     , m);

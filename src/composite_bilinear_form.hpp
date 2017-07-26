@@ -187,8 +187,9 @@ public:
     linear_solver s;
     auto petsc_gmres_ilu(s.get_solver(solver::petsc,
 				      method::gmres,
-				      preconditioner::ilu,
-				      test_cfes.get_total_dof_number()));
+				      preconditioner::ilu));
+    petsc_gmres_ilu->set_size(test_cfes.get_total_dof_number());
+    
     if (true) {
       // Convert to CRS format
       std::vector<int>

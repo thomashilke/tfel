@@ -6,7 +6,7 @@ DEPSFLAGS = -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_IN
 CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++11 -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR)
 LDFLAGS += -Wall -Wextra -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR) -L./lib/
 LDLIBS = -lpetsc -llapacke -Wl,--whole-archive -ltfel -Wl,--no-whole-archive
-AR = ar
+AR = llvm-ar
 ARFLAGS = rc
 MKDIR = mkdir
 MKDIRFLAGS = -p

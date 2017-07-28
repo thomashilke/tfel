@@ -74,3 +74,22 @@ const double quad::triangle::qf1pTlump::x[3][2] = {{0.0, 0.0},
 						   {1.0, 0.0},
 						   {0.0, 1.0}};
 const double quad::triangle::qf1pTlump::w[3] = {1.0/3.0, 1.0/3.0, 1.0/3.0};
+
+
+const double quad::tetrahedron::qf1pTet::x[1][3] = {{0.25, 0.25, 0.25}};
+const double quad::tetrahedron::qf1pTet::w[1] = {1.0 / 2.0};
+
+  
+
+const double quad::tetrahedron::qf4pTet::x[4][3] = {{0.138196601125011, 0.138196601125011, 0.138196601125011},
+						    {0.585410196624969, 0.138196601125011, 0.138196601125011},
+						    {0.138196601125011, 0.585410196624969, 0.138196601125011},
+						    {0.138196601125011, 0.138196601125011, 0.585410196624969}};
+const double quad::tetrahedron::qf4pTet::w[4] = {0.25 / 2.0, 0.25 / 2.0, 0.25 / 2.0, 0.25 / 2.0};
+
+/*const double quad::tetrahedron::qf5pTet::x[5][3] = {{},
+						    {},
+						    {},
+						    {},
+						    {}};
+						    const double quad::tetrahedron::qf5pTet::w[5] = {/ 2.0, / 2.0, / 2.0, / 2.0, / 2.0};*/

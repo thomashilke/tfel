@@ -220,14 +220,6 @@ public:
     return cell_type::get_jmt(vertices, elements, k);
   }
 
-
-  struct subdomain_info {
-    std::size_t parent_element_id, parent_element_subdomain_id;
-    ::cell::subdomain_type subdomain;
-
-    bool operator<(const subdomain_info& op) const { return subdomain < op.subdomain; }
-  };
-
   submesh<cell_type, cell_type> get_submesh_with_reference(std::size_t ref_id) {
     const std::size_t element_number(std::count(&references.at(0),
 						&references.at(0) + references.get_size(0),
@@ -259,7 +251,14 @@ public:
     el.at(0, 0) = elements.at(k, 0);
     return  submesh<cell_type, ::cell::point>(*this, el, el_id, sd_id);
   }
-  
+
+  struct subdomain_info {
+    std::size_t parent_element_id, parent_element_subdomain_id;
+    ::cell::subdomain_type subdomain;
+
+    bool operator<(const subdomain_info& op) const { return subdomain < op.subdomain; }
+  };
+
   submesh<cell_type> get_boundary_submesh() const {
     using ::cell::subdomain_type;
 
@@ -268,8 +267,7 @@ public:
 
     const std::size_t subdomain_id(cell_type::n_subdomain_type - 2);
     for (unsigned int k(0); k < get_element_number(); ++k) {
-      for (unsigned int j(0); j < cell_type::n_subdomain(subdomain_id); ++j) {
-	
+      for (unsigned int j(0); j < cell_type::n_subdomain(subdomain_id); ++j) {	
 	subdomain_info current{k, j, cell::get_subdomain(elements, k, subdomain_id, j)};
 	subdomain_count[current] += 1;
       }

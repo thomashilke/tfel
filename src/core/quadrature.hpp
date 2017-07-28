@@ -103,6 +103,35 @@ namespace quad {
       static const double w[3];
     };
   }
+
+  namespace tetrahedron {
+    struct qf1pTet {
+      typedef cell::tetrahedron cell_type;
+      
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 1;
+      static const double x[1][3];
+      static const double w[1];
+    };
+
+    struct qf4pTet {
+      typedef cell::tetrahedron cell_type;
+      
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 4;
+      static const double x[4][3];
+      static const double w[4];
+    };
+
+    struct qf5pTet {
+      typedef cell::tetrahedron cell_type;
+      
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 5;
+      static const double x[5][3];
+      static const double w[5];
+    };
+  }
 };
 
 template<typename cell_type>

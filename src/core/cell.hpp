@@ -460,7 +460,7 @@ namespace cell {
     typedef triangle boundary_cell_type;
 
     static std::size_t n_subdomain(unsigned int i) {
-      static const std::size_t n_sub[] = {4, 6, 3, 1};
+      static const std::size_t n_sub[] = {4, 6, 4, 1};
       return n_sub[i];
     }
 
@@ -574,8 +574,8 @@ namespace cell {
       std::set<subdomain_type> triangle_list;
 
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
-	for (unsigned int i(0); i < elements.get_size(1) - 1; ++i) {
-	  for (unsigned int j(i + 1); j < elements.get_size(1); ++j) {
+	for (unsigned int i(0); i < elements.get_size(1) - 2; ++i) {
+	  for (unsigned int j(i + 1); j < elements.get_size(1) - 1; ++j) {
 	    for (unsigned int l(j + 1); l < elements.get_size(1); ++l) {
 	      subdomain_type triangle;
 	      triangle.insert(elements.at(k, i));
@@ -594,7 +594,7 @@ namespace cell {
       std::set<subdomain_type> element_list;
 
       for (unsigned int k(0); k < elements.get_size(0); ++k) {
-	subdomain_type tetrahedron;;
+	subdomain_type tetrahedron;
 	for (unsigned int i(0); i < elements.get_size(1); ++i)
 	  tetrahedron.insert(elements.at(k, i));
 	element_list.insert(tetrahedron);
@@ -638,7 +638,7 @@ namespace cell {
       c.at(1) = vertices.at(elements.at(k, 3), 1) - vertices.at(elements.at(k, 0), 1);
       c.at(2) = vertices.at(elements.at(k, 3), 2) - vertices.at(elements.at(k, 0), 2);
 
-      return 1.0 / 6.0 * dotp(crossp(a, b), c);
+      return std::abs(1.0 / 6.0 * dotp(crossp(a, b), c));
     }
 
     static array<double> get_jmt(const array<double>& vertices,

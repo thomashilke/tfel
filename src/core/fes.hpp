@@ -143,6 +143,12 @@ public:
     for (const auto& dof: dirichlet_dof)
       stream << dof << " ";
     stream << std::endl;
+
+    stream << "dof map:" << std::endl;
+    for (std::size_t k(0); k < m.get_element_number(); ++k) {
+      for (std::size_t n(0); n < fe_type::n_dof_per_element; ++n)
+	stream << "local dof (k = " << k << ", n = " << n << ") -> " << get_dof(k, n) << std::endl;
+    }
   }
 
   const mesh<cell_type>& get_mesh() const { return m; }

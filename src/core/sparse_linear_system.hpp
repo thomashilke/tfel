@@ -26,6 +26,7 @@ public:
   void show(std::ostream& stream) const {
     auto p(stream.precision(2));
     array<double> profile{n_equation, n_unknown};
+    profile.fill(0.0);
     for (const auto& elem: elements)
       profile.at(elem.first.first, elem.first.second) = elem.second;
 

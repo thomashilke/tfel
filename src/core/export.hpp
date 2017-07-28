@@ -1,12 +1,15 @@
 #ifndef _EXPORT_H_
 #define _EXPORT_H_
 
+#include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <type_traits>
 
 #include "fe.hpp"
 #include "fes.hpp"
 #include "quadrature.hpp"
+#include "meta.hpp"
 
 namespace exporter {
 
@@ -46,9 +49,12 @@ namespace exporter {
 				finite_element::edge_lagrange_p1_bubble,
 				finite_element::triangle_lagrange_p0,
 				finite_element::triangle_lagrange_p1,
-				finite_element::triangle_lagrange_p1_bubble>;
+				finite_element::triangle_lagrange_p1_bubble,
+				finite_element::tetrahedron_lagrange_p0,
+				finite_element::tetrahedron_lagrange_p1>;
       static constexpr variable_type variable_types[] = {variable_type::elemental, variable_type::nodal, variable_type::nodal,
-							 variable_type::elemental, variable_type::nodal, variable_type::nodal};
+							 variable_type::elemental, variable_type::nodal, variable_type::nodal,
+							 variable_type::elemental, variable_type::nodal};
       using fe_type = typename fes_element_type::fe_type;
 
     public:
@@ -78,8 +84,8 @@ namespace exporter {
     template<typename cell_type>
     struct ensight_element_type_name {
     private:
-      using cell_list = type_list<cell::point, cell::edge, cell::triangle>;
-      static constexpr const char* values[] = {"point", "bar2", "tria3"};
+      using cell_list = type_list<cell::point, cell::edge, cell::triangle, cell::tetrahedron>;
+      static constexpr const char* values[] = {"point", "bar2", "tria3", "tetra4"};
     public:
       static constexpr const char* value = values[get_index_of_element<cell_type, cell_list>::value];
     };
@@ -219,6 +225,38 @@ namespace exporter {
     }
 
 
+    template<>
+    void write_static_variable_file<finite_element_space<finite_element::tetrahedron_lagrange_p0>::element>
+    (std::ostream& stream,
+     const typename finite_element_space<finite_element::tetrahedron_lagrange_p0>::element& v,
+     const std::string& var_name) {
+      stream << var_name << '\n';
+      stream << "part" << std::setw(8) << std::right << 1 << '\n';
+      stream << ensight_element_type_name<cell::tetrahedron>::value;
+      for (std::size_t k(0); k < v.get_coefficients().get_size(0); ++k) {
+	if (k % 6 == 0)
+	  stream << '\n';
+	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+	       << v.get_coefficients().at(v.get_finite_element_space().get_dof(k, 0));
+      }
+    }
+
+
+    template<>
+    void write_static_variable_file<finite_element_space<finite_element::tetrahedron_lagrange_p1>::element>
+    (std::ostream& stream,
+     const typename finite_element_space<finite_element::tetrahedron_lagrange_p1>::element& v,
+     const std::string& var_name) {
+      stream << var_name;
+      for (std::size_t n(0); n < v.get_coefficients().get_size(0); ++n) {
+	if (n % 6 == 0)
+	  stream << '\n';
+	stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+	       << v.get_coefficients().at(n);
+      }
+    }
+
+
     template<typename fes_element_type, typename ... As>
     void write_static_variable_file_dispatch(std::vector<std::string>::iterator filename_it,
 					     std::vector<std::string>::iterator name_it,
@@ -270,6 +308,30 @@ namespace exporter {
 					    var_types);
     
     ensight6_detail::write_static_geometry_file(geometry_file, "mesh", "part1", std::forward<As>(as)...);
+  }
+
+  template<typename cell_type>
+  void ensight6_geometry(const std::string& filename,
+			 const mesh<cell_type>& m) {
+    const std::string
+      case_filename(filename + ".case"),
+      geometry_filename(filename + ".geom");
+
+    std::vector<std::string> var_filenames;
+    std::vector<std::string> var_names;
+    std::vector<ensight6_detail::variable_type> var_types;
+    
+    std::ofstream
+      case_file(case_filename.c_str(), std::ios::out),
+      geometry_file(geometry_filename.c_str(), std::ios::out);
+
+    ensight6_detail::write_static_case_file(case_file,
+					    geometry_filename,
+					    var_filenames,
+					    var_names,
+					    var_types);
+    
+    ensight6_detail::write_static_geometry_file(geometry_file, "mesh", "part1", m);
   }
 
   template<typename fe>

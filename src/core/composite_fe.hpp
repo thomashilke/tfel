@@ -2,6 +2,7 @@
 #define _COMPOSITE_FE_H_
 
 #include "meta.hpp"
+#include "fe_value_manager.hpp"
 
 
 /*

@@ -118,15 +118,8 @@ public:
   void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
 					const std::function<double(const double*)>& f_bc) {
     this->set_dirichlet_condition(f_bc);
-    //this->f_bc = f_bc;
     this->set_dirichlet_boundary(dm);
   }
-  
-  /*template<typename c_cell_type>
-  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
-					double (*f_bc)(const double*)) {
-    set_dirichlet_boundary_condition(dm, std::function<double(const double*)>(f_bc));
-    }*/
   
   std::size_t get_dof_number() const { return dof_number; }
 
@@ -189,6 +182,7 @@ template<typename fe>
 struct finite_element_space<fe>::element {
 public:
   using fe_type = fe;
+  using cell_type = typename fe_type::cell_type;
   
   element(const finite_element_space<fe>& fes)
     : coefficients{fes.get_dof_number()}, fes(fes) {}
@@ -231,6 +225,30 @@ public:
       throw std::string("Assigment of elements between different finite element spaces is not supported.");
     coefficients = e.coefficients;
     return *this;
+  }
+
+  typename finite_element_space<fe>::element
+  restrict(const finite_element_space<fe>& sm_fes, const submesh<cell_type, cell_type>& sm) const {
+    array<double> sm_coefficients{sm_fes.get_dof_number()};
+    sm_coefficients.fill(0.0);
+
+    for (std::size_t k(0); k < sm.get_element_number(); ++k)
+      for (std::size_t i(0); i < fe::n_dof_per_element; ++i)
+	sm_coefficients.at(sm_fes.get_dof(k, i)) = this->coefficients.at(fes.get_dof(sm.get_parent_element_id(k), i));
+    
+    return typename finite_element_space<fe>::element(sm_fes, sm_coefficients);
+  }
+
+  typename finite_element_space<fe>::element
+  extend(const finite_element_space<fe>& m_fes, const submesh<cell_type, cell_type>& sm) const {
+    array<double> m_coefficients{m_fes.get_dof_number()};
+    m_coefficients.fill(0.0);
+
+    for (std::size_t k(0); k < fes.get_mesh().get_element_number(); ++k)
+      for (std::size_t i(0); i < fe::n_dof_per_element; ++i)
+	m_coefficients.at(m_fes.get_dof(sm.get_parent_element_id(k), i)) = this->coefficients.at(fes.get_dof(k, i));
+
+    return typename finite_element_space<fe>::element(m_fes, m_coefficients);
   }
   
 private:

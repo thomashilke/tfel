@@ -7,6 +7,7 @@
 #include <spikes/array.hpp>
 
 #include "linear_algebra.hpp"
+#include "vector_operation.hpp"
 
 
 namespace cell {
@@ -410,7 +411,7 @@ namespace cell {
 	b_1(vertices.at(elements.at(k, 2), 0) - vertices.at(elements.at(k, 0), 0)),
 	b_2(vertices.at(elements.at(k, 2), 1) - vertices.at(elements.at(k, 0), 1));
       
-      return 0.5 * std::abs(a_1 * b_2 - a_2 * b_1);
+      return 1.0 / 2.0 * std::abs(a_1 * b_2 - a_2 * b_1);
     }
 
     /*
@@ -478,16 +479,55 @@ namespace cell {
 
     static subdomain_type get_vertex(const array<unsigned int>& elements,
 				     std::size_t k,
-				     std::size_t j);
+				     std::size_t j) {
+      subdomain_type vertex;
+      vertex.insert(elements.at(k, j));
+      return vertex;
+    }
     static subdomain_type get_edge(const array<unsigned int>& elements,
 				   std::size_t k,
-				   std::size_t j);
+				   std::size_t j) {
+      subdomain_type edge;
+
+      if (j < 3) {
+	edge.insert(elements.at(k, 0));
+	edge.insert(elements.at(k, 1 + j));
+      } else if (j < 5) {
+	edge.insert(elements.at(k, 1));
+	edge.insert(elements.at(k, j - 1));
+      } else {
+	edge.insert(elements.at(k, 2));
+	edge.insert(elements.at(k, 3));
+      }
+      
+      return edge;
+    }
     static subdomain_type get_triangle(const array<unsigned int>& elements,
 				       std::size_t k,
-				       std::size_t j);
+				       std::size_t j) {
+      subdomain_type triangle;
+
+      if (j < 2) {
+	triangle.insert(elements.at(k, 0));
+	triangle.insert(elements.at(k, 1));
+	triangle.insert(elements.at(k, 2 + j));
+      } else {
+	triangle.insert(elements.at(k, j - 2));
+	triangle.insert(elements.at(k, 2));
+	triangle.insert(elements.at(k, 3));
+      }
+
+      return triangle;
+    }
+    
     static subdomain_type get_element(const array<unsigned int>& elements,
 				      std::size_t k,
-				      std::size_t j);
+				      std::size_t j) {
+      subdomain_type element;
+      for (std::size_t i(0); i < 4; ++i)
+	element.insert(elements.at(k, i));
+      return element;
+    }
 
     static std::set<subdomain_type> get_subdomain_list(const array<unsigned int>& elements,
 					     std::size_t sd) {
@@ -500,27 +540,149 @@ namespace cell {
       throw std::string("invalid subdomain id");
     }
     
-    static std::set<subdomain_type> get_vertex_list(const array<unsigned int>& elements);
-    static std::set<subdomain_type> get_edge_list(const array<unsigned int>& elements);
-    static std::set<subdomain_type> get_triangle_list(const array<unsigned int>& elements);
-    static std::set<subdomain_type> get_element_list(const array<unsigned int>& elements);
+    static std::set<subdomain_type> get_vertex_list(const array<unsigned int>& elements) {
+      std::set<subdomain_type> vertex_list;
+
+      for (std::size_t k(0); k < elements.get_size(0); ++k)
+	for (std::size_t i(0); i < elements.get_size(1); ++i) {
+	  subdomain_type vertex;
+	  vertex.insert(elements.at(k, i));
+	  vertex_list.insert(vertex);
+	}
+
+      return vertex_list;
+    }
+    
+    static std::set<subdomain_type> get_edge_list(const array<unsigned int>& elements) {
+      std::set<subdomain_type> edge_list;
+
+      for (unsigned int k(0); k < elements.get_size(0); ++k) {
+	for (unsigned int i(0); i < elements.get_size(1) - 1; ++i) {
+	  for (unsigned int j(i + 1); j < elements.get_size(1); ++j) {
+	    subdomain_type edge;
+	    edge.insert(elements.at(k, i));
+	    edge.insert(elements.at(k, j));
+	    edge_list.insert(edge);
+	  }
+	}
+      }
+      
+      return edge_list;
+    }
+
+    static std::set<subdomain_type> get_triangle_list(const array<unsigned int>& elements) {
+      std::set<subdomain_type> triangle_list;
+
+      for (unsigned int k(0); k < elements.get_size(0); ++k) {
+	for (unsigned int i(0); i < elements.get_size(1) - 1; ++i) {
+	  for (unsigned int j(i + 1); j < elements.get_size(1); ++j) {
+	    for (unsigned int l(j + 1); l < elements.get_size(1); ++l) {
+	      subdomain_type triangle;
+	      triangle.insert(elements.at(k, i));
+	      triangle.insert(elements.at(k, j));
+	      triangle.insert(elements.at(k, l));
+	      triangle_list.insert(triangle);
+	    }
+	  }
+	}
+      }
+      
+      return triangle_list;
+    }
+
+    static std::set<subdomain_type> get_element_list(const array<unsigned int>& elements) {
+      std::set<subdomain_type> element_list;
+
+      for (unsigned int k(0); k < elements.get_size(0); ++k) {
+	subdomain_type tetrahedron;;
+	for (unsigned int i(0); i < elements.get_size(1); ++i)
+	  tetrahedron.insert(elements.at(k, i));
+	element_list.insert(tetrahedron);
+      }
+      
+      return element_list;
+    }
 
     static array<double> map_points_to_space_coordinates(const array<double>& vertices,
 							 const array<unsigned int>& elements,
 							 std::size_t k,
-							 const array<double>& xs);
+							 const array<double>& xs) {
+      array<double> hat_xs{xs.get_size(0), vertices.get_size(1)};
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(k, 0), n) 
+	    + xs.at(i, 0) * (vertices.at(elements.at(k, 1), n)
+			     - vertices.at(elements.at(k, 0), n))
+	    + xs.at(i, 1) * (vertices.at(elements.at(k, 2), n)
+			     - vertices.at(elements.at(k, 0), n))
+	    + xs.at(i, 2) * (vertices.at(elements.at(k, 3), n)
+			     - vertices.at(elements.at(k, 0), n));
+      }
+      
+      return hat_xs;
+    }
 
     static double get_cell_volume(const array<double>& vertices,
 				  const array<unsigned int>& elements,
-				  unsigned int k);
+				  unsigned int k) {
+      array<double> a{3}, b{3}, c{3};
+      a.at(0) = vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0);
+      a.at(1) = vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1);
+      a.at(2) = vertices.at(elements.at(k, 1), 2) - vertices.at(elements.at(k, 0), 2);
+
+      b.at(0) = vertices.at(elements.at(k, 2), 0) - vertices.at(elements.at(k, 0), 0);
+      b.at(1) = vertices.at(elements.at(k, 2), 1) - vertices.at(elements.at(k, 0), 1);
+      b.at(2) = vertices.at(elements.at(k, 2), 2) - vertices.at(elements.at(k, 0), 2);
+
+      c.at(0) = vertices.at(elements.at(k, 3), 0) - vertices.at(elements.at(k, 0), 0);
+      c.at(1) = vertices.at(elements.at(k, 3), 1) - vertices.at(elements.at(k, 0), 1);
+      c.at(2) = vertices.at(elements.at(k, 3), 2) - vertices.at(elements.at(k, 0), 2);
+
+      return 1.0 / 6.0 * dotp(crossp(a, b), c);
+    }
 
     static array<double> get_jmt(const array<double>& vertices,
 				 const array<unsigned int>& elements,
-				 unsigned int k);
+				 unsigned int k) {
+      array<double> jmt{3, 3};
+
+      jmt.at(0, 0) = vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0);
+      jmt.at(1, 0) = vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1);
+      jmt.at(2, 0) = vertices.at(elements.at(k, 1), 2) - vertices.at(elements.at(k, 0), 2);
+
+      jmt.at(0, 1) = vertices.at(elements.at(k, 2), 0) - vertices.at(elements.at(k, 0), 0);
+      jmt.at(1, 1) = vertices.at(elements.at(k, 2), 1) - vertices.at(elements.at(k, 0), 1);
+      jmt.at(2, 1) = vertices.at(elements.at(k, 2), 2) - vertices.at(elements.at(k, 0), 2);
+
+      jmt.at(0, 2) = vertices.at(elements.at(k, 3), 0) - vertices.at(elements.at(k, 0), 0);
+      jmt.at(1, 2) = vertices.at(elements.at(k, 3), 1) - vertices.at(elements.at(k, 0), 1);
+      jmt.at(2, 2) = vertices.at(elements.at(k, 3), 2) - vertices.at(elements.at(k, 0), 2);
+
+      matrix_inverse(&jmt.at(0,0), 3);
+      
+      std::swap(jmt.at(0, 1), jmt.at(1, 0));
+      std::swap(jmt.at(0, 2), jmt.at(2, 0));
+      std::swap(jmt.at(1, 2), jmt.at(2, 1));
+
+      return jmt;
+    }
 
     static double element_diameter(const array<double>& vertices,
 				   const array<unsigned int>& elements,
-				   unsigned int k);
+				   unsigned int k) {
+      double longest_side(0.0);
+      for (unsigned int i(0); i < 4 - 1; ++i)
+	for (unsigned int j(i + 1); j < 4; ++j) {
+	  double side_length(0.0);
+	  for (unsigned int n(0); n < 3; ++n)
+	    side_length += std::pow(  vertices.at(elements.at(k, i), n)
+				      - vertices.at(elements.at(k, j), n), 2);
+	  side_length = std::sqrt(side_length);
+
+	  longest_side = std::max(longest_side, side_length);
+	}
+      return longest_side;
+    }
     
   };
 

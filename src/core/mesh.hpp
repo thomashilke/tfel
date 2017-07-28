@@ -11,21 +11,7 @@
 #include <spikes/array.hpp>
 
 #include "cell.hpp"
-
-
-template<typename T>
-T dotp(const array<T>& a, const array<T>& b) {
-  assert(a.get_rank() == 1);
-  assert(b.get_rank() == 1);
-  assert(a.get_size(0) == b.get_size(0));
-  
-  T result = {};
-
-  for (std::size_t k(0); k < a.get_size(0); ++k)
-    result += a.at(k) * b.at(k);
-  
-  return result;
-}
+#include "vector_operation.hpp"
 
 
 template<typename cell>
@@ -145,9 +131,12 @@ public:
        unsigned int n_vertices, unsigned int n_components,
        const unsigned int* elements, unsigned int n_elements)
     : vertices{n_vertices, n_components},
-      elements{n_elements, cell_type::n_vertex_per_element}, h{n_elements} {
+      elements{n_elements, cell_type::n_vertex_per_element},
+      references{n_elements},
+      h{n_elements} {
     (this->vertices).set_data(vertices);
     (this->elements).set_data(elements);
+    references.fill(0);
 
     // We have to ensure that the vertices are ordered in the
     // elements list.
@@ -157,6 +146,65 @@ public:
     compute_element_diameter();
   }
 
+  mesh(const double* vertices,
+       unsigned int n_vertices, unsigned int n_components,
+       const unsigned int* elements, unsigned int n_elements,
+       const unsigned int* references)
+    : mesh(vertices, n_vertices, n_components, elements, n_elements) {
+    (this->references).set_data(references);
+  }
+
+  mesh(const submesh<cell_type, cell_type>& m)
+    : vertices{0},
+      elements{m.get_element_number(),
+	       cell_type::n_vertex_per_element},
+      references{m.get_element_number()},
+      h{m.get_element_number()} {
+    references.fill(0);
+
+    std::set<unsigned int> selected_nodes;
+    for (std::size_t k(0); k < get_element_number(); ++k) {
+      for (std::size_t n(0); n < cell_type::n_vertex_per_element; ++n)
+	selected_nodes.insert(m.get_elements().at(k, n));
+    }
+
+    {
+      vertices = array<double>{selected_nodes.size(), cell_type::n_dimension};
+      std::size_t new_node_id(0);
+      for (const auto node_id: selected_nodes) {
+	for (std::size_t k(0); k < cell_type::n_dimension; ++k)
+	  vertices.at(new_node_id, k) = m.get_vertices().at(node_id, k);
+	new_node_id += 1;
+      }
+    }
+
+    {
+      std::map<unsigned int, unsigned int> index_map;
+      std::size_t new_node_id(0);
+      for (const auto node_id: selected_nodes) {
+	index_map[node_id] = new_node_id;
+	new_node_id += 1;
+      }
+
+      for (std::size_t k(0); k < get_element_number(); ++k) {
+	for (std::size_t n(0); n < cell_type::n_vertex_per_element; ++n) {
+	  elements.at(k, n) = index_map[m.get_elements().at(k, n)];
+	}
+      }
+    }
+  }
+
+  submesh<cell_type, cell_type> query_elements(const std::function<bool(const double*)>& f) const {
+    std::vector<bool> selected_elements(get_element_number(), false);
+    
+    for (std::size_t k(0); k < get_element_number(); ++k) {
+      for (std::size_t n(0); n < vertices.get_size(1); ++n)
+	selected_elements.at(k) = selected_elements.at(k) || f(&vertices.at(elements.at(k, n), 0));
+    }
+    
+    return submesh_from_selection(selected_elements);
+  }
+  
   std::size_t get_embedding_space_dimension() const { return vertices.get_size(1); }
   std::size_t get_element_number() const { return elements.get_size(0); }
   std::size_t get_vertex_number() const { return vertices.get_size(0); }
@@ -180,6 +228,30 @@ public:
     bool operator<(const subdomain_info& op) const { return subdomain < op.subdomain; }
   };
 
+  submesh<cell_type, cell_type> get_submesh_with_reference(std::size_t ref_id) {
+    const std::size_t element_number(std::count(&references.at(0),
+						&references.at(0) + references.get_size(0),
+						ref_id));
+    array<unsigned int> elements{element_number, cell_type::n_vertex_per_element};
+    array<unsigned int> parent_element_id{element_number};
+    array<unsigned int> parent_element_subdomain_id{element_number};
+    parent_element_subdomain_id.fill(0);
+
+    
+    for (std::size_t k(0), pk(0); pk < get_element_number(); ++pk) {
+      if (references.at(pk) == ref_id) {
+	for (std::size_t n(0); n < cell_type::n_vertex_per_element; ++n)
+	  elements.at(k, n) = this->elements.at(pk, n);
+	  
+	parent_element_id.at(k) = pk;
+	
+	k += 1;
+      }
+    }
+
+    return submesh<cell_type, cell_type>(*this, elements, parent_element_id, parent_element_subdomain_id);
+  }
+  
   submesh<cell_type, ::cell::point> get_point_submesh(std::size_t k = 0) const {
     array<unsigned int> el_id{1}, sd_id{1}, el{1, 1};
     el_id.at(0) = k;
@@ -252,6 +324,7 @@ public:
 private:
   array<double> vertices;
   array<unsigned int> elements;
+  array<unsigned int> references;
   array<double> h;
   double h_max;
 
@@ -278,10 +351,35 @@ private:
     h_max = *std::max_element(&h.at(0),
 			      &h.at(0) + get_element_number());
   }
+
+  submesh<cell_type, cell_type> submesh_from_selection(const std::vector<bool>& selected_elements) const {
+    const std::size_t n_elements(std::count(selected_elements.begin(),
+					    selected_elements.end(),
+					    true));
+
+    array<unsigned int> el_id{n_elements};
+    array<unsigned int> sd_id{n_elements};
+    array<unsigned int> el{n_elements, cell_type::n_vertex_per_element};
+
+    for (std::size_t n(0), m(0); n < get_element_number(); ++n) {
+      if (selected_elements[n]) {
+	el_id.at(m) = n;
+	sd_id.at(m) = 0;
+	std::copy(&elements.at(n, 0),
+		  &elements.at(n, 0) + cell_type::n_vertex_per_element,
+		  &el.at(m, 0));
+	++m;
+      }
+    }
+    
+    return submesh<cell_type, cell_type>(*this, el, el_id, sd_id);
+  }
 };
 
 mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n);
 mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
 				     unsigned int n_1, unsigned int n_2);
+mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
+				      unsigned int n_1, unsigned int n_2, unsigned int n_3);
 
 #endif /* _MESH_H_ */

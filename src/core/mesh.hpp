@@ -307,8 +307,19 @@ public:
     }
   }
 
-  unsigned int get_element_at(const double* x) const {
-    // TODO
+#warning "FIXME: implement a better than O(N) algorithm."
+  std::size_t get_element_at(const double* x) const {
+    for (std::size_t k(0); k < get_element_number(); ++k) {
+      const array<double>
+	bc_coord(cell_type::get_barycentric_coordinates(vertices, elements, k, x));
+
+      const double* min(std::min_element(&bc_coord.at(0),
+					 &bc_coord.at(0) + cell_type::n_vertex_per_element));
+      if (*min >= 0.0)
+	return k;
+    }
+
+    throw std::string("point out of bounds");
   }
 
   double get_h_max() const {

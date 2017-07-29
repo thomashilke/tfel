@@ -222,8 +222,16 @@ public:
     return value;
   }
 
-  double evaluate(const double* x_hat) const {
-    // TODO
+  double evaluate(const double* x) const {
+    std::size_t k(get_mesh().get_element_at(x));
+    
+    const array<double>
+      bc_coord(cell_type::get_barycentric_coordinates(
+        get_mesh().get_vertices(),
+	get_mesh().get_elements(),
+	k, x));
+
+    return evaluate(k, &bc_coord.at(1));
   }
 
   typename finite_element_space<fe>::element& operator=(const typename finite_element_space<fe>::element& e) {

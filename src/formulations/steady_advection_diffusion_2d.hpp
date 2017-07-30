@@ -1,5 +1,5 @@
-#ifndef _STATIONARY_ADVECTION_DIFFUSION_2D_H_
-#define _STATIONARY_ADVECTION_DIFFUSION_2D_H_
+#ifndef _STEADY_ADVECTION_DIFFUSION_2D_H_
+#define _STEADY_ADVECTION_DIFFUSION_2D_H_
 
 #include "../core/basic_fe_formulation.hpp"
 
@@ -8,7 +8,7 @@
  *  The advection field b is supposed to be in H(div).
  */
 template<typename fe>
-class stationary_advection_diffusion: public basic_fe_formulation<fe> {
+class steady_advection_diffusion: public basic_fe_formulation<fe> {
 public:
   using fe_type = typename basic_fe_formulation<fe>::fe_type;
   using fes_type = typename basic_fe_formulation<fe>::fes_type;
@@ -18,7 +18,7 @@ public:
   using boundary_quadrature_type = typename basic_fe_formulation<fe>::boundary_quadrature_type;
 
 
-  stationary_advection_diffusion(const mesh<cell_type>& m, double diffusivity)
+  steady_advection_diffusion(const mesh<cell_type>& m, double diffusivity)
     : diffusivity(diffusivity),
       m(m), dm(m.get_boundary_submesh()), fes(m, dm),
       a(fes, fes), f(fes),
@@ -88,7 +88,7 @@ private:
 
     if (supg_stabilisation) {
       if (not std::is_same<fe_type, finite_element::triangle_lagrange_p1>::value)
-	throw std::string("stationary advection diffusion 2d:"
+	throw std::string("steady advection diffusion 2d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
       const double delta(1.0);
@@ -127,4 +127,4 @@ private:
   }
 };
 
-#endif /* _STATIONARY_ADVECTION_DIFFUSION_2D_H_ */
+#endif /* _STEADY_ADVECTION_DIFFUSION_2D_H_ */

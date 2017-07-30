@@ -38,10 +38,10 @@ SOURCES = \
 	test/alucell_import.cpp \
 	test/tetrahedron_cube.cpp \
 	src/protocols/stokes_2d/driven_cavity.cpp \
-	src/protocols/stationary_advection_diffusion_2d/step.cpp \
-	src/protocols/transient_advection_diffusion_2d/rotating_hill.cpp \
-	src/protocols/transient_advection_diffusion_2d/front.cpp \
-	src/protocols/steady_advection_1d/stabilisation.cpp \
+	src/protocols/steady_advection_diffusion_2d/step.cpp \
+	src/protocols/unsteady_advection_diffusion_2d/rotating_hill.cpp \
+	src/protocols/unsteady_advection_diffusion_2d/front.cpp \
+	src/protocols/steady_advection_diffusion_1d/stabilisation.cpp \
 	src/main.cpp \
 	src/core/cell.cpp \
 	src/core/mesh.cpp \
@@ -74,11 +74,11 @@ HEADERS = \
 	include/tfel/core/quadrature.hpp \
 	include/tfel/core/sparse_linear_system.hpp \
 	include/tfel/core/timer.hpp \
-	include/tfel/formulations/stationary_advection_diffusion_2d.hpp \
-	include/tfel/formulations/steady_advection_1d.hpp \
+	include/tfel/formulations/steady_advection_diffusion_2d.hpp \
+	include/tfel/formulations/steady_advection_diffusion_1d.hpp \
 	include/tfel/formulations/stokes_2d.hpp \
-	include/tfel/formulations/transient_advection_diffusion_2d.hpp \
-	include/tfel/formulations/transient_diffusion_2d.hpp \
+	include/tfel/formulations/unsteady_advection_diffusion_2d.hpp \
+	include/tfel/formulations/unsteady_diffusion_2d.hpp \
 	include/tfel/utility/importer.hpp
 
 
@@ -100,10 +100,10 @@ BIN = \
 	bin/test_tetrahedron_cube \
 	bin/test_l2_p1_bubble_projection \
 	bin/prot_stoke_2d_driven_cavity \
-	bin/prot_stationary_advection_diffusion_2d_step \
-	bin/prot_transient_advection_diffusion_2d_rotating_hill \
-	bin/prot_transient_advection_diffusion_2d_front \
-	bin/prot_steady_advection_1d_stabilisation \
+	bin/prot_steady_advection_diffusion_2d_step \
+	bin/prot_unsteady_advection_diffusion_2d_rotating_hill \
+	bin/prot_unsteady_advection_diffusion_2d_front \
+	bin/prot_steady_advection_diffusion_1d_stabilisation \
 	bin/test_alucell_import \
 	bin/main
 
@@ -124,10 +124,10 @@ bin/test_quadrature_2d: build/test/quadrature_2d.o
 bin/test_stokes_2d: build/test/stokes_2d.o
 bin/test_l2_p1_bubble_projection: build/test/l2_p1_bubble_projection.o
 bin/prot_stoke_2d_driven_cavity: build/src/protocols/stokes_2d/driven_cavity.o
-bin/prot_stationary_advection_diffusion_2d_step: build/src/protocols/stationary_advection_diffusion_2d/step.o
-bin/prot_transient_advection_diffusion_2d_rotating_hill: build/src/protocols/transient_advection_diffusion_2d/rotating_hill.o
-bin/prot_transient_advection_diffusion_2d_front: build/src/protocols/transient_advection_diffusion_2d/front.o
-bin/prot_steady_advection_1d_stabilisation: build/src/protocols/steady_advection_1d/stabilisation.o
+bin/prot_steady_advection_diffusion_2d_step: build/src/protocols/steady_advection_diffusion_2d/step.o
+bin/prot_unsteady_advection_diffusion_2d_rotating_hill: build/src/protocols/unsteady_advection_diffusion_2d/rotating_hill.o
+bin/prot_unsteady_advection_diffusion_2d_front: build/src/protocols/unsteady_advection_diffusion_2d/front.o
+bin/prot_steady_advection_diffusion_1d_stabilisation: build/src/protocols/steady_advection_diffusion_1d/stabilisation.o
 bin/test_alucell_import: build/test/alucell_import.o
 bin/test_tetrahedron_cube: build/test/tetrahedron_cube.o
 

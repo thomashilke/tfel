@@ -1,5 +1,5 @@
 
-#include "../../formulations/steady_advection_1d.hpp"
+#include "../../formulations/steady_advection_diffusion_1d.hpp"
 
 int main(
   int argc,

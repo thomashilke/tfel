@@ -1,5 +1,5 @@
-#ifndef _STATIONARY_ADVECTION_DIFFUSION_2D_H_
-#define _STATIONARY_ADVECTION_DIFFUSION_2D_H_
+#ifndef _UNSTEADY_ADVECTION_DIFFUSION_2D_H_
+#define _UNSTEADY_ADVECTION_DIFFUSION_2D_H_
 
 #include "../core/basic_fe_formulation.hpp"
 
@@ -8,7 +8,7 @@
  *  The advection field b is supposed to be in H(div).
  */
 template<typename fe>
-class transient_advection_diffusion: public basic_fe_formulation<fe> {
+class unsteady_advection_diffusion: public basic_fe_formulation<fe> {
 public:
   using fe_type = typename basic_fe_formulation<fe>::fe_type;
   using fes_type = typename basic_fe_formulation<fe>::fes_type;
@@ -18,9 +18,9 @@ public:
   using boundary_quadrature_type = typename basic_fe_formulation<fe>::boundary_quadrature_type;
 
 
-  transient_advection_diffusion(const mesh<cell_type>& m,
-				const submesh<cell_type>& dm,
-				double delta_t, double diffusivity)
+  unsteady_advection_diffusion(const mesh<cell_type>& m,
+			       const submesh<cell_type>& dm,
+			       double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
       m(m), dm(dm), fes(m, dm), p0_fes(m),
       a(fes, fes), f(fes),
@@ -28,8 +28,8 @@ public:
       bk_norm(p0_fes), h(build_element_diameter_function<cell_type>(m, p0_fes)),
       b_0(null_function), b_1(null_function), src(null_function) {}
 
-  transient_advection_diffusion(const mesh<cell_type>& m, double delta_t, double diffusivity)
-    : transient_advection_diffusion(m, submesh<cell_type>(m), delta_t, diffusivity) {}
+  unsteady_advection_diffusion(const mesh<cell_type>& m, double delta_t, double diffusivity)
+    : unsteady_advection_diffusion(m, submesh<cell_type>(m), delta_t, diffusivity) {}
 
   void set_boundary_value(const std::function<double(const double*)>& u_bc) {
     fes.set_dirichlet_condition(u_bc);
@@ -134,7 +134,7 @@ private:
 
     if (supg_stabilisation) {
       if (not std::is_same<fe_type, finite_element::triangle_lagrange_p1>::value)
-	throw std::string("stationary advection diffusion 2d:"
+	throw std::string("unsteady advection diffusion 2d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
       a += integrate<volume_quadrature_type>(//delta_t *
@@ -171,4 +171,4 @@ private:
   }
 };
 
-#endif /* _STATIONARY_ADVECTION_DIFFUSION_2D_H_ */
+#endif /* _UNSTEADY_ADVECTION_DIFFUSION_2D_H_ */

@@ -1,5 +1,5 @@
-#ifndef _STEADY_ADVECTION_1D_H_
-#define _STEADY_ADVECTION_1D_H_
+#ifndef _STEADY_ADVECTION_DIFFUSION_1D_H_
+#define _STEADY_ADVECTION_DIFFUSION_1D_H_
 
 #include "../core/basic_fe_formulation.hpp"
 
@@ -108,7 +108,7 @@ private:
 
     if (supg_stabilisation) {
       if (not std::is_same<fe_type, finite_element::edge_lagrange_p1>::value)
-	throw std::string("stationary advection diffusion 1d:"
+	throw std::string("steady advection diffusion 1d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
       const double delta(0.5);
@@ -146,4 +146,4 @@ private:
 };
 
 
-#endif /* _STEADY_ADVECTION_1D_H_ */
+#endif /* _STEADY_ADVECTION_DIFFUSION_1D_H_ */

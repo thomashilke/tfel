@@ -1,11 +1,11 @@
-#ifndef _TRANSIENT_DIFFUSION_2D_H_
-#define _TRANSIENT_DIFFUSION_2D_H_
+#ifndef _UNSTEADY_DIFFUSION_2D_H_
+#define _UNSTEADY_DIFFUSION_2D_H_
 
 #include "../core/basic_fe_formulation.hpp"
 
 
 template<typename fe>
-class transient_diffusion_2d: public basic_fe_formulation<fe> {
+class unsteady_diffusion_2d: public basic_fe_formulation<fe> {
 public:
   using typename basic_fe_formulation<fe>::fe_type;
   using typename basic_fe_formulation<fe>::fes_type;
@@ -14,8 +14,8 @@ public:
   using typename basic_fe_formulation<fe>::volume_quadrature_type;
   using typename basic_fe_formulation<fe>::boundary_quadrature_type;
   
-  transient_diffusion_2d(const mesh<cell_type>& m,
-			 double delta_t, double diffusivity)
+  unsteady_diffusion_2d(const mesh<cell_type>& m,
+			double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
       m(m), dm(m.get_boundary_submesh()),
       fes(m, dm), a(fes, fes), f(fes),
@@ -23,9 +23,9 @@ public:
     assemble_bilinear_form();
   }
 
-  transient_diffusion_2d(const mesh<cell_type>& m,
-			 const submesh<cell_type>& dm,
-			 double delta_t, double diffusivity)
+  unsteady_diffusion_2d(const mesh<cell_type>& m,
+			const submesh<cell_type>& dm,
+			double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
       m(m), dm(dm),
       fes(m, dm), a(fes, fes), f(fes),
@@ -102,4 +102,4 @@ private:
 };
 
 
-#endif /* _TRANSIENT_DIFFUSION_2D_H_ */
+#endif /* _UNSTEADY_DIFFUSION_2D_H_ */

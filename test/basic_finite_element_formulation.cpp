@@ -1,7 +1,7 @@
 
 #include <functional>
 
-#include "../src/formulations/transient_diffusion_2d.hpp"
+#include "../src/formulations/unsteady_diffusion_2d.hpp"
 
 
 double bell(double x) {
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 		      and x[0] < 2.0 / 3.0);
 		      }));
 
-  transient_diffusion_2d<fe_type> h(m, dirichlet_boundary, delta_t, D);
+  unsteady_diffusion_2d<fe_type> h(m, dirichlet_boundary, delta_t, D);
   h.set_initial_condition(initial_condition);
 
   exporter::ensight6_transient<fe_type> ens("heat", m, "solution");

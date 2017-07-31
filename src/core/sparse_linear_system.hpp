@@ -11,6 +11,11 @@ class sparse_linear_system {
 public:
   sparse_linear_system(std::size_t n_eq, std::size_t n_unk)
     :n_equation(n_eq), n_unknown(n_unk) {}
+
+  void set_sizes(std::size_t n_eq, std::size_t n_unk) {
+    n_equation = n_eq;
+    n_unknown = n_unk;
+  }
   
   void accumulate(std::size_t i, std::size_t j, double v) {
     if (i >= n_equation or j >= n_unknown)

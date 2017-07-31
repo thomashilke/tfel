@@ -138,6 +138,7 @@ namespace linear_solver_impl {
 
       ierr = MatSeqAIJSetPreallocation(A, 0, nz);CHKERRV(ierr);
       ierr = MatSetUp(A);CHKERRV(ierr);
+      ierr = VecSetUp(b);CHKERRV(ierr);
     }
 
     virtual void add_value(std::size_t i, std::size_t j, double v) {

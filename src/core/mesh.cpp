@@ -44,9 +44,9 @@ mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
 
 mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
 				      unsigned int n_1, unsigned int n_2, unsigned int n_3) {
-  array<double> vertices{n_1 + 1, n_2 + 1, n_3 + 1, 3};
-  array<unsigned int> v_ids{n_1 + 1, n_2 + 1, n_3 + 1};
-  array<unsigned int> elements{n_1, n_2, n_3, 5, 4};
+  array<double> vertices{n_3 + 1, n_2 + 1, n_1 + 1, 3};
+  array<unsigned int> v_ids{n_3 + 1, n_2 + 1, n_1 + 1};
+  array<unsigned int> elements{n_3, n_2, n_1, 5, 4};
 
   const double
     h_x(x_1 / static_cast<double>(n_1)),

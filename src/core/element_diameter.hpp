@@ -8,9 +8,10 @@
 
 template<typename cell_type>
 struct per_element_fe_type {
-  using cell_list = type_list<cell::edge, cell::triangle>;
+  using cell_list = type_list<cell::edge, cell::triangle, cell::tetrahedron>;
   using fe_list = type_list<finite_element::edge_lagrange_p0,
-			    finite_element::triangle_lagrange_p0>;
+			    finite_element::triangle_lagrange_p0,
+			    finite_element::tetrahedron_lagrange_p0>;
 
   using type = get_element_at_t<get_index_of_element<cell_type, cell_list>::value, fe_list>;
 };

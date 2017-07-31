@@ -75,7 +75,8 @@ public:
       }
   }
 
-  finite_element_space(const mesh<cell_type>& m, const submesh<cell_type>& dm)
+  template<typename c_cell_type>
+  finite_element_space(const mesh<cell_type>& m, const submesh<cell_type, c_cell_type>& dm)
     : finite_element_space(m) {
     f_bc = default_f_bc;
     set_dirichlet_boundary(dm);
@@ -168,6 +169,9 @@ public:
 						      global_dof_to_local_dof.at(i,0),
 						      x);
   }
+
+  std::size_t get_dof_element(std::size_t i) const { return global_dof_to_local_dof.at(i, 0); }
+  std::size_t get_dof_local_id(std::size_t i) const { return global_dof_to_local_dof.at(i, 1); }
   
 private:
   const mesh<cell_type>& m;

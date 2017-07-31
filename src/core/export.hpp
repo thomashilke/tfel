@@ -100,6 +100,8 @@ namespace exporter {
     template<typename fe_type> struct variable_section_item;
     template<> struct variable_section_item<finite_element::triangle_lagrange_p0> { static constexpr const char* value = "scalar per element: "; };
     template<> struct variable_section_item<finite_element::triangle_lagrange_p1> { static constexpr const char* value = "scalar per node: "; };
+    template<> struct variable_section_item<finite_element::tetrahedron_lagrange_p0> { static constexpr const char* value = "scalar per element: "; };
+    template<> struct variable_section_item<finite_element::tetrahedron_lagrange_p1> { static constexpr const char* value = "scalar per node: "; };
 
 
     template<typename cell_type>

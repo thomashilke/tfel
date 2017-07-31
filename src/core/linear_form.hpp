@@ -70,14 +70,19 @@ public:
     }
   }
 
+  void set_constraint_value(double v) { constraint_values.push_back(v); }
+  
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
 
   const array<double>& get_coefficients() const { return f; }
-
+  const std::vector<double>& get_constraint_values() const { return constraint_values; }
+  
   void clear() {
     std::fill(f.get_data(),
 	      f.get_data() + f.get_size(0),
 	      0.0);
+    
+    constraint_values.clear();
   }
   
   void show(std::ostream& stream) {
@@ -90,6 +95,7 @@ private:
   const test_fes_type& test_fes;
   
   array<double> f;
+  std::vector<double> constraint_values;
 };
 
 #endif /* _LINEAR_FORM_H_ */

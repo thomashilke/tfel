@@ -48,17 +48,29 @@ struct fe_value_manager<type_list<fe_pack...> > {
   
   fe_value_manager(std::size_t n_quadrature_point):
     values({n_quadrature_point,
-	  fe_pack::n_dof_per_element,
-	  fe_pack::cell_type::n_dimension + 1}...) {
+	    fe_pack::n_dof_per_element,
+	    fe_pack::cell_type::n_dimension + 1}...),
+    values_hat({n_quadrature_point,
+	        fe_pack::n_dof_per_element,
+	  fe_pack::cell_type::n_dimension + 1}...),
+    xq_hat{n_quadrature_point, cell_type::n_dimension} {
+    
     static_assert(list_size<cell_list>::value == 1,
 		  "the cells types must be homogeneous");
   }
 
-  void prepare(const array<double>& jmt,
-	       const array<double>& xq) {
+  void set_points(const array<double>& xq_hat) {
+    this->xq_hat = xq_hat;
+
+    using index_sequence = make_integral_list_t<std::size_t, sizeof...(fe_pack)>;
+    call_for_each<prepare_hat_impl, index_sequence>::call(values, values_hat, xq_hat);
+  }
+    
+  
+  void prepare(const array<double>& jmt) {
     using index_sequence = make_integral_list_t<std::size_t, sizeof...(fe_pack)>;
     call_for_each<prepare_impl, index_sequence
-		  >::call(values, jmt, xq);
+		  >::call(values, values_hat, jmt, xq_hat);
   }
 
   void clear() {
@@ -83,6 +95,9 @@ private:
   using values_type = std::tuple<return_2nd_t<fe_pack, array<double> >... >;
   
   values_type values;
+  values_type values_hat;
+
+  array<double> xq_hat;
 
   template<typename integral_value>
   struct prepare_impl;
@@ -90,28 +105,55 @@ private:
   template<std::size_t n>
   struct prepare_impl<integral_constant<std::size_t, n> > {
     static void call(values_type& values,
+		     const values_type& values_hat,
 		     const array<double>& jmt,
-		     const array<double>& xq) {
-      const std::size_t n_q(xq.get_size(0));
+		     const array<double>& xq_hat) {
       
       array<double>& phi(std::get<n>(values));
+      const array<double>& phi_hat(std::get<n>(values_hat));
     
+      const std::size_t n_q(xq_hat.get_size(0));
+      const std::size_t n_dim(cell_type::n_dimension);
+      const std::size_t n_dof(fe_type<n>::n_dof_per_element);
+    
+      // prepare the basis function derivatives on the quadrature points
+      for (unsigned int q(0); q < n_q; ++q) {
+	for (std::size_t i(0); i < n_dof; ++i) {
+	  phi.at(q, i, 0) = phi_hat.at(q, i, 0);
+	  for (std::size_t s(0); s < n_dim; ++s) {
+	    phi.at(q, i, 1 + s) = 0.0;
+	    for (std::size_t t(0); t < n_dim; ++t)
+	      phi.at(q, i, 1 + s) += jmt.at(s, t) * phi_hat.at(q, i, 1 + t);
+	  }
+	}
+      }
+    }
+  };
+
+
+  template<typename integral_value>
+  struct prepare_hat_impl;
+  
+  template<std::size_t n>
+  struct prepare_hat_impl<integral_constant<std::size_t, n> > {
+    static void call(values_type& values,
+		     values_type& values_hat,
+		     const array<double>& xq_hat) {
+
+      array<double>& phi(std::get<n>(values));
+      array<double>& phi_hat(std::get<n>(values_hat));
+    
+      const std::size_t n_q(xq_hat.get_size(0));
       const std::size_t n_dim(cell_type::n_dimension);
       const std::size_t n_dof(fe_type<n>::n_dof_per_element);
     
       // prepare the basis function on the quadrature points
       for (unsigned int q(0); q < n_q; ++q) {
-	for (std::size_t i(0); i < n_dof; ++i)
-	  phi.at(q, i, 0) = fe_type<n>::phi(i, &xq.at(q, 0));
-      }
-      
-      // prepare the basis function derivatives on the quadrature points
-      for (unsigned int q(0); q < n_q; ++q) {
 	for (std::size_t i(0); i < n_dof; ++i) {
+	  phi_hat.at(q, i, 0) = fe_type<n>::phi(i, &xq_hat.at(q, 0));
+	  phi.at(q, i, 0) = phi_hat.at(q, i, 0);
 	  for (std::size_t s(0); s < n_dim; ++s) {
-	    phi.at(q, i, 1 + s) = 0.0;
-	    for (std::size_t t(0); t < n_dim; ++t)
-	      phi.at(q, i, 1 + s) += jmt.at(s, t) * fe_type<n>::dphi(t, i, &xq.at(q, 0));
+	    phi_hat.at(q, i, 1 + s) = fe_type<n>::dphi(s, i, &xq_hat.at(q, 0));
 	  }
 	}
       }

@@ -9,6 +9,7 @@ public:
   using test_fe_list = typename test_cfe_type::fe_list;
   using fe_list = test_fe_list;
   using unique_fe_list = unique_t<fe_list>;
+  using fe_cell_type = typename get_element_at_t<0, unique_fe_list>::cell_type;
 
   static const std::size_t n_test_component = test_cfe_type::n_component;
 
@@ -79,6 +80,7 @@ public:
 
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
+    using form_type = typename T::form_type;
 
     // m is the mesh over which we integrate
     const auto& m(integration_proxy.m);
@@ -88,19 +90,36 @@ public:
     array<double> omega{n_q};
     omega.set_data(&quadrature_type::w[0]);
 
+    // storage for the quadrature points;
+    array<double> xq_hat{n_q, fe_cell_type::n_dimension};
+    array<double> xq{n_q, fe_cell_type::n_dimension};
+    
     // storage for the point-wise basis function evaluation
     fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
     fe_zvalues.clear();
+
+    if (T::point_set_number == 1) {
+      xq_hat = integration_proxy.get_quadrature_points(0);
+      fe_values.set_points(xq_hat);
+    }
     
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
+
       // prepare the quadrature points
-      const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
-      const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_elements(),
-									k, xq_hat));
+      if (T::point_set_number > 1) {
+	xq_hat = integration_proxy.get_quadrature_points(k);
+	fe_values.set_points(xq_hat);
+      }
+
+      xq = cell_type::map_points_to_space_coordinates(m.get_vertices(),
+						      m.get_elements(),
+						      k, xq_hat);
+      
       // prepare the basis function values
-      const array<double> jmt(m.get_jmt(k));
-      fe_values.prepare(jmt, xq_hat);
+      if (form_type::differential_order > 0) {
+	const array<double> jmt(m.get_jmt(k));
+	fe_values.prepare(jmt);
+      }
 
 
       /*

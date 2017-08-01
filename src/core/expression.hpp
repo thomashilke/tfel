@@ -20,6 +20,8 @@ struct form {
   }
 
   static constexpr std::size_t rank = rnk;
+  static constexpr std::size_t differential_order = derivative == 0 ? 0 : 1;
+  static constexpr bool require_space_coordinates = false;
 };
 
 struct free_function {
@@ -38,6 +40,8 @@ struct free_function {
   }
 
   static constexpr std::size_t rank = 0;
+  static constexpr std::size_t differential_order = 0;
+  static constexpr bool require_space_coordinates = true;
   
 private:
   typedef double (*function_type)(const double*);
@@ -61,6 +65,8 @@ struct std_function {
   }
 
   static constexpr std::size_t rank = 0;
+  static constexpr std::size_t differential_order = 0;
+  static constexpr bool require_space_coordinates = true;
 
 private:
   std::function<double(const double*)> f;
@@ -84,6 +90,8 @@ public:
   }
 
   static constexpr std::size_t rank = 0;
+  static constexpr std::size_t differential_order = 0;
+  static constexpr bool require_space_coordinates = false;
 			     
 private:
   const typename finite_element_space<fe>::element& v;
@@ -106,6 +114,8 @@ struct constant {
   }
 
   static constexpr std::size_t rank = 0;
+  static constexpr std::size_t differential_order = 0;
+  static constexpr bool require_space_coordinates = false;
   
 private:
   const double value;
@@ -133,6 +143,8 @@ struct expression {
   }
 
   static constexpr std::size_t rank = expr_t::rank;
+  static constexpr std::size_t differential_order = expr_t::differential_order;
+  static constexpr bool require_space_coordinates = expr_t::require_space_coordinates;
 };
 
 template<typename left, typename right, typename op>
@@ -152,6 +164,9 @@ struct binary_expression {
   }
 
   static constexpr std::size_t rank = left::rank < right::rank ? right::rank : left::rank;
+  static constexpr std::size_t differential_order = left::differential_order < right::differential_order ? right::differential_order : left::differential_order;
+
+  static constexpr bool require_space_coordinates = left::require_space_coordinates or right::require_space_coordinates;
   
   expression<left> l;
   expression<right> r;
@@ -172,6 +187,8 @@ struct composition {
   }
 
   static constexpr std::size_t rank = inner_expr::rank;
+  static constexpr std::size_t differential_order = inner_expr::differential_order;
+  static constexpr bool require_space_coordinates = inner_expr::require_space_coordinates;
   
   double (*f)(double);
   expression<inner_expr> e;

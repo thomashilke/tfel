@@ -11,14 +11,18 @@ public:
 
   template<typename T>
   void operator+=(const T& integration_proxy) {
+    
     static_assert(T::form_type::rank == 1, "linear_form expects rank-1 expression.");
     
     typedef typename test_fes_type::fe_type test_fe_type;
+    using test_fe_type = typename test_fes_type::fe_type;
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
+    using form_type = typename T::form_type;
+    std::cerr << "linear_form: form differential order: " << form_type::differential_order << std::endl;
+
 
     const auto& m(integration_proxy.m);
-    const std::size_t dim(m.get_embedding_space_dimension());
 
     // prepare the quadrature weights
     const std::size_t n_q(quadrature_type::n_point);
@@ -26,46 +30,58 @@ public:
     omega.set_data(&quadrature_type::w[0]);
 
 
-    // storage for the point-wise basis function evaluation
-    const std::size_t n_dof(test_fe_type::n_dof_per_element);
-    array<double> psi{n_q, n_dof, dim + 1};
+    // storage for the quadrature points
+    array<double> xq_hat{n_q, test_fe_type::cell_type::n_dimension};
+    array<double> xq{n_q, test_fe_type::cell_type::n_dimension};
+    
 
+    // storage for the point-wise basis function evaluation
+    using fe_list = type_list<test_fe_type>;
+    using unique_fe_list = unique_t<fe_list>;
+
+    const std::size_t test_fe_index(get_index_of_element<test_fe_type, unique_fe_list>::value);
+    fe_value_manager<unique_fe_list> fe_values(n_q);
+    
+
+    if (T::point_set_number == 1) {
+      xq_hat = integration_proxy.get_quadrature_points(0);
+      fe_values.set_points(xq_hat);
+      }
     
     // loop over the elements
-    for (unsigned int k(0); k < m.get_element_number(); ++k) {
-      const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
-      const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_elements(),
-									k, xq_hat));
+    for (std::size_t k(0); k < m.get_element_number(); ++k) {
 
-      // prepare the basis function on the quadrature points
-      for (unsigned int q(0); q < n_q; ++q) {
-	for (std::size_t i(0); i < n_dof; ++i)
-	  psi.at(q, i, 0) = test_fe_type::phi(i, &xq_hat.at(q, 0));
+      // prepare the quadrature points if necessary
+      if (T::point_set_number > 1) {
+	xq_hat = integration_proxy.get_quadrature_points(k);
+	fe_values.set_points(xq_hat);
       }
+
+      if (form_type::require_space_coordinates)
+	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
+						   m.get_elements(),
+						   k, xq_hat);
+
+      // prepare the basis function values if necessary
+      if (form_type::differential_order == 1ul) {
+	const array<double>& jmt(m.get_jmt(k));
+	fe_values.prepare(jmt);
+      }
+
+      const array<double>& psi(fe_values.template get_values<test_fe_index>());
       
-      // prepare the basis function derivatives on the quadrature points
-      const array<double> jmt(m.get_jmt(k));
-      for (unsigned int q(0); q < n_q; ++q) {
-	for (std::size_t i(0); i < n_dof; ++i) {
-	  for (std::size_t n(0); n < dim; ++n) {
-	    psi.at(q, i, 1 + n) = 0.0;
-	    for (std::size_t k(0); k < dim; ++k)
-	      psi.at(q, i, 1 + n) += jmt.at(n, k) * test_fe_type::dphi(k, i, &xq_hat.at(q, 0));
-	  }
-	}
-      }
-
       // evaluate the weak form
+      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
       const double volume(m.get_cell_volume(k));
-      for (unsigned int j(0); j < n_dof; ++j) {
+      for (std::size_t j(0); j < n_test_dof; ++j) {
 	double rhs_el(0.0);
-	for (unsigned int q(0); q < n_q; ++q) {
-	  rhs_el += volume * omega.at(q) * integration_proxy.f(k, &xq.at(q, 0),
-							       &xq_hat.at(q, 0),
-							       &psi.at(q, j, 0));
+	for (std::size_t q(0); q < n_q; ++q) {
+	  rhs_el += omega.at(q) *
+	    integration_proxy.f(k, &xq.at(q, 0ul),
+				&xq_hat.at(q, 0ul),
+				&psi.at(q, j, 0ul));
 	}
-	f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_el;
+	f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_el * volume;
       }
     }
   }

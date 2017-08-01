@@ -30,6 +30,7 @@ public:
     typedef typename trial_fes_type::fe_type trial_fe_type;
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
+    using form_type = typename T::form_type;
 
     const auto& m(integration_proxy.m);
 
@@ -38,25 +39,44 @@ public:
     array<double> omega{n_q};
     omega.set_data(&quadrature_type::w[0]);
 
+    // storage for the quadrature points
+    array<double> xq_hat{n_q, test_fe_type::cell_type::n_dimension};
+    array<double> xq{n_q, test_fe_type::cell_type::n_dimension};
+    
     // storage for the point-wise basis function evaluation
     using fe_list = type_list<test_fe_type, trial_fe_type>;
     using unique_fe_list = unique_t<fe_list>;
 
     const std::size_t test_fe_index(get_index_of_element<test_fe_type, unique_fe_list>::value);
     const std::size_t trial_fe_index(get_index_of_element<trial_fe_type, unique_fe_list>::value);
-    fe_value_manager<unique_fe_list> fe_values((n_q));
+    fe_value_manager<unique_fe_list> fe_values(n_q);
+    
+    if (T::point_set_number == 1) {
+      xq_hat = integration_proxy.get_quadrature_points(0);
+      fe_values.set_points(xq_hat);
+    }
 
 
     // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
-      // prepare the quadrature points
-      const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
-      const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_elements(),
-									k, xq_hat));
-      // prepare the basis function values
-      const array<double> jmt(m.get_jmt(k));
-      fe_values.prepare(jmt, xq_hat);
+
+      // prepare the quadrature points if necessary
+      if (T::point_set_number > 1) {
+	xq_hat = integration_proxy.get_quadrature_points(k);
+	fe_values.set_points(xq_hat);
+      }
+
+      if (form_type::require_space_coordinates)
+	cell_type::map_points_to_space_coordinates(xq,
+						   m.get_vertices(),
+						   m.get_elements(),
+						   k, xq_hat);
+
+      if (form_type::differential_order == 1ul) {
+	// prepare the basis function values
+	const array<double> jmt(m.get_jmt(k));
+	fe_values.prepare(jmt); 
+      }
       
       const array<double>& psi(fe_values.template get_values<test_fe_index>());
       const array<double>& phi(fe_values.template get_values<trial_fe_index>());
@@ -69,13 +89,13 @@ public:
 	for (unsigned int j(0); j < n_trial_dof; ++j) {
 	  double a_el(0.0);
 	  for (unsigned int q(0); q < n_q; ++q) {
-	    a_el += volume * omega.at(q) * integration_proxy.f(k,
-							       &xq.at(q, 0), &xq_hat.at(q, 0),
-							       &psi.at(q, i, 0),
-							       &phi.at(q, j, 0));
+	    a_el += omega.at(q) * integration_proxy.f(k,
+						      &xq.at(q, 0), &xq_hat.at(q, 0),
+						      &psi.at(q, i, 0),
+						      &phi.at(q, j, 0));
 	  }
 	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
-		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), j), a_el);
+		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), j), a_el * volume);
 	}
       }
     }
@@ -247,7 +267,8 @@ public:
 									k, xq_hat));
       // prepare the basis function values
       const array<double> jmt(m.get_jmt(k));
-      fe_values.prepare(jmt, xq_hat);
+      fe_values.set_points(xq_hat);
+      fe_values.prepare(jmt);
       
       const array<double>& psi(fe_zvalues.template get_values<test_fe_index>());
       const array<double>& phi(fe_values.template get_values<trial_fe_index>());
@@ -297,7 +318,8 @@ public:
 									k, xq_hat));
       // prepare the basis function values
       const array<double> jmt(m.get_jmt(k));
-      fe_values.prepare(jmt, xq_hat);
+      fe_values.set_points(xq_hat);
+      fe_values.prepare(jmt);
       
       const array<double>& psi(fe_values.template get_values<test_fe_index>());
       const array<double>& phi(fe_zvalues.template get_values<trial_fe_index>());

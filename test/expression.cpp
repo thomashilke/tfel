@@ -86,7 +86,8 @@ void test_fe_value_manager() {
   xq.at(0, 0) = 1.0/3.0;
   xq.at(0, 1) = 1.0/3.0;
 
-  values.prepare(jmt, xq);
+  values.set_points(xq);
+  values.prepare(jmt);
 
   assert(phi_1[0] == fe::phi(0, &xq.at(0,0)));
   assert(phi_1[1] == fe::phi(1, &xq.at(0,0)));
@@ -139,7 +140,8 @@ void test_valuation_selection() {
   xq.at(0, 0) = 1.0/3.0;
   xq.at(0, 1) = 1.0/3.0;
 
-  values.prepare(jmt, xq);
+  values.set_points(xq);
+  values.prepare(jmt);
 
   const double* phi_psi[6] = {};
   select_function_valuation<fe_list, 0>(phi_psi, 0, 0, values, zvalues);

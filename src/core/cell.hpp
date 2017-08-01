@@ -19,7 +19,7 @@ namespace cell {
     static const std::size_t n_dimension = 0;
     static const std::size_t n_vertex_per_element = 1;
     static const std::size_t n_subdomain_type = 1;
-    static const std::size_t n_subdomain_of_type[1];
+    static constexpr std::size_t n_subdomain_of_type[1] = {1};
     static const bool is_simplicial = true;
 
     typedef empty_cell boundary_cell_type;
@@ -71,6 +71,17 @@ namespace cell {
       return hat_xs;
     }
 
+
+    static void map_points_to_space_coordinates(array<double>& hat_xs,
+						const array<double>& vertices,
+						const array<unsigned int>& elements,
+						std::size_t subdomain_id, const array<double>& xs) {
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(subdomain_id, 0), n);
+      }
+    }
+
     static double element_diameter(const array<double>& vertices,
 				   const array<unsigned int>& elements,
 				   std::size_t k) {
@@ -83,7 +94,7 @@ namespace cell {
     static const std::size_t n_dimension = 1;
     static const std::size_t n_vertex_per_element = 2;
     static const std::size_t n_subdomain_type = 2;
-    static const std::size_t n_subdomain_of_type[2];
+    static constexpr std::size_t n_subdomain_of_type[2] = {2, 1};
     static const bool is_simplicial = true;
 
     typedef point boundary_cell_type;
@@ -204,6 +215,18 @@ namespace cell {
       return hat_xs;
     }
 
+    static void map_points_to_space_coordinates(array<double>& hat_xs,
+						const array<double>& vertices,
+						const array<unsigned int>& elements,
+						std::size_t subdomain_id, const array<double>& xs) {
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(subdomain_id, 0), n) +
+	    xs.at(i, 0) * (vertices.at(elements.at(subdomain_id, 1), n)
+			   - vertices.at(elements.at(subdomain_id, 0), n));
+      }
+    }
+
     static double element_diameter(const array<double>& vertices,
 				   const array<unsigned int>& elements,
 				   std::size_t k) {
@@ -268,7 +291,7 @@ namespace cell {
     static const std::size_t n_dimension = 2;
     static const std::size_t n_vertex_per_element = 3;
     static const std::size_t n_subdomain_type = 3;
-    static const std::size_t n_subdomain_of_type[3];
+    static constexpr std::size_t n_subdomain_of_type[3] = {3, 3, 1};
     static const bool is_simplicial = true;
 
     typedef edge boundary_cell_type;
@@ -390,6 +413,20 @@ namespace cell {
       return hat_xs;
     }
 
+    static void map_points_to_space_coordinates(array<double>& hat_xs,
+						const array<double>& vertices,
+						const array<unsigned int>& elements,
+						std::size_t subdomain_id, const array<double>& xs) {
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n)
+	  hat_xs.at(i, n) = vertices.at(elements.at(subdomain_id, 0), n) 
+	    + xs.at(i, 0) * (vertices.at(elements.at(subdomain_id, 1), n)
+			     - vertices.at(elements.at(subdomain_id, 0), n))
+	    + xs.at(i, 1) * (vertices.at(elements.at(subdomain_id, 2), n)
+			   - vertices.at(elements.at(subdomain_id, 0), n));
+      }
+    }
+
 
     /*
      * Return the integration-wise cell volume
@@ -486,7 +523,7 @@ namespace cell {
     static const std::size_t n_dimension = 3;
     static const std::size_t n_vertex_per_element = 4;
     static const std::size_t n_subdomain_type = 4;
-    static const std::size_t n_subdomain_of_type[4];
+    static constexpr const std::size_t n_subdomain_of_type[4] = {4, 6, 4, 1};
     static const bool is_simplicial = true;
 
     typedef triangle boundary_cell_type;
@@ -652,6 +689,21 @@ namespace cell {
       }
       
       return hat_xs;
+    }
+
+    static void map_points_to_space_coordinates(array<double>& hat_xs,
+						const array<double>& vertices,
+						const array<unsigned int>& elements,
+						std::size_t k,
+						const array<double>& xs) {
+      for (std::size_t i(0); i < xs.get_size(0); ++i) {
+	for (std::size_t n(0); n < xs.get_size(1); ++n) {
+	  hat_xs.at(i, n) = vertices.at(elements.at(k, 0), n);
+	  for (std::size_t m(0); m < n_vertex_per_element - 1; ++m)
+	    hat_xs.at(i, n) += xs.at(i, m) * (vertices.at(elements.at(k, m + 1), n)
+					      - vertices.at(elements.at(k, 0), n));
+	}
+      }
     }
 
     static double get_cell_volume(const array<double>& vertices,

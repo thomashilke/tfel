@@ -144,7 +144,8 @@ void test_fe_value_manager() {
   jmt.at(1, 1) = 1.0;
   
   fe_value_manager<fe_list> fe_values(n_q);
-  fe_values.prepare(jmt, xq);
+  fe_values.set_points(xq);
+  fe_values.prepare(jmt);
 
   std::cout << fe_values.get_values<0ul>().at(0,0,0) << std::endl;
   const array<double>& phi(fe_values.get_values<0>());

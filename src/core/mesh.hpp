@@ -133,6 +133,7 @@ public:
     : vertices{n_vertices, n_components},
       elements{n_elements, cell_type::n_vertex_per_element},
       references{n_elements},
+      cell_volume{n_elements},
       h{n_elements} {
     (this->vertices).set_data(vertices);
     (this->elements).set_data(elements);
@@ -144,6 +145,8 @@ public:
       sort_elements();
 
     compute_element_diameter();
+    compute_cell_volume();
+    compute_jmt();
   }
 
   mesh(const double* vertices,
@@ -159,6 +162,7 @@ public:
       elements{m.get_element_number(),
 	       cell_type::n_vertex_per_element},
       references{m.get_element_number()},
+      cell_volume{m.get_element_number()},
       h{m.get_element_number()} {
     references.fill(0);
 
@@ -192,6 +196,10 @@ public:
 	}
       }
     }
+
+    compute_element_diameter();
+    compute_cell_volume();
+    compute_jmt();
   }
 
   submesh<cell_type, cell_type> query_elements(const std::function<bool(const double*)>& f) const {
@@ -213,11 +221,11 @@ public:
   const array<unsigned int>& get_elements() const { return elements; }
 
   double get_cell_volume(std::size_t k) const {
-    return cell_type::get_cell_volume(vertices, elements, k);
+    return cell_volume.at(k);
   }
 
-  array<double> get_jmt(std::size_t k) const {
-    return cell_type::get_jmt(vertices, elements, k);
+  const array<double>& get_jmt(std::size_t k) const {
+    return jmt[k];
   }
 
   submesh<cell_type, cell_type> get_submesh_with_reference(std::size_t ref_id) {
@@ -334,8 +342,11 @@ private:
   array<double> vertices;
   array<unsigned int> elements;
   array<unsigned int> references;
+  array<double> cell_volume;
   array<double> h;
   double h_max;
+  std::vector<array<double> > jmt;
+  
 
   bool check_elements_admissibility() {
     for (unsigned int k(0); k < elements.get_size(0); ++k)
@@ -359,6 +370,17 @@ private:
 
     h_max = *std::max_element(&h.at(0),
 			      &h.at(0) + get_element_number());
+  }
+
+  void compute_cell_volume() {
+    for (std::size_t k(0); k < get_element_number(); ++k)
+      cell_volume.at(k) = cell_type::get_cell_volume(vertices, elements, k);
+  }
+
+  void compute_jmt() {
+    jmt.reserve(get_element_number());
+    for (std::size_t k(0); k < get_element_number(); ++k)
+      jmt.push_back(cell_type::get_jmt(vertices, elements, k));
   }
 
   submesh<cell_type, cell_type> submesh_from_selection(const std::vector<bool>& selected_elements) const {

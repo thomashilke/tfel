@@ -138,7 +138,8 @@ public:
 									k, xq_hat));
       // prepare the basis function values
       const array<double> jmt(m.get_jmt(k));
-      fe_values.prepare(jmt, xq_hat);
+      fe_values.set_points(xq_hat);
+      fe_values.prepare(jmt);
       
 
       /*

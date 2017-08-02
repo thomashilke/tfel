@@ -46,10 +46,14 @@ public:
     if (T::point_set_number == 1) {
       xq_hat = integration_proxy.get_quadrature_points(0);
       fe_values.set_points(xq_hat);
-      }
+    }
+
+    const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
+    array<double> rhs_el{n_test_dof};
     
     // loop over the elements
     for (std::size_t k(0); k < m.get_element_number(); ++k) {
+      rhs_el.fill(0.0);
 
       // prepare the quadrature points if necessary
       if (T::point_set_number > 1) {
@@ -71,18 +75,19 @@ public:
       const array<double>& psi(fe_values.template get_values<test_fe_index>());
       
       // evaluate the weak form
-      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
       const double volume(m.get_cell_volume(k));
-      for (std::size_t j(0); j < n_test_dof; ++j) {
-	double rhs_el(0.0);
-	for (std::size_t q(0); q < n_q; ++q) {
-	  rhs_el += omega.at(q) *
+      for (std::size_t q(0); q < n_q; ++q) {
+	integration_proxy.f.prepare(k, &xq.at(q, 0ul), &xq_hat.at(q, 0ul));
+	
+	for (std::size_t j(0); j < n_test_dof; ++j) {
+	  rhs_el.at(j) += omega.at(q) *
 	    integration_proxy.f(k, &xq.at(q, 0ul),
 				&xq_hat.at(q, 0ul),
 				&psi.at(q, j, 0ul));
 	}
-	f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_el * volume;
       }
+      for (std::size_t j(0); j < n_test_dof; ++j)
+	f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_el.at(j) * volume;
     }
   }
 

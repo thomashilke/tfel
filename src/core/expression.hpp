@@ -19,6 +19,8 @@ struct form {
     return argument<arg>(ts...)[derivative];
   }
 
+  void prepare(unsigned int k, const double* x, const double* x_hat) const  {}
+
   static constexpr std::size_t rank = rnk;
   static constexpr std::size_t differential_order = derivative == 0 ? 0 : 1;
   static constexpr bool require_space_coordinates = false;
@@ -31,12 +33,16 @@ struct free_function {
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
 		    Ts ... ts) const {
-    return f(x);
+    return cached_value;
   }
 
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat) const {
-    return f(x);
+    return cached_value;
+  }
+
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {
+    cached_value = f(x);
   }
 
   static constexpr std::size_t rank = 0;
@@ -46,6 +52,7 @@ struct free_function {
 private:
   typedef double (*function_type)(const double*);
   function_type f;
+  mutable double cached_value = 0.0;
 };
 
 
@@ -56,12 +63,16 @@ struct std_function {
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
 		    Ts ... ts) const {
-    return f(x);
+    return cached_value;
   }
 
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat) const {
-    return f(x);
+    return cached_value;
+  }
+
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {
+    cached_value = f(x);
   }
 
   static constexpr std::size_t rank = 0;
@@ -70,6 +81,7 @@ struct std_function {
 
 private:
   std::function<double(const double*)> f;
+  mutable double cached_value = 0.0;
 };
 
 template<typename fe>
@@ -81,12 +93,16 @@ public:
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat,
 		    Ts ... ts) const {
-    return v.evaluate(k, x_hat);
+    return cached_value;
   }
 
   double operator()(unsigned int k,
 		    const double* x, const double* x_hat) const {
-    return v.evaluate(k, x_hat);
+    return cached_value;
+  }
+
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {
+    cached_value = v.evaluate(k, x_hat);
   }
 
   static constexpr std::size_t rank = 0;
@@ -95,6 +111,7 @@ public:
 			     
 private:
   const typename finite_element_space<fe>::element& v;
+  mutable double cached_value = 0.0;
 };
 
 struct constant {
@@ -112,6 +129,8 @@ struct constant {
 		    const double* x, const double* x_hat) const {
     return value;
   }
+
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {}
 
   static constexpr std::size_t rank = 0;
   static constexpr std::size_t differential_order = 0;
@@ -142,6 +161,10 @@ struct expression {
     return expr(k, x, x_hat);
   }
 
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {
+    expr.prepare(k, x, x_hat);
+  }
+
   static constexpr std::size_t rank = expr_t::rank;
   static constexpr std::size_t differential_order = expr_t::differential_order;
   static constexpr bool require_space_coordinates = expr_t::require_space_coordinates;
@@ -163,6 +186,11 @@ struct binary_expression {
 		     r(k, x, x_hat));
   }
 
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {
+    l.prepare(k, x, x_hat);
+    r.prepare(k, x, x_hat);
+  }
+  
   static constexpr std::size_t rank = left::rank < right::rank ? right::rank : left::rank;
   static constexpr std::size_t differential_order = left::differential_order < right::differential_order ? right::differential_order : left::differential_order;
 
@@ -184,6 +212,10 @@ struct composition {
 
   double operator()(unsigned int k, const double* x, const double* x_hat) const {
     return f(e(k, x, x_hat));
+  }
+
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {
+    e.prepare(k, x, x_hat);
   }
 
   static constexpr std::size_t rank = inner_expr::rank;

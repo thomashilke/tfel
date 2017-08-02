@@ -114,6 +114,8 @@ double integrate_with_proxy(const T& integration_proxy) {
     const double volume(m.get_cell_volume(k));
     double rhs_el(0.0);
     for (unsigned int q(0); q < n_q; ++q) {
+      integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+      
       rhs_el += omega.at(q)
 	* integration_proxy.f(k, &xq.at(q, 0), &xq_hat.at(q, 0));
     }

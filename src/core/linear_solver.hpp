@@ -113,9 +113,10 @@ namespace linear_solver_impl {
       PetscErrorCode ierr;
       
       ierr = MatDestroy(&A);CHKERRV(ierr);
-      ierr = VecDestroy(&x);CHKERRV(ierr);
       ierr = VecDestroy(&b);CHKERRV(ierr);
       ierr = KSPDestroy(&ksp);CHKERRV(ierr);
+      ierr = PetscViewerAndFormatDestroy(&vaf);
+      ierr = PetscViewerDestroy(&v);
     }
 
     virtual void reset() {
@@ -127,8 +128,8 @@ namespace linear_solver_impl {
     virtual void set_size(std::size_t s) {
       PetscErrorCode ierr;
 
-      ierr = MatSetSizes(A, PETSC_DECIDE, PETSC_DECIDE, s, s);CHKERRV(ierr);
-      ierr = VecSetSizes(b, PETSC_DECIDE, s);CHKERRV(ierr);
+      ierr = MatSetSizes(A, s, s, s, s);CHKERRV(ierr);
+      ierr = VecSetSizes(b, s, s);CHKERRV(ierr);
 
       reset();
     }
@@ -137,7 +138,6 @@ namespace linear_solver_impl {
       PetscErrorCode ierr;
 
       ierr = MatSeqAIJSetPreallocation(A, 0, nz);CHKERRV(ierr);
-      ierr = MatSetUp(A);CHKERRV(ierr);
       ierr = VecSetUp(b);CHKERRV(ierr);
     }
 
@@ -169,8 +169,9 @@ namespace linear_solver_impl {
 	ierr = VecSetValue(b, i, rhs.at(i), INSERT_VALUES);CHKERRCONTINUE(ierr);
       }
       ierr = VecAssemblyBegin(b);CHKERRCONTINUE(ierr);
-      ierr = VecAssemblyBegin(b);CHKERRCONTINUE(ierr);
+      ierr = VecAssemblyEnd(b);CHKERRCONTINUE(ierr);
 
+      Vec x;
       ierr = VecDuplicate(b, &x);CHKERRCONTINUE(ierr);
       ierr = KSPSolve(ksp, b, x);CHKERRCONTINUE(ierr);
 
@@ -179,6 +180,7 @@ namespace linear_solver_impl {
       std::iota(ix.begin(), ix.end(), 0);
 
       ierr = VecGetValues(x, ix.size(), &ix[0], &result.at(0));CHKERRCONTINUE(ierr);
+      ierr = VecDestroy(&x); CHKERRCONTINUE(ierr);
       return result;
     }
     
@@ -188,7 +190,7 @@ namespace linear_solver_impl {
     const bool ilu = true;
     
     Mat A;
-    Vec x, b;
+    Vec b;
 
     KSP ksp;
     PC pc;

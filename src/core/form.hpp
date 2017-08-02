@@ -23,12 +23,12 @@ struct mesh_integration_proxy {
   }
 
   typedef quadrature_t quadrature_type;
-  typedef form_t form_type;
+  typedef typename std::decay<form_t>::type form_type;
   typedef cell_t cell_type;
 
   const static std::size_t point_set_number = 1;
   
-  const form_type f;
+  form_type f;
   const mesh<cell_type>& m;
   array<double> xq;
 
@@ -49,7 +49,7 @@ struct submesh_integration_proxy {
   }
 
   typedef quadrature_t quadrature_type;
-  typedef form_t form_type;
+  typedef typename std::decay<form_t>::type form_type;
   typedef typename submesh<cell_t>::cell_type cell_type;
   typedef typename submesh<cell_t>::parent_cell_type parent_cell_type;
 

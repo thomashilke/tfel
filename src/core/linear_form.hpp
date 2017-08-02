@@ -10,7 +10,7 @@ public:
   }
 
   template<typename T>
-  void operator+=(const T& integration_proxy) {
+  void operator+=(T integration_proxy) {
     
     static_assert(T::form_type::rank == 1, "linear_form expects rank-1 expression.");
     
@@ -19,21 +19,18 @@ public:
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
     using form_type = typename T::form_type;
-    std::cerr << "linear_form: form differential order: " << form_type::differential_order << std::endl;
-
 
     const auto& m(integration_proxy.m);
 
+    
     // prepare the quadrature weights
     const std::size_t n_q(quadrature_type::n_point);
     array<double> omega{n_q};
     omega.set_data(&quadrature_type::w[0]);
 
-
     // storage for the quadrature points
     array<double> xq_hat{n_q, test_fe_type::cell_type::n_dimension};
     array<double> xq{n_q, test_fe_type::cell_type::n_dimension};
-    
 
     // storage for the point-wise basis function evaluation
     using fe_list = type_list<test_fe_type>;
@@ -41,7 +38,6 @@ public:
 
     const std::size_t test_fe_index(get_index_of_element<test_fe_type, unique_fe_list>::value);
     fe_value_manager<unique_fe_list> fe_values(n_q);
-    
 
     if (T::point_set_number == 1) {
       xq_hat = integration_proxy.get_quadrature_points(0);

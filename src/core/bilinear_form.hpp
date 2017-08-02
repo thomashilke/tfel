@@ -23,7 +23,7 @@ public:
   }
 
   template<typename T>
-  void operator+=(const T& integration_proxy) {
+  void operator+=(T integration_proxy) {
     static_assert(T::form_type::rank == 2, "linear_form expects rank-2 expression.");
       
     typedef typename test_fes_type::fe_type test_fe_type;
@@ -34,6 +34,7 @@ public:
 
     const auto& m(integration_proxy.m);
 
+    
     // prepare the quadrature weights
     const std::size_t n_q(quadrature_type::n_point);
     array<double> omega{n_q};
@@ -54,12 +55,12 @@ public:
     if (T::point_set_number == 1) {
       xq_hat = integration_proxy.get_quadrature_points(0);
       fe_values.set_points(xq_hat);
+      xq.fill(0.0);
     }
 
     const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
     const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
     array<double> a_el{n_test_dof, n_trial_dof};
-    
 
     // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
@@ -161,6 +162,9 @@ public:
 	petsc->add_value(v.first.first, v.first.second, v.second);
     }
     petsc->assemble();
+    //petsc->show();
+    
+    
     dirty = false;
   }
   
@@ -186,8 +190,7 @@ public:
     
     if (dirty)
       prepare_solver();
-    //petsc_gmres_ilu->show();
-
+    
     if (constraint_number == 0) {
       return typename trial_fes_type::element(trial_fes, petsc->solve(f));
     } else {

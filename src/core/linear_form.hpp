@@ -1,17 +1,73 @@
 #ifndef _LINEAR_FORM_H_
 #define _LINEAR_FORM_H_
 
+#include <spikes/thread_pool.hpp>
+
 template<typename test_fes_type>
 class linear_form {
 public:
-  linear_form(const test_fes_type& te_fes)
-    : test_fes(te_fes), f{te_fes.get_dof_number()} {
+  linear_form(const test_fes_type& te_fes,
+	      std::size_t n_thread = std::thread::hardware_concurrency())
+    : tp(n_thread),
+      test_fes(te_fes),
+      f{te_fes.get_dof_number()} {
+    
     f.fill(0.0);
   }
 
   template<typename T>
   void operator+=(T integration_proxy) {
+    typedef typename test_fes_type::fe_type test_fe_type;
+    const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
     
+    std::size_t n_element(integration_proxy.m.get_element_number());
+    std::size_t n_thread(tp.size());
+
+    std::vector<array<double> > rhs_els(n_thread, array<double>{});
+    for (std::size_t n(0); n < n_thread; ++n) {
+      std::size_t
+	k_begin(n_element * n / n_thread ),
+	k_end(std::min(n_element * (n + 1) / n_thread, n_element));
+      
+      rhs_els[n] = array<double>{k_end - k_begin, n_test_dof};
+    }
+    
+    std::vector<std::future<void> > futures;
+    for (std::size_t n(0); n < n_thread; ++n) {
+      std::size_t
+	k_begin(n_element * n / n_thread ),
+	k_end(std::min(n_element * (n + 1) / n_thread, n_element));
+      futures.push_back(
+        tp.enqueue(
+	  [this, &rhs_els, integration_proxy, k_begin, k_end, n]
+	  () {
+	    this->assemble_element_range<T>(rhs_els[n],	k_begin, k_end, integration_proxy);
+	  }
+        )
+      );
+      
+      //assemble_element_range<T>(rhs_els[n], k_begin, k_end, integration_proxy);
+    }
+
+    for (auto& f: futures) f.wait();
+
+    for (std::size_t n(0); n < n_thread; ++n) {
+      std::size_t
+	k_begin(n_element * n / n_thread ),
+	k_end(std::min(n_element * (n + 1) / n_thread, n_element));
+
+      for (std::size_t k(k_begin); k < k_end; ++k)
+	for (std::size_t j(0); j < n_test_dof; ++j)
+	  f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_els[n].at(k - k_begin, j);
+    }
+  }
+
+  template<typename T>
+  void assemble_element_range(array<double>& rhs_el,
+			      std::size_t k_begin, std::size_t k_end,
+			      T integration_proxy) {
+    rhs_el.fill(0.0);
+	  
     static_assert(T::form_type::rank == 1, "linear_form expects rank-1 expression.");
     
     typedef typename test_fes_type::fe_type test_fe_type;
@@ -45,11 +101,9 @@ public:
     }
 
     const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
-    array<double> rhs_el{n_test_dof};
     
     // loop over the elements
-    for (std::size_t k(0); k < m.get_element_number(); ++k) {
-      rhs_el.fill(0.0);
+    for (std::size_t k(k_begin); k < k_end; ++k) {
 
       // prepare the quadrature points if necessary
       if (T::point_set_number > 1) {
@@ -76,17 +130,16 @@ public:
 	integration_proxy.f.prepare(k, &xq.at(q, 0ul), &xq_hat.at(q, 0ul));
 	
 	for (std::size_t j(0); j < n_test_dof; ++j) {
-	  rhs_el.at(j) += omega.at(q) *
+	  rhs_el.at(k - k_begin, j) += omega.at(q) * volume *
 	    integration_proxy.f(k, &xq.at(q, 0ul),
 				&xq_hat.at(q, 0ul),
 				&psi.at(q, j, 0ul));
 	}
       }
-      for (std::size_t j(0); j < n_test_dof; ++j)
-	f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_el.at(j) * volume;
+
     }
   }
-
+  
   void set_constraint_value(double v) { constraint_values.push_back(v); }
   
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
@@ -109,6 +162,8 @@ public:
     stream << "];" << std::endl;
   }
 private:
+  thread_pool tp;
+  
   const test_fes_type& test_fes;
   
   array<double> f;

@@ -14,7 +14,10 @@
 #include "vector_operation.hpp"
 
 
-template<typename cell>
+template<typename value_t, typename mesh_t>
+class mesh_data;
+
+template<typename cell_t>
 class mesh;
 
 
@@ -38,12 +41,15 @@ public:
       elements{0, 0},
       parent_element_id{0},
       parent_subdomain_id{0} {}
+
   std::size_t get_embedding_space_dimension() const { return m.get_embedding_space_dimension(); }
   double get_cell_volume(std::size_t k) const { return cell_type::get_cell_volume(m.get_vertices(), elements, k); }
   std::size_t get_element_number() const { return elements.get_size(0); }
+  std::size_t get_vertex_number() const { return m.get_vertices().get_size(0); }
   array<double> get_jmt(std::size_t k) const { return m.get_jmt(parent_element_id.at(k)); }
   std::size_t get_subdomain_id(std::size_t k) const { return parent_subdomain_id.at(k); }
   std::size_t get_parent_element_id(std::size_t k) const { return parent_element_id.at(k); }
+  const mesh<parent_cell_type>& get_mesh() const {return m;}
 
   const array<double>& get_vertices() const { return m.get_vertices(); }
   const array<unsigned int>& get_elements() const { return elements; }
@@ -84,9 +90,14 @@ public:
       for (std::size_t i(0); i < elements.get_size(1); ++i) {
 	stream << elements.at(k, i) << " ";
       }
-      stream << " is #" << parent_subdomain_id.at(k) << "subdomain of parent element " << parent_element_id.at(k);
+      stream << " is #" << parent_subdomain_id.at(k) << " subdomain of parent element " << parent_element_id.at(k);
       stream << std::endl;
     }
+  }
+
+  submesh<parent_cell_type, cell_type> submesh_from_selection(const mesh_data<bool, submesh<parent_cell_type, cell_type> >& cell_selection) const {
+    std::vector<bool> selection(&cell_selection.value(0, 0), &cell_selection.value(0, 0) + get_element_number());
+    return submesh_from_selection(selection);
   }
   
 private:
@@ -157,7 +168,8 @@ public:
     (this->references).set_data(references);
   }
 
-  mesh(const submesh<cell_type, cell_type>& m)
+  template<typename parent_cell_type>
+  mesh(const submesh<parent_cell_type, cell_type>& m)
     : vertices{0},
       elements{m.get_element_number(),
 	       cell_type::n_vertex_per_element},
@@ -173,10 +185,10 @@ public:
     }
 
     {
-      vertices = array<double>{selected_nodes.size(), cell_type::n_dimension};
+      vertices = array<double>{selected_nodes.size(), parent_cell_type::n_dimension};
       std::size_t new_node_id(0);
       for (const auto node_id: selected_nodes) {
-	for (std::size_t k(0); k < cell_type::n_dimension; ++k)
+	for (std::size_t k(0); k < parent_cell_type::n_dimension; ++k)
 	  vertices.at(new_node_id, k) = m.get_vertices().at(node_id, k);
 	new_node_id += 1;
       }
@@ -367,9 +379,11 @@ private:
     for (std::size_t k(0); k < get_element_number(); ++k)
       h.at(k) = cell_type::element_diameter(vertices, elements, k);
 
-
-    h_max = *std::max_element(&h.at(0),
-			      &h.at(0) + get_element_number());
+    if (get_element_number())
+      h_max = *std::max_element(&h.at(0),
+				&h.at(0) + get_element_number());
+    else
+      h_max = 0.0;
   }
 
   void compute_cell_volume() {
@@ -406,6 +420,7 @@ private:
     return submesh<cell_type, cell_type>(*this, el, el_id, sd_id);
   }
 };
+
 
 mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n);
 mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,

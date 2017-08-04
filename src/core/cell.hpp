@@ -3,6 +3,7 @@
 
 #include <set>
 #include <cmath>
+#include <vector>
 
 #include <spikes/array.hpp>
 
@@ -86,6 +87,16 @@ namespace cell {
 				   const array<unsigned int>& elements,
 				   std::size_t k) {
       return 0.0;
+    }
+
+    static array<double> barycenter(const array<double>& vertices,
+				    const array<unsigned int>& elements,
+				    std::size_t k) {
+      array<double> bc{vertices.get_size(1)};
+      std::copy(&vertices.at(elements.at(k, 0), 0),
+		&vertices.at(elements.at(k, 0), 0) + vertices.get_size(1),
+		&bc.at(0));
+      return bc;
     }
   };
 
@@ -237,12 +248,12 @@ namespace cell {
     static array<double> normal(const array<double>& vertices,
 				const array<unsigned int>& elements,
 				std::size_t k) {
-      if (vertices.get_size(1) != 2)
+      if (vertices.get_size(1) != 2 or elements.get_size(1) != 2)
 	throw std::string("cell::edge: normal is only defined for edges embedded in 2d space");
 
       array<double> n{2};
-      n.at(0) =    (vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1));
-      n.at(1) =  - (vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0));
+      n.at(0) =  - (vertices.at(elements.at(k, 1), 1) - vertices.at(elements.at(k, 0), 1));
+      n.at(1) =    (vertices.at(elements.at(k, 1), 0) - vertices.at(elements.at(k, 0), 0));
 
       return n;
     }
@@ -283,6 +294,21 @@ namespace cell {
 	  bc_coord.at(i) += bc_map.at(i, j) * x_coord.at(j);
 
       return bc_coord;
+    }
+
+
+    static array<double> barycenter(const array<double>& vertices,
+				    const array<unsigned int>& elements,
+				    std::size_t k) {
+      array<double> bc{vertices.get_size(1)};
+      const double weight(1.0 / elements.get_size(1));
+      for (std::size_t m(0); m < vertices.get_size(1); ++m) {
+	bc.at(m) = 0.0;
+	for (std::size_t n(0); n < elements.get_size(1); ++n)
+	  bc.at(m) += vertices.at(elements.at(k, n), m) * weight;
+      }
+
+      return bc;
     }
   };
 
@@ -516,6 +542,42 @@ namespace cell {
       return bc_coord;
     }
 
+    static array<double> barycenter(const array<double>& vertices,
+				    const array<unsigned int>& elements,
+				    std::size_t k) {
+      array<double> bc{vertices.get_size(1)};
+      const double weight(1.0 / elements.get_size(1));
+      for (std::size_t m(0); m < vertices.get_size(1); ++m) {
+	bc.at(m) = 0.0;
+	for (std::size_t n(0); n < elements.get_size(1); ++n)
+	  bc.at(m) += vertices.at(elements.at(k, n), m) * weight;
+      }
+
+      return bc;
+    }
+
+    static array<double> subdomain_normal(const array<double>& vertices,
+					  const array<unsigned int>& elements,
+					  std::size_t k,
+					  std::size_t subdomain_id) {
+      auto edge(get_edge(elements, k, subdomain_id));
+      std::vector<unsigned int> vertices_id(edge.begin(), edge.end());
+      std::size_t last_vertex(2 - subdomain_id);
+
+      array<double> n{2};
+      n.at(0) =  - (vertices.at(vertices_id[1], 1) - vertices.at(vertices_id[0], 1));
+      n.at(1) =    (vertices.at(vertices_id[1], 0) - vertices.at(vertices_id[0], 0));
+
+      array<double> m{2};
+      m.at(0) =    (vertices.at(elements.at(k, last_vertex), 0) - vertices.at(vertices_id[0], 0));
+      m.at(1) =    (vertices.at(elements.at(k, last_vertex), 1) - vertices.at(vertices_id[0], 1));
+
+      if (dotp(n, m) > 0.0)
+	for (std::size_t k(0); k < 2; ++k)
+	  n.at(k) *= -1.0;
+
+      return n;
+    }
   };
 
 
@@ -800,6 +862,20 @@ namespace cell {
 	  bc_coord.at(i) += bc_map.at(i, j) * x_coord.at(j);
 
       return bc_coord;
+    }
+    
+    static array<double> barycenter(const array<double>& vertices,
+				    const array<unsigned int>& elements,
+				    std::size_t k) {
+      array<double> bc{vertices.get_size(1)};
+      const double weight(1.0 / elements.get_size(1));
+      for (std::size_t m(0); m < vertices.get_size(1); ++m) {
+	bc.at(m) = 0.0;
+	for (std::size_t n(0); n < elements.get_size(1); ++n)
+	  bc.at(m) += vertices.at(elements.at(k, n), m) * weight;
+      }
+
+      return bc;
     }
   };
 

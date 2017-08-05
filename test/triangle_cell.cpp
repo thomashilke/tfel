@@ -24,7 +24,7 @@ void projection(std::size_t n) {
     std::cout << std::setw(40) << "mesh: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     
-    typedef finite_element::triangle_lagrange_p1 fe_type;
+    typedef cell::triangle::fe::lagrange_p1 fe_type;
     finite_element_space<fe_type> fes(m);
     std::cout << std::setw(40) << "finite element space: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
@@ -45,7 +45,7 @@ void projection(std::size_t n) {
 	}
     }
 
-    exporter::ensight6("l2projection", func_h, "func_h");
+    exporter::ensight6("l2projection", to_mesh_vertex_data<fe_type>(func_h), "func_h");
     std::cout << std::setw(40) << "ensight export: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     

@@ -306,4 +306,34 @@ private:
 };
 
 
+template<std::size_t n, typename cell_type>
+typename composite_finite_element_space<
+  make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p1>
+>::element
+to_composite_p1_finite_element_function(const mesh_data<double, mesh<cell_type> >& data) {
+  throw std::string("not implemented yet");
+}
+
+template<std::size_t n, typename cell_type>
+typename composite_finite_element_space<typename cell_type::fe::lagrange_p0>::element
+to_composite_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data) {
+  throw std::string("not implemented yet");
+}
+
+template<typename fe_type>
+mesh_data<double, mesh<typename fe_type::cell_type> >
+to_mesh_cell_data(const typename composite_finite_element_space<fe_type>::element& v) {
+  throw std::string("not implemented yet");
+}
+
+template<typename fe_type>
+mesh_data<double, mesh<typename fe_type::cell_type> >
+to_mesh_vertex_data(const typename composite_finite_element_space<fe_type>::element& v) {
+  static_assert(is_continuous<fe_type>::value,
+		"conversion to vertex data is only defined "
+		"for continuous finite element spaces.");
+  throw std::string("not implemented yet");
+}
+
+
 #endif /* _COMPOSITE_FES_H_ */

@@ -209,6 +209,8 @@ DECL_NUMERIC_BINARY_LOGICAL_OP(||, logical_or)
 #undef DECL_NUMERIC_BINARY_LOGICAL_OP
 
 
+enum class mesh_data_kind {cell, vertex};
+
 
 template<typename value_t, typename mesh_t>
 class mesh_data {
@@ -217,13 +219,20 @@ public:
   using cell_type = typename mesh_type::cell_type;
   using value_type = value_t;
 
-  enum class data_type {cell, vertex};
   
-  mesh_data(const mesh_type& m, data_type t, std::size_t n_component = 1ul)
+  mesh_data(const mesh_type& m, mesh_data_kind t, std::size_t n_component = 1ul)
     : m(m), values{value_number(t), n_component}, type(t) {}
 
+  mesh_data(const mesh_type& m, mesh_data_kind t, const array<double>& values)
+    : m(m), type(t), values(values) {}
+
+  mesh_data(const mesh_type& m, mesh_data_kind t, array<double>&& values)
+    : m(m), type(t), values(std::move(values)) {}
+
+  
+  
   template<typename ast_type>
-  mesh_data(const mesh_type& m, data_type t, const mesh_data_expression<ast_type>& expr)
+  mesh_data(const mesh_type& m, mesh_data_kind t, const mesh_data_expression<ast_type>& expr)
     : m(m), values{value_number(t), expr.component_number()}, type(t) {
       
       for (std::size_t k(0); k < values.get_size(0); ++k)
@@ -254,16 +263,22 @@ public:
   }
 
   const array<value_type>& get_values() const { return values; }
+
+  std::size_t get_component_number() const { return values.get_size(1); }
+
+  mesh_data_kind get_kind() const { return type; }
+
+  const mesh_type& get_mesh() const { return m; }
   
 private:
   const mesh_type& m;
   array<value_type> values;
-  data_type type;
+  mesh_data_kind type;
 
-  std::size_t value_number(data_type type) const {
+  std::size_t value_number(mesh_data_kind type) const {
     switch (type) {
-    case data_type::cell: return m.get_element_number();
-    case data_type::vertex: return m.get_vertex_number();
+    case mesh_data_kind::cell: return m.get_element_number();
+    case mesh_data_kind::vertex: return m.get_vertex_number();
     }
   }
 };
@@ -271,11 +286,8 @@ private:
 template<typename cell_type>
 mesh_data<double, submesh<cell_type, typename cell_type::boundary_cell_type> >
 compute_boundary_normals(const submesh<cell_type>& dm) {
-  using mesh_data_type = mesh_data<double, submesh<cell_type, typename cell_type::boundary_cell_type> >;
-  using data_type = typename mesh_data_type::data_type;
-
   mesh_data<double, submesh<cell_type> >
-    result(dm, data_type::cell,
+    result(dm, mesh_data_kind::cell,
 	   dm.get_embedding_space_dimension());
   
   for (std::size_t k(0); k < dm.get_element_number(); ++k) {
@@ -292,17 +304,12 @@ compute_boundary_normals(const submesh<cell_type>& dm) {
 }
 
 
-template<typename A, typename B> struct return_2nd: is_type<B> {};
-template<typename A, typename B> using return_2nd_t = typename return_2nd<A, B>::type;
-
 template<typename mesh_type, typename ... Fs>
 mesh_data<double, mesh_type>
 evaluate_on_cells(const mesh_type& m, Fs... fs) {
-  using mesh_data_type = mesh_data<double, mesh_type>;
-  using data_type = typename mesh_data_type::data_type;
   using cell_type = typename mesh_type::cell_type;
 
-  mesh_data<double, mesh_type> result(m, data_type::cell,
+  mesh_data<double, mesh_type> result(m, mesh_data_kind::cell,
 				      sizeof...(Fs));
 
   for (std::size_t k(0); k < m.get_element_number(); ++k) {
@@ -319,10 +326,7 @@ evaluate_on_cells(const mesh_type& m, Fs... fs) {
 template<typename mesh_type, typename ... Fs>
 mesh_data<double, mesh_type>
 evaluate_on_vertices(const mesh_type& m, Fs... fs) {
-  using mesh_data_type = mesh_data<double, mesh_type>;
-  using data_type = typename mesh_data_type::data_type;
-
-  mesh_data<double, mesh_type> result(m, data_type::vertex,
+  mesh_data<double, mesh_type> result(m, mesh_data_kind::vertex,
 				      sizeof...(Fs));
 
   for (std::size_t k(0); k < m.get_vertex_number(); ++k) {

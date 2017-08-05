@@ -22,4 +22,19 @@ struct composite_finite_element {
   static const std::size_t n_component = list_size<fe_list>::value;
 };
 
+template<std::size_t n, typename U, typename ... Ts>
+struct mk_composite_fe_impl: is_type<typename mk_composite_fe_impl<n - 1, U, Ts..., U>::type > {};
+
+template<typename U, typename ... Ts>
+struct mk_composite_fe_impl<0, U, Ts...>: is_type<composite_finite_element<Ts...> > {};
+
+template<std::size_t n, typename fe_type>
+struct make_composite_finite_element
+  : is_type<
+      typename mk_composite_fe_impl<
+	         n, fe_type>::type > {};
+
+template<std::size_t n, typename fe_type>
+using make_composite_finite_element_t = typename make_composite_finite_element<n, fe_type>::type;
+
 #endif /* _COMPOSITE_FE_H_ */

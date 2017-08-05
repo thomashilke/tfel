@@ -81,8 +81,8 @@ double f_1(const double* x) { return -1.0; }
 
 void test_cfe() {
   using cell_type = cell::triangle;
-  using fe_0_type = finite_element::triangle_lagrange_p1;
-  using fe_1_type = finite_element::triangle_lagrange_p1;
+  using fe_0_type = cell::triangle::fe::lagrange_p1;
+  using fe_1_type = cell::triangle::fe::lagrange_p1;
   using fe_type = composite_finite_element<fe_0_type, fe_1_type>;
   using fes_type = composite_finite_element_space<fe_type>;
   
@@ -117,14 +117,14 @@ void test_cfe() {
 
   const fes_type::element x(a.solve(f));
 
-  exporter::ensight6("laplacien_0", x.get_component<0>(), "solution");
-  exporter::ensight6("laplacien_1", x.get_component<1>(), "solution");
+  exporter::ensight6("laplacien_0", to_mesh_vertex_data<fe_0_type>(x.get_component<0>()), "solution");
+  exporter::ensight6("laplacien_1", to_mesh_vertex_data<fe_1_type>(x.get_component<1>()), "solution");
 }
 
 
 void test_fe_value_manager() {
-  using fe_list = type_list<finite_element::triangle_lagrange_p0,
-			    finite_element::triangle_lagrange_p1>;
+  using fe_list = type_list<cell::triangle::fe::lagrange_p0,
+			    cell::triangle::fe::lagrange_p1>;
 
   const std::size_t n_q(3);
   array<double> xq{3, 2};

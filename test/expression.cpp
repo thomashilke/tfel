@@ -53,7 +53,7 @@ void test_expression() {
 void test_fe_value_manager() {
   std::size_t nq(1);
   
-  using fe = finite_element::triangle_lagrange_p1;
+  using fe = cell::triangle::fe::lagrange_p1;
   using fe_list = type_list<fe, fe, fe>;
   
   fe_value_manager<fe_list> values(nq), zvalues(nq);
@@ -105,9 +105,9 @@ void test_fe_value_manager() {
 void test_valuation_selection() {
   std::size_t nq(1);
   
-  using fe_0 = finite_element::triangle_lagrange_p0;
-  using fe_1 = finite_element::triangle_lagrange_p1;
-  using fe_2 = finite_element::triangle_lagrange_p1_bubble;
+  using fe_0 = cell::triangle::fe::lagrange_p0;
+  using fe_1 = cell::triangle::fe::lagrange_p1;
+  using fe_2 = cell::triangle::fe::lagrange_p1_bubble;
   using fe_list = type_list<fe_0, fe_1, fe_2>;
   
   fe_value_manager<fe_list> values(nq), zvalues(nq);

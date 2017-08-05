@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
   using cell_type = cell::triangle;
   using quad_type = quad::triangle::qf5pT;
-  using fe_type = finite_element::triangle_lagrange_p1;
+  using fe_type = cell::triangle::fe::lagrange_p1;
   using fes_type = finite_element_space<fe_type>;
 
   mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   }
 
   exporter::ensight6("poisson_constraint"
-		     , a.solve(f), "solution");
+		     , to_mesh_vertex_data<fe_type>(a.solve(f)), "solution");
   
   return 0;
 }

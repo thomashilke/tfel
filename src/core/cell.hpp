@@ -310,6 +310,12 @@ namespace cell {
 
       return bc;
     }
+
+    struct fe {
+      struct lagrange_p0;
+      struct lagrange_p1;
+      struct lagrange_p1_bubble;
+    };
   };
 
 
@@ -578,6 +584,12 @@ namespace cell {
 
       return n;
     }
+
+    struct fe {
+      struct lagrange_p0;
+      struct lagrange_p1;
+      struct lagrange_p1_bubble;
+    };
   };
 
 
@@ -877,8 +889,15 @@ namespace cell {
 
       return bc;
     }
+
+    struct fe {
+      struct lagrange_p0;
+      struct lagrange_p1;
+    };
   };
 
 }
+
+#include "fe.hpp"
 
 #endif /* _CELL_H_ */

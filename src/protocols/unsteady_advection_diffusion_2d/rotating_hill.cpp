@@ -1,5 +1,5 @@
 #include "../../formulations/unsteady_advection_diffusion_2d.hpp"
-
+#include "../../core/mesh_data.hpp"
 
 double bell(double r_sqr) {
   const double epsilon(1.0e-5);
@@ -39,7 +39,7 @@ struct kim_moin {
 
 
 double u_bc(const double* x) {
-  return 1.0;
+  return 0.0;
 }
 
 double exact_solution(double time, const double* x) {
@@ -72,24 +72,20 @@ double error(std::size_t M, std::size_t N) {
     
   
   using cell_type = cell::triangle;
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, N, N));
+  using mesh_type = mesh<cell_type>;
+  mesh_type m(gen_square_mesh(1.0, 1.0, N, N));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
-  {
-    submesh<cell_type> inflow_boundary(dm.inflow_boundary([&](const double* x) -> array<double> {
-      array<double> b{2};
-      b.at(0) = vortex::b_0(x);
-      b.at(1) = vortex::b_1(x);
-      return b;
-    }));
-  }
+  mesh_data<double, submesh<cell::triangle> > n(compute_boundary_normals(dm));
+  mesh_data<double, submesh<cell::triangle> > b_bc(evaluate_on_cells(dm, vortex::b_0, vortex::b_1));
+  mesh_data<bool, submesh<cell::triangle> > inflow_boundary_cells(
+    dm, mesh_data_kind::cell,
+    (n[0] * b_bc[0] + n[1] * b_bc[1]) < -1.0e-6 );
 
-  submesh<cell_type> inflow_boundary(dm.query_elements([](const double* x) {
-	return x[1] < 0.0001;
-      }));
+  submesh<cell::triangle> inflow(dm.submesh_from_selection(inflow_boundary_cells));
   
-  using fe_type = finite_element::triangle_lagrange_p1;
-  unsteady_advection_diffusion<fe_type> tad(m, delta_t, diffusivity);
+  using fe_type = cell::triangle::fe::lagrange_p1;
+  unsteady_advection_diffusion<fe_type> tad(m, inflow, delta_t, diffusivity);
   tad.set_boundary_value(u_bc);
   tad.set_advection_velocity(vortex::b_0, vortex::b_1);
   tad.set_initial_condition([](const double* x) {
@@ -97,23 +93,27 @@ double error(std::size_t M, std::size_t N) {
     });
 
 
-  /*exporter::ensight6_transient<fe_type>
+  exporter::ensight6_geometry("inflow", mesh<cell::edge>(inflow));
+  
+  exporter::ensight6_transient<mesh_type>
     ens("unsteady_advection_diffusion_rotating_hill",
-    m, "solution");*/
+    m, "solution");
 
   double time(0.0);
-  //ens.export_time_step(time, tad.get_solution());
+  ens.export_time_step(time, to_mesh_vertex_data<fe_type>(tad.get_solution()));
   for (std::size_t k(0); k < M; ++k) {
     std::cerr << "step " << k << std::endl;
     time += delta_t;
     tad.step();
-    //ens.export_time_step(time, tad.get_solution());
+    ens.export_time_step(time, to_mesh_vertex_data<fe_type>(tad.get_solution()));
   }
 
 
   finite_element_space<fe_type> fes(m);
   exporter::ensight6("exact_sol"
-		     , projector::lagrange<fe_type>([=](const double* x) -> double { return exact_solution(time, x) ;}, fes)
+		     , evaluate_on_vertices<mesh_type>(m, [=](const double* x) -> double { return exact_solution(time, x) ;})
+
+		     // projector::lagrange<fe_type>(, fes)
 		     , "solution");
   
   return std::sqrt(integrate<quad::triangle::qf5pT>(compose(sqr,

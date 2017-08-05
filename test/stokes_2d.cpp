@@ -21,14 +21,14 @@ int main(int argc, char *argv[]) {
 
   const auto solution(s2d.get_solution());
   exporter::ensight6("stokes_p",
-		     solution.get_component<0>(), "u0",
-		     solution.get_component<1>(), "u1",
-		     solution.get_component<2>(), "p");
+		     to_mesh_vertex_data<stokes_2d<>::velocity_fe_type>(solution.get_component<0>()), "u0",
+		     to_mesh_vertex_data<stokes_2d<>::velocity_fe_type>(solution.get_component<1>()), "u1",
+		     to_mesh_vertex_data<stokes_2d<>::pressure_fe_type>(solution.get_component<2>()), "p");
 
   {
-    finite_element_space<finite_element::triangle_lagrange_p0> fes(m);
+    finite_element_space<cell::triangle::fe::lagrange_p0> fes(m);
     const auto h(build_element_diameter_function(m, fes));
-    exporter::ensight6("diam", h, "h");
+    exporter::ensight6("diam", to_mesh_cell_data<cell::triangle::fe::lagrange_p0>(h), "h");
   }
   
   return 0;

@@ -43,11 +43,11 @@ public:
   void set_advection_velocity(const std::function<double(const double*)>& b) {
     this->b = b;
 
-    const auto bk = projector::l2<finite_element::edge_lagrange_p0,
+    const auto bk = projector::l2<cell::edge::fe::lagrange_p0,
 				  volume_quadrature_type>(b, p0_fes);
 
-    using p0_fe = finite_element::edge_lagrange_p0;
-    bk_norm = projector::l2<finite_element::edge_lagrange_p0,
+    using p0_fe = cell::edge::fe::lagrange_p0;
+    bk_norm = projector::l2<cell::edge::fe::lagrange_p0,
 			    volume_quadrature_type>(compose(std::abs, make_expr<p0_fe>(bk)), p0_fes);
     
     assemble_bilinear_form();
@@ -71,14 +71,14 @@ private:
   const submesh<cell_type> dm;
 
   fes_type fes;
-  finite_element_space<finite_element::edge_lagrange_p0> p0_fes;
+  finite_element_space<cell::edge::fe::lagrange_p0> p0_fes;
 
   bilinear_form<fes_type, fes_type> a;
   linear_form<fes_type> f;
 
   element_type solution;
-  finite_element_space<finite_element::edge_lagrange_p0>::element h;
-  finite_element_space<finite_element::edge_lagrange_p0>::element bk_norm;
+  finite_element_space<cell::edge::fe::lagrange_p0>::element h;
+  finite_element_space<cell::edge::fe::lagrange_p0>::element bk_norm;
 
   std::function<double(const double*)> b, src;
 
@@ -107,14 +107,14 @@ private:
     }
 
     if (supg_stabilisation) {
-      if (not std::is_same<fe_type, finite_element::edge_lagrange_p1>::value)
+      if (not std::is_same<fe_type, cell::edge::fe::lagrange_p1>::value)
 	throw std::string("steady advection diffusion 1d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
       const double delta(0.5);
       a += integrate<volume_quadrature_type>(delta *
-					     compose(inv, make_expr<finite_element::edge_lagrange_p0>(bk_norm)) *
-					     make_expr<finite_element::edge_lagrange_p0>(h) *
+					     compose(inv, make_expr<cell::edge::fe::lagrange_p0>(bk_norm)) *
+					     make_expr<cell::edge::fe::lagrange_p0>(h) *
 					     (make_expr(b) * d<1>(u)) *
 					     (make_expr(b) * d<1>(v))
 					     , m);
@@ -132,12 +132,12 @@ private:
     if (supg_stabilisation) {
       const double delta(1.0);
       
-      finite_element_space<finite_element::edge_lagrange_p0> p0_fes(m);
+      finite_element_space<cell::edge::fe::lagrange_p0> p0_fes(m);
       const auto h(build_element_diameter_function(m, p0_fes));
 
       f += integrate<volume_quadrature_type>(delta *
-					     compose(inv, make_expr<finite_element::edge_lagrange_p0>(bk_norm)) *
-					     make_expr<finite_element::edge_lagrange_p0>(h) *
+					     compose(inv, make_expr<cell::edge::fe::lagrange_p0>(bk_norm)) *
+					     make_expr<cell::edge::fe::lagrange_p0>(h) *
 					     make_expr(src) *
 					     (make_expr(b) * d<1>(v))
 					     , m);

@@ -28,7 +28,7 @@ double heat_source(const double* x) {
 
 int main(int argc, char *argv[]) {
 
-  typedef finite_element::triangle_lagrange_p1 fe_type;
+  typedef cell::triangle::fe::lagrange_p1 fe_type;
   typedef mesh<fe_type::cell_type> mesh_type;
   typedef submesh<fe_type::cell_type> submesh_type;
 
@@ -57,8 +57,8 @@ int main(int argc, char *argv[]) {
   unsteady_diffusion_2d<fe_type> h(m, dirichlet_boundary, delta_t, D);
   h.set_initial_condition(initial_condition);
 
-  exporter::ensight6_transient<fe_type> ens("heat", m, "solution");
-  ens.export_time_step(time, h.get_solution());
+  exporter::ensight6_transient<mesh_type> ens("heat", m, "solution");
+  ens.export_time_step(time, to_mesh_vertex_data<fe_type>(h.get_solution()));
 
   for (std::size_t i(0); i < M; ++i) {
     std::cout << "step" << i << std::endl;
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     h.set_source(source_function);
     h.step();
 
-    ens.export_time_step(time, h.get_solution());
+    ens.export_time_step(time, to_mesh_vertex_data<fe_type>(h.get_solution()));
   }
 
   return 0;

@@ -185,7 +185,7 @@ namespace linear_solver_impl {
     }
     
   private:
-    const bool verbose = true;
+    const bool verbose = false;
     const bool lu = false;
     const bool ilu = true;
     

@@ -20,20 +20,22 @@ int main(int argc, char *argv[]) {
   timer t;
   try {
     const std::size_t n(6);
+
+    using cell_type = cell::edge;
     
-    mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
-    submesh<cell::edge> dm(m.get_boundary_submesh());
-    submesh<cell::edge> left_boundary(dm.query_elements([](const double* x) -> bool {
+    mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, n));
+    submesh<cell_type> dm(m.get_boundary_submesh());
+    submesh<cell_type> left_boundary(dm.query_elements([](const double* x) -> bool {
 	  return *x < 1.0 / 2.0;
 	}));
-    submesh<cell::edge> right_boundary(dm.query_elements([](const double* x) -> bool {
+    submesh<cell_type> right_boundary(dm.query_elements([](const double* x) -> bool {
 	  return *x > 1.0 / 2.0;
 	}));
     std::cout << std::setw(40) << "mesh: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
   
  
-    typedef finite_element::edge_lagrange_p1 fe;
+    using fe = cell::edge::fe::lagrange_p1;
     finite_element_space<fe> fes(m, left_boundary);
     fes.show(std::cout);
     

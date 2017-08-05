@@ -7,7 +7,7 @@ double func(const double* x) {
 
 int main(int argc, char *argv[]) {
   typedef cell::edge cell_type;
-  typedef finite_element::edge_lagrange_p1 fe_type;
+  typedef cell::edge::fe::lagrange_p1 fe_type;
   typedef finite_element_space<fe_type> fes_type;
 
   const bool export_to_stdout(false);

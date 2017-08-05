@@ -51,6 +51,7 @@ int main(int, char**) {
   timer t;
   try {
     const std::size_t n(10);
+    using mesh_type = mesh<cell::edge>;
     
     mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
@@ -64,7 +65,7 @@ int main(int, char**) {
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
  
     //typedef finite_element::edge_lagrange_p1_bubble fe;
-    typedef finite_element::edge_lagrange_p1 fe;
+    typedef cell::edge::fe::lagrange_p1 fe;
     finite_element_space<fe> fes(m, dm);
     std::cout << std::setw(40) << "finite element system: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
@@ -97,7 +98,7 @@ int main(int, char**) {
 		<< std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
 
 
-    exporter::ascii<fe>("u.dat", u);
+    exporter::ascii<mesh_type>("u.dat", to_mesh_vertex_data<fe>(u));
     std::cout << std::setw(40) << "export the solution: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
 

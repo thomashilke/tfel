@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
   mesh_data<double, submesh<cell::triangle> > b_v(evaluate_on_vertices(dm, b_0, b_1));
 
   mesh_data<bool, submesh<cell::triangle> > inflow_boundary_cells(
-    dm, mesh_data<bool, submesh<cell::triangle> >::data_type::cell,
+    dm, mesh_data_kind::cell,
     (n[0] * b_bc[0] + n[1] * b_bc[1]) < -1.0e-6 );
 
   //submesh<cell::triangle, cell::edge> inflow_m(dm.submesh_from_selection(inflow_boundary_cells));

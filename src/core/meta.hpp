@@ -48,6 +48,10 @@ template<typename T>
 struct is_type { typedef T type; };
 
 
+// Useful for pack expension
+template<typename A, typename B> struct return_2nd: is_type<B> {};
+template<typename A, typename B> using return_2nd_t = typename return_2nd<A, B>::type;
+
 /*
  *  Type list definition
  */

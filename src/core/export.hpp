@@ -165,6 +165,7 @@ namespace exporter {
           }
 	}
       }
+	break;
 	
       case mesh_data_kind::vertex:  {
 	stream << var_name;
@@ -178,6 +179,7 @@ namespace exporter {
           }
 	}
       }
+	break;
       }
     }
 
@@ -319,7 +321,7 @@ namespace exporter {
       stream << "GEOMETRY\n";
       stream << "model: " << 1 << " " << geometry_filename << "\n\n";
       stream << "VARIABLE\n";
-      stream << ensight6_detail::variable_section_item(kind, n_component) << " " << 1 << " "
+      stream << ensight6_detail::variable_section_item(kind, n_component) << ": " << 1 << " "
 	     << variable_name
 	     << " " << variable_filename_pattern.str() << "\n\n";
 

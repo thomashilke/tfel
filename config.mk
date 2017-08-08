@@ -83,7 +83,9 @@ HEADERS = \
 	include/tfel/formulations/unsteady_diffusion_2d.hpp \
 	include/tfel/utility/importer.hpp \
 	include/tfel/core/vector_operation.hpp \
-	include/tfel/core/subdomain.hpp
+	include/tfel/core/subdomain.hpp \
+	include/tfel/core/mesh_data.hpp \
+	include/tfel/core/operator.hpp
 
 
 BIN = \

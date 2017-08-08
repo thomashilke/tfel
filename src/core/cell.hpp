@@ -911,6 +911,38 @@ namespace cell {
       return result;
     }
 
+    static array<double> subdomain_normal(const array<double>& vertices,
+					  const array<unsigned int>& elements,
+					  std::size_t k,
+					  std::size_t subdomain_id) {
+      auto triangle(get_triangle(elements, k, subdomain_id));
+      std::vector<unsigned int> vertices_id(triangle.begin(), triangle.end());
+      std::size_t last_vertex(3 - subdomain_id);
+
+      array<double> v1{3};
+      v1.at(0) = (vertices.at(vertices_id[1], 0) - vertices.at(vertices_id[0], 0));
+      v1.at(1) = (vertices.at(vertices_id[1], 1) - vertices.at(vertices_id[0], 1));
+      v1.at(2) = (vertices.at(vertices_id[1], 2) - vertices.at(vertices_id[0], 2));
+
+      array<double> v2{3};
+      v2.at(0) = (vertices.at(vertices_id[2], 0) - vertices.at(vertices_id[0], 0));
+      v2.at(1) = (vertices.at(vertices_id[2], 1) - vertices.at(vertices_id[0], 1));
+      v2.at(2) = (vertices.at(vertices_id[2], 2) - vertices.at(vertices_id[0], 2));
+
+      array<double> n(crossp(v1, v2));
+
+      array<double> m{3};
+      m.at(0) = (vertices.at(elements.at(k, last_vertex), 0) - vertices.at(vertices_id[0], 0));
+      m.at(1) = (vertices.at(elements.at(k, last_vertex), 1) - vertices.at(vertices_id[0], 1));
+      m.at(2) = (vertices.at(elements.at(k, last_vertex), 2) - vertices.at(vertices_id[0], 2));
+
+      if (dotp(n, m) > 0.0)
+	for (std::size_t k(0); k < 3; ++k)
+	  n.at(k) *= -1.0;
+
+      return n;
+    }
+
     struct fe {
       struct lagrange_p0;
       struct lagrange_p1;

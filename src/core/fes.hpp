@@ -368,7 +368,7 @@ to_mesh_vertex_data(const typename finite_element_space<fe_type>::element& v) {
   
   array<double> values{fes.get_dof_number(), 1};
 
-#warning "This works only for finite element with nodes on the cell vertices"
+#warning "FIXME: This works only for finite element with nodes on the cell vertices"
   for (std::size_t k(0); k < m.get_element_number(); ++k)
     for (std::size_t n(0); n < cell_type::n_vertex_per_element; ++n)
       values.at(m.get_elements().at(k, n), 0) = v.get_coefficients().at(fes.get_dof(k, n));

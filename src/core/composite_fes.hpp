@@ -321,7 +321,7 @@ struct to_composite_p1_impl {
   static typename cfes_type::element
   unwrap(const cfes_type& cfes, const mesh_data<double, mesh<cell_type> >& data, Es&& ... es) {
     return to_composite_p1_impl<n + 1, n_max, cfes_type>::
-             template unwrap<Es..., typename cfes_type::template fe_type<n>::element>(
+             template unwrap<Es..., typename cfes_type::template fes_type<n>::element>(
                cfes,
                data,
                std::forward<Es>(es)...,
@@ -371,7 +371,7 @@ struct to_composite_p0_impl {
   static typename cfes_type::element
   unwrap(const cfes_type& cfes, const mesh_data<double, mesh<cell_type> >& data, Es&& ... es) {
     return to_composite_p0_impl<n + 1, n_max, cfes_type>::
-             template unwrap<Es..., typename cfes_type::template fe_type<n>::element>(
+             template unwrap<Es..., typename cfes_type::template fes_type<n>::element>(
                cfes,
                data,
                std::forward<Es>(es)...,

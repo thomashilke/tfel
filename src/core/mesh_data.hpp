@@ -224,7 +224,7 @@ public:
 
   
   mesh_data(const mesh_type& m, mesh_data_kind t, std::size_t n_component = 1ul)
-    : m(m), values{value_number(t), n_component}, type(t) {}
+    : m(m), type(t), values{value_number(t), n_component} {}
 
   mesh_data(const mesh_type& m, mesh_data_kind t, const array<double>& values)
     : m(m), type(t), values(values) {}
@@ -236,7 +236,7 @@ public:
   
   template<typename ast_type>
   mesh_data(const mesh_type& m, mesh_data_kind t, const mesh_data_expression<ast_type>& expr)
-    : m(m), values{value_number(t), expr.component_number()}, type(t) {
+    : m(m), type(t), values{value_number(t), expr.component_number()} {
       
       for (std::size_t k(0); k < values.get_size(0); ++k)
 	for (std::size_t n(0); n < values.get_size(1); ++n)
@@ -275,8 +275,8 @@ public:
   
 private:
   const mesh_type& m;
-  array<value_type> values;
   mesh_data_kind type;
+  array<value_type> values;
 
   std::size_t value_number(mesh_data_kind type) const {
     switch (type) {

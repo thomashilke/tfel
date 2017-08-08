@@ -79,7 +79,7 @@ namespace importer {
       ::alucell::variable::array<double> v(&db, variable_id);
 
       array<double> coefficients{v.get_size(), v.get_components()};
-      v.get_data(&coefficients.at(0));
+      v.get_data(&coefficients.at(0, 0));
 
       using mesh_data_type = mesh_data<double, ::mesh<cell_type> >;
       if (coefficients.get_size(0) == m.get_vertex_number())

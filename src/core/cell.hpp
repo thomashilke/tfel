@@ -311,6 +311,13 @@ namespace cell {
       return bc;
     }
 
+    static array<double> barycenter() {
+      static const double bc[1] = {0.5};
+      array<double> result{1};
+      result.set_data(bc);
+      return result;
+    }
+
     struct fe {
       struct lagrange_p0;
       struct lagrange_p1;
@@ -562,6 +569,13 @@ namespace cell {
       return bc;
     }
 
+    static array<double> barycenter() {
+      static const double bc[] = {1.0 / 3.0, 1.0 / 3.0};
+      array<double> result{2};
+      result.set_data(bc);
+      return result;
+    }
+    
     static array<double> subdomain_normal(const array<double>& vertices,
 					  const array<unsigned int>& elements,
 					  std::size_t k,
@@ -888,6 +902,13 @@ namespace cell {
       }
 
       return bc;
+    }
+
+    static array<double> barycenter() {
+      static const double bc[] = {1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0};
+      array<double> result{3};
+      result.set_data(bc);
+      return result;
     }
 
     struct fe {

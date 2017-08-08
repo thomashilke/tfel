@@ -56,34 +56,6 @@ namespace exporter {
 
   namespace ensight6_detail {
 
-    void write_static_case_file(std::ostream& stream,
-				const std::string& geometry_filename,
-				const std::vector<std::string>& var_filenames,
-				const std::vector<std::string>& var_names,
-				const std::vector<mesh_data_kind>& var_types) {
-      stream << "FORMAT\ntype: ensight\n\n";
-      stream << "GEOMETRY\n";
-      stream << "model: " << geometry_filename << "\n\n";
-      stream << "VARIABLE\n";
-      for (std::size_t i(0); i < var_names.size(); ++i) {
-	if (var_types[i] == mesh_data_kind::vertex) {
-	  stream << "scalar per node: " << var_names[i]
-		 << " " << var_filenames[i] << '\n';
-	} else if (var_types[i] == mesh_data_kind::cell) {
-	  stream << "scalar per element: " << var_names[i]
-		 << " " << var_filenames[i] << '\n';
-	}
-      }
-    }
-      
-    template<typename cell_type>
-    struct ensight_cell_name {
-    private:
-      using cell_list = type_list<cell::point, cell::edge, cell::triangle, cell::tetrahedron>;
-      static constexpr const char* values[] = {"point", "bar2", "tria3", "tetra4"};
-    public:
-      static constexpr const char* value = values[get_index_of_element<cell_type, cell_list>::value];
-    };
 
     inline
     const char* variable_section_item(mesh_data_kind t,
@@ -104,6 +76,33 @@ namespace exporter {
 	throw std::string("unsupported component number");
       }
     }
+    
+    void write_static_case_file(std::ostream& stream,
+				const std::string& geometry_filename,
+				const std::vector<std::string>& var_filenames,
+				const std::vector<std::string>& var_names,
+				const std::vector<std::pair<mesh_data_kind, std::size_t> >& var_types) {
+      stream << "FORMAT\ntype: ensight\n\n";
+      stream << "GEOMETRY\n";
+      stream << "model: " << geometry_filename << "\n\n";
+      stream << "VARIABLE\n";
+      for (std::size_t i(0); i < var_names.size(); ++i) {
+        stream << variable_section_item(var_types[i].first, var_types[i].second) << var_names[i]
+               << " " << var_filenames[i] << '\n';
+
+      }
+    }
+      
+    template<typename cell_type>
+    struct ensight_cell_name {
+    private:
+      using cell_list = type_list<cell::point, cell::edge, cell::triangle, cell::tetrahedron>;
+      static constexpr const char* values[] = {"point", "bar2", "tria3", "tetra4"};
+    public:
+      static constexpr const char* value = values[get_index_of_element<cell_type, cell_list>::value];
+    };
+
+
       
 
     template<typename mesh_type>
@@ -157,20 +156,26 @@ namespace exporter {
 	stream << "part" << std::setw(8) << std::right << 1 << '\n';
 	stream << ensight_cell_name<typename mesh_type::cell_type>::value;
 	for (std::size_t k(0); k < data.get_values().get_size(0); ++k) {
-	  if (k % 6 == 0)
-	    stream << '\n';
-	  stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
-		 << data.get_values().at(k);
+          for (std::size_t n(0); n < data.get_component_number(); ++n) {
+            std::size_t value_id(k * data.get_component_number() + n);
+            if (value_id % 6 == 0)
+              stream << '\n';
+            stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+                   << data.value(k, n);
+          }
 	}
       }
 	
       case mesh_data_kind::vertex:  {
 	stream << var_name;
-	for (std::size_t n(0); n < data.get_values().get_size(0); ++n) {
-	  if (n % 6 == 0)
-	    stream << '\n';
-	  stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
-		 << data.get_values().at(n);
+	for (std::size_t k(0); k < data.get_values().get_size(0); ++k) {
+          for (std::size_t n(0); n < data.get_component_number(); ++n) {
+            std::size_t value_id(k * data.get_component_number() + n);
+            if (value_id % 6 == 0)
+              stream << '\n';
+            stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+                   << data.value(k, n);
+          }
 	}
       }
       }
@@ -178,13 +183,13 @@ namespace exporter {
 
     void write_static_variable_file_dispatch(std::vector<std::string>::iterator filename_it,
 					     std::vector<std::string>::iterator name_it,
-					     std::vector<mesh_data_kind>::iterator vt_it,
+					     std::vector<std::pair<mesh_data_kind, std::size_t> >::iterator vt_it,
 					     const std::string& filename) {}
 
     template<typename mesh_type, typename ... As>
     void write_static_variable_file_dispatch(std::vector<std::string>::iterator filename_it,
 					     std::vector<std::string>::iterator name_it,
-					     std::vector<mesh_data_kind>::iterator vt_it,
+					     std::vector<std::pair<mesh_data_kind, std::size_t> >::iterator vt_it,
 					     const std::string& filename,
 					     const mesh_data<double, mesh_type>& data,
 					     const std::string& var_name,
@@ -195,7 +200,7 @@ namespace exporter {
       write_static_variable_file(variable_file, data, var_name);
       *filename_it = variable_filename;
       *name_it = var_name;
-      *vt_it = data.get_kind();
+      *vt_it = std::make_pair(data.get_kind(), data.get_component_number());
       
       write_static_variable_file_dispatch(filename_it + 1, name_it + 1, vt_it + 1, filename, std::forward<As>(as)...);
     }
@@ -213,7 +218,7 @@ namespace exporter {
 
     std::vector<std::string> var_filenames(sizeof...(As)/2);
     std::vector<std::string> var_names(sizeof...(As)/2);
-    std::vector<mesh_data_kind> var_types(sizeof...(As)/2);
+    std::vector<std::pair<mesh_data_kind, std::size_t> > var_types(sizeof...(As)/2);
     
     std::ofstream
       case_file(case_filename.c_str(), std::ios::out),
@@ -242,7 +247,7 @@ namespace exporter {
 
     std::vector<std::string> var_filenames;
     std::vector<std::string> var_names;
-    std::vector<mesh_data_kind> var_types;
+    std::vector<std::pair<mesh_data_kind, std::size_t> > var_types;
     
     std::ofstream
       case_file(case_filename.c_str(), std::ios::out),

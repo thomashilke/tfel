@@ -44,7 +44,7 @@ void test_alucell_import() {
     using cell_type = cell::tetrahedron;
     using mesh_type = mesh<cell_type>;
   
-    mesh<cell_type> cuve(importer::alucell::mesh<cell_type>("/usr/scratch/master/alu-data/trunk/AP32/stat/dbfile_stat", "cuveb"));
+    mesh<cell_type> cuve(importer::alucell::mesh<cell_type>("/home/thomas/git/alu-data/AP32/stat/dbfile_stat", "cuveb"));
     submesh<cell_type, cell_type> electrolyte(cuve.get_submesh_with_reference(2));
     mesh<cell_type> electrolyte_m(electrolyte);
 
@@ -58,8 +58,9 @@ void test_alucell_import() {
     cfes_type::element
       velocity(to_composite_p1_finite_element_function<3, cell_type>(
 		 importer::alucell::variable<cell_type>(
-		   "/usr/scratch/master/alu-data/trunk/AP32/stat/dbfile_stat",
-		   "cuveb", "vitesse", cuve)));
+		   "/home/thomas/git/alu-data/AP32/stat/dbfile_stat",
+		   "cuveb", "vitesse", cuve),
+                 velocity_fes));
 
     cfes_type::element electrolyte_velocity(velocity.restrict(electrolyte_velocity_fes, electrolyte));
   

@@ -45,6 +45,9 @@ public:
   using cell_type = get_element_at_t<0, cell_list>;
   using fe_list = type_list<fe_pack...>;
 
+  template<std::size_t n>
+  using fe_type = finite_element_space<get_element_at_t<n, fe_list> >;
+
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wunused-value"
 
@@ -306,25 +309,162 @@ private:
 };
 
 
+
+template<std::size_t n, std::size_t n_max, typename cfes_type>
+struct to_composite_p1_impl {
+  using cell_type = typename cfes_type::cell_type;
+  
+  template<typename ... Es>
+  static typename cfes_type::element
+  unwrap(const cfes_type& cfes, const mesh_data<double, mesh<cell_type> >& data, Es&& ... es) {
+    return to_composite_p1_impl<n + 1, n_max, cfes_type>::
+             template unwrap<Es..., typename cfes_type::template fe_type<n>::element>(
+               cfes,
+               data,
+               std::forward<Es>(es)...,
+               to_p1_finite_element_function<cell_type>(
+                 data[n],
+                 cfes.template get_finite_element_space<n>()));
+  }
+};
+
+template<std::size_t n, typename cfes_type>
+struct  to_composite_p1_impl<n, n, cfes_type> {
+  using cell_type = typename cfes_type::cell_type;
+  
+  template<typename ... Es>
+  static typename cfes_type::element
+  unwrap(const cfes_type& cfes, const mesh_data<double, mesh<cell_type> >& data, Es&& ... es) {
+    return typename cfes_type::element(cfes, std::forward<Es>(es)...);
+  }
+};
+
+
+  
 template<std::size_t n, typename cell_type>
 typename composite_finite_element_space<
   make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p1>
 >::element
-to_composite_p1_finite_element_function(const mesh_data<double, mesh<cell_type> >& data) {
-  throw std::string("not implemented yet");
+to_composite_p1_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
+                                        const composite_finite_element_space<
+                                          make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p1>
+                                        >& cfes) {
+
+
+  using cfes_type = composite_finite_element_space<
+      make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p1>
+    >;
+
+  return to_composite_p1_impl<0, n, cfes_type>::unwrap(cfes, data);
+
 }
 
+
+template<std::size_t n, std::size_t n_max, typename cfes_type>
+struct to_composite_p0_impl {
+  using cell_type = typename cfes_type::cell_type;
+  
+  template<typename ... Es>
+  static typename cfes_type::element
+  unwrap(const cfes_type& cfes, const mesh_data<double, mesh<cell_type> >& data, Es&& ... es) {
+    return to_composite_p0_impl<n + 1, n_max, cfes_type>::
+             template unwrap<Es..., typename cfes_type::template fe_type<n>::element>(
+               cfes,
+               data,
+               std::forward<Es>(es)...,
+               to_p0_finite_element_function<cell_type>(
+                 data[n],
+                 cfes.template get_finite_element_space<n>()));
+  }
+};
+
+template<std::size_t n, typename cfes_type>
+struct  to_composite_p0_impl<n, n, cfes_type> {
+  using cell_type = typename cfes_type::cell_type;
+  
+  template<typename ... Es>
+  static typename cfes_type::element
+  unwrap(const cfes_type& cfes, const mesh_data<double, mesh<cell_type> >& data, Es&& ... es) {
+    return typename cfes_type::element(cfes, std::forward<Es>(es)...);
+  }
+};
+
+
 template<std::size_t n, typename cell_type>
-typename composite_finite_element_space<typename cell_type::fe::lagrange_p0>::element
-to_composite_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data) {
-  throw std::string("not implemented yet");
+typename composite_finite_element_space<
+    make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p0>
+  >::element
+to_composite_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
+                                        const composite_finite_element_space<
+                                          make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p0>
+                                        >& cfes) {
+  using cfes_type = composite_finite_element_space<
+      make_composite_finite_element_t<n, typename cell_type::fe::lagrange_p0>
+    >;
+
+  return to_composite_p1_impl<0, n, cfes_type>::unwrap(cfes, data);
 }
+
+
+
+template<std::size_t n, std::size_t n_max, typename result_type, typename element_type>
+struct to_mesh_cell_impl {
+  using cell_type = typename element_type::cell_type;
+  
+  static void
+  unwrap(result_type& result, const element_type& v) {
+    mesh_data<double, mesh<cell_type> > comp(to_mesh_cell_data(v.template get_component<n>()));
+    for (std::size_t k(0); k < v.get_mesh().get_element_number(); ++k)
+      result.value(k, n) = comp.value(k, 0);
+
+    to_mesh_cell_impl<n + 1, n_max, result_type, element_type>::unwrap(result, v);
+  }
+};
+
+template<std::size_t n, typename result_type, typename element_type>
+struct to_mesh_cell_impl<n, n, result_type, element_type> {
+  static void unwrap(result_type& result, const element_type& v) {}
+};
 
 template<typename fe_type>
 mesh_data<double, mesh<typename fe_type::cell_type> >
 to_mesh_cell_data(const typename composite_finite_element_space<fe_type>::element& v) {
   throw std::string("not implemented yet");
+  
+  using cell_type = typename fe_type::cell_type;
+  using cfe_type = fe_type;
+  using cfes_type = composite_finite_element_space<fe_type>;
+  using result_type = mesh_data<double, mesh<cell_type> >;
+  using element_type = typename cfes_type::element;
+
+  mesh_data<double, mesh<cell_type> > result(v.get_mesh(),
+                                             mesh_data_kind::cell,
+                                             cfe_type::n_component);
+  
+  to_mesh_cell_impl<0, cfe_type::n_component, result_type, element_type>::unwrap(result, v);
+
+  return result;
 }
+
+
+template<std::size_t n, std::size_t n_max, typename result_type, typename element_type>
+struct to_mesh_vertex_impl {
+  using cell_type = typename element_type::cell_type;
+  
+  static void
+  unwrap(result_type& result, const element_type& v) {
+    mesh_data<double, mesh<cell_type> > comp(to_mesh_vertex_data(v.template get_component<n>()));
+    for (std::size_t k(0); k < v.get_mesh().get_vertex_number(); ++k)
+      result.value(k, n) = comp.value(k, 0);
+
+    to_mesh_vertex_impl<n + 1, n_max, result_type, element_type>::unwrap(result, v);
+  }
+};
+
+template<std::size_t n, typename result_type, typename element_type>
+struct to_mesh_vertex_impl<n, n, result_type, element_type> {
+  static void unwrap(result_type& result, const element_type& v) {}
+};
 
 template<typename fe_type>
 mesh_data<double, mesh<typename fe_type::cell_type> >
@@ -332,7 +472,20 @@ to_mesh_vertex_data(const typename composite_finite_element_space<fe_type>::elem
   static_assert(is_continuous<fe_type>::value,
 		"conversion to vertex data is only defined "
 		"for continuous finite element spaces.");
-  throw std::string("not implemented yet");
+
+  using cell_type = typename fe_type::cell_type;
+  using cfe_type = fe_type;
+  using cfes_type = composite_finite_element_space<fe_type>;
+  using result_type = mesh_data<double, mesh<cell_type> >;
+  using element_type = typename cfes_type::element;
+
+  mesh_data<double, mesh<cell_type> > result(v.get_mesh(),
+                                             mesh_data_kind::vertex,
+                                             cfe_type::n_component);
+  
+  to_mesh_vertex_impl<0, cfe_type::n_component, result_type, element_type>::unwrap(result, v);
+
+  return result;
 }
 
 

@@ -48,10 +48,11 @@ double bc(const double* x) {
 
 int main(int argc, char *argv[]) {
   typedef cell::triangle cell_type;
-  typedef finite_element::triangle_lagrange_p1 fe_type;
+  typedef cell::triangle::fe::lagrange_p1 fe_type;
   typedef finite_element_space<fe_type> fes_type;
   typedef typename finite_element_space<fe_type>::element element_type;
   typedef quad::triangle::qf5pT q_type;
+  using mesh_type = mesh<cell_type>;
   
   const std::size_t n(100);
   mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]) {
   const element_type c_init(projector::l2<fe_type,
 			                  q_type>(initial_condition,
 						  fes));
-  exporter::ensight6("initial_condition", c_init, "c_init");
+  exporter::ensight6("initial_condition", to_mesh_vertex_data<fe_type>(c_init), "c_init");
 
 
   const std::size_t M(100);
@@ -77,8 +78,8 @@ int main(int argc, char *argv[]) {
 
   element_type c(c_init);
 
-  exporter::ensight6_transient<fe_type> ens("solution", m, "c");
-  ens.export_time_step(0.0, c);
+  exporter::ensight6_transient<mesh_type> ens("solution", m, "c");
+  ens.export_time_step(0.0, to_mesh_vertex_data<fe_type>(c));
   
   for (std::size_t k(0); k < M; ++k) {
     std::cout << "step " << k << std::endl;
@@ -89,7 +90,7 @@ int main(int argc, char *argv[]) {
 			     + (1.0 - (k + 1) * delta_t) * 2 * M_PI * M_PI * (initial_condition * v), m);
     }
     c = a.solve(f);
-    ens.export_time_step((k + 1) * delta_t, c);
+    ens.export_time_step((k + 1) * delta_t, to_mesh_vertex_data<fe_type>(c));
   }
   
   return 0;

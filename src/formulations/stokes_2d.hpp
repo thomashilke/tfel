@@ -23,8 +23,8 @@
  */
 
 
-template<typename v_fe_type = finite_element::triangle_lagrange_p1_bubble,
-	 typename p_fe_type = finite_element::triangle_lagrange_p1>
+template<typename v_fe_type = cell::triangle::fe::lagrange_p1_bubble,
+	 typename p_fe_type = cell::triangle::fe::lagrange_p1>
 class stokes_2d
   : public basic_fe_formulation<composite_finite_element<v_fe_type,
 							 v_fe_type,
@@ -131,9 +131,9 @@ private:
 					  , m);
 
     // Stabilisation for the P_1 - P_1 finite element choice
-    if (not std::is_same<velocity_fe_type, finite_element::triangle_lagrange_p1_bubble>::value) {
-      using fe = finite_element::triangle_lagrange_p0;
-      finite_element_space<finite_element::triangle_lagrange_p0> fes(m);
+    if (not std::is_same<velocity_fe_type, cell::triangle::fe::lagrange_p1_bubble>::value) {
+      using fe = cell::triangle::fe::lagrange_p0;
+      finite_element_space<cell::triangle::fe::lagrange_p0> fes(m);
       const auto h(build_element_diameter_function(m, fes));
       const double stab_coefficient(- 1.0);
 

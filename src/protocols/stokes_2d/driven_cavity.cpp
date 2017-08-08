@@ -34,9 +34,9 @@ int main(int argc, char *argv[]) {
     using cell_type = cell::triangle;
     mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 50, 50));
 
-    using vfe = finite_element::triangle_lagrange_p1_bubble;
+    using vfe = cell::triangle::fe::lagrange_p1_bubble;
     //using vfe = finite_element::triangle_lagrange_p1;
-    using pfe = finite_element::triangle_lagrange_p1;
+    using pfe = cell::triangle::fe::lagrange_p1;
 
     stokes_2d<vfe, pfe> s2d(m, 1.0);
     s2d.set_velocity_condition(u_0_bc, u_1_bc);
@@ -45,9 +45,9 @@ int main(int argc, char *argv[]) {
 
     const auto solution(s2d.get_solution());
     exporter::ensight6("stokes_2d_driven_cavity",
-		       solution.get_component<0>(), "u0",
-		       solution.get_component<1>(), "u1",
-		       solution.get_component<2>(), "p");
+		       to_mesh_vertex_data<vfe>(solution.get_component<0>()), "u0",
+		       to_mesh_vertex_data<vfe>(solution.get_component<1>()), "u1",
+		       to_mesh_vertex_data<pfe>(solution.get_component<2>()), "p");
   }
   catch (const std::string& exept) {
     std::cout << exept << std::endl;

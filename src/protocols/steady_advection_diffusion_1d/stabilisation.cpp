@@ -6,7 +6,8 @@ int main(
   char *argv[])
 {
   using cell_type = cell::edge;
-  using fe_type = finite_element::edge_lagrange_p1;
+  using mesh_type = mesh<cell_type>;
+  using fe_type = cell::edge::fe::lagrange_p1;
   mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, 40));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
@@ -19,7 +20,7 @@ int main(
   sad.set_advection_velocity([](const double* x) { return 1.0; });
   sad.solve();
 
-  exporter::ascii<fe_type>("sad.dat", sad.get_solution());
+  exporter::ascii<mesh_type>("sad.dat", to_mesh_vertex_data<fe_type>(sad.get_solution()));
   
   return 0;
 }

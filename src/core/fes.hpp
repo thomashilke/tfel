@@ -6,6 +6,7 @@
 
 #include "cell.hpp"
 #include "mesh.hpp"
+#include "mesh_data.hpp"
 
 template<typename fe>
 class finite_element_space {
@@ -273,5 +274,106 @@ private:
   array<double> coefficients;
   const finite_element_space<fe>& fes;
 };
+
+
+template<typename cell_type>
+typename finite_element_space<typename cell_type::fe::lagrange_p1>::element
+to_p1_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
+                              const finite_element_space<typename cell_type::fe::lagrange_p1>& fes) {
+  using return_type = typename finite_element_space<typename cell_type::fe::lagrange_p1>::element;
+
+  if (data.get_kind() != mesh_data_kind::vertex)
+    throw std::string("wrong data kind");
+
+  if (data.get_component_number() != 1)
+    throw std::string("wrong component number");
+
+  const mesh<cell_type>& m(fes.get_mesh());
+  
+  array<double> coefficients{fes.get_dof_number()};
+
+  for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
+    const std::size_t element_id(fes.get_dof_element(k));
+    const std::size_t dof_local_id(fes.get_dof_local_id(k));
+    coefficients.at(k) = data.value(m.get_elements().at(element_id, dof_local_id), 0);
+  }
+  
+  return return_type(fes, coefficients);
+}
+
+template<typename cell_type, typename expr_type>
+typename finite_element_space<typename cell_type::fe::lagrange_p1>::element
+to_p1_finite_element_function(const mesh_data_expression<expr_type>& expr,
+                              const finite_element_space<typename cell_type::fe::lagrange_p1>& fes) {
+  return to_p1_finite_element_function(mesh_data<double, mesh<cell_type> >(fes.get_mesh(),
+                                                                           mesh_data_kind::vertex,
+                                                                           expr), fes);
+}
+
+template<typename cell_type>
+typename finite_element_space<typename cell_type::fe::lagrange_p0>::element
+to_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
+                              const finite_element_space<typename cell_type::fe::lagrange_p0>& fes) {
+  using return_type = typename finite_element_space<typename cell_type::fe::lagrange_p0>::element;
+
+  if (data.get_kind() != mesh_data_kind::cell)
+    throw std::string("wrong data kind");
+
+  if (data.get_component_number() != 1)
+    throw std::string("wrong component number");
+
+  const mesh<cell_type>& m(fes.get_mesh());
+  
+  array<double> coefficients{fes.get_dof_number()};
+
+  for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
+    const std::size_t element_id(fes.get_dof_element(k));
+    coefficients.at(k) = data.values(element_id, 0);
+  }
+  
+  return return_type(fes, coefficients);
+}
+
+template<typename fe_type>
+mesh_data<double, mesh<typename fe_type::cell_type> >
+to_mesh_cell_data(const typename finite_element_space<fe_type>::element& v) {
+  using return_type = mesh_data<double, mesh<typename fe_type::cell_type> >;
+  using cell_type = typename fe_type::cell_type;
+
+  const finite_element_space<fe_type>& fes(v.get_finite_element_space());
+  const mesh<cell_type>& m(fes.get_mesh());
+  
+  array<double> values{fes.get_dof_number(), 1};
+
+  const array<double> bc_hat(cell_type::barycenter());
+  for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
+    values.at(k, 0) = v.evaluate(k, &bc_hat.at(0));
+  }
+  
+  return return_type(m, mesh_data_kind::cell, values);
+}
+
+template<typename fe_type>
+mesh_data<double, mesh<typename fe_type::cell_type> >
+to_mesh_vertex_data(const typename finite_element_space<fe_type>::element& v) {
+  static_assert(is_continuous<fe_type>::value,
+		"conversion to vertex data is only defined "
+		"for continuous finite element spaces.");
+  
+  using return_type = mesh_data<double, mesh<typename fe_type::cell_type> >;
+  using cell_type = typename fe_type::cell_type;
+
+  const finite_element_space<fe_type>& fes(v.get_finite_element_space());
+  const mesh<cell_type>& m(fes.get_mesh());
+  
+  array<double> values{fes.get_dof_number(), 1};
+
+#warning "FIXME: This works only for finite element with nodes on the cell vertices"
+  for (std::size_t k(0); k < m.get_element_number(); ++k)
+    for (std::size_t n(0); n < cell_type::n_vertex_per_element; ++n)
+      values.at(m.get_elements().at(k, n), 0) = v.get_coefficients().at(fes.get_dof(k, n));
+  
+  return return_type(m, mesh_data_kind::vertex, values);
+}
 
 #endif /* _FES_H_ */

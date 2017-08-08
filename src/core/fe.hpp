@@ -3,19 +3,19 @@
 
 #include "cell.hpp"
 
-namespace finite_element {
+template<typename fe_type>
+struct is_continuous {
+  static const bool value = fe_type::is_continuous;
+};
 
-  template<typename fe_type>
-  struct is_continuous {
-    static const bool value = fe_type::is_continuous;
-  };
+template<typename fe_type>
+struct is_lagrangian {
+  static const bool value = fe_type::is_lagrangian;
+};
 
-  template<typename fe_type>
-  struct is_lagrangian {
-    static const bool value = fe_type::is_lagrangian;
-  };
 
-  struct edge_lagrange_p0 {
+namespace cell {
+  struct edge::fe::lagrange_p0 {
     typedef cell::edge cell_type;
 
     static const std::size_t n_dof_per_element = 1;
@@ -51,7 +51,7 @@ namespace finite_element {
     }
   };
   
-  struct edge_lagrange_p1 {
+  struct edge::fe::lagrange_p1 {
     typedef cell::edge cell_type;
 
     static const std::size_t n_dof_per_element = 2;
@@ -101,8 +101,8 @@ namespace finite_element {
   };
 
   
-  struct edge_lagrange_p1_bubble: public edge_lagrange_p1 {
-    using edge_lagrange_p1::cell_type;
+  struct edge::fe::lagrange_p1_bubble: public edge::fe::lagrange_p1 {
+    using edge::fe::lagrange_p1::cell_type;
 
     static const std::size_t n_dof_per_element = 3;
     static constexpr std::size_t n_dof[] = {1, 1};
@@ -118,8 +118,8 @@ namespace finite_element {
 				 unsigned int* derivatives,
 				 const double* x) {
       typedef double (*bf_type)(const double*);
-      static const bf_type bf[2][3] = {{edge_lagrange_p1::bf_0_1, edge_lagrange_p1::bf_0_2, bf_0_3},
-				       {edge_lagrange_p1::bf_1_1, edge_lagrange_p1::bf_1_2, bf_1_3}};
+      static const bf_type bf[2][3] = {{bf_0_1, bf_0_2, bf_0_3},
+				       {bf_1_1, bf_1_2, bf_1_3}};
       if (i >= 3)
 	throw std::string("finite_element::edge_lagrange_p1_bubble::basis_function: "
 			  "i out of range");
@@ -148,22 +148,28 @@ namespace finite_element {
     }
     
   protected:
+    using edge::fe::lagrange_p1::bf_0_1;
+    using edge::fe::lagrange_p1::bf_0_2;
+
+    using edge::fe::lagrange_p1::bf_1_1;
+    using edge::fe::lagrange_p1::bf_1_2;
+
     static double bf_0_3(const double* x) {
-      return edge_lagrange_p1::bf_0_1(x) * edge_lagrange_p1::bf_0_2(x);
+      return bf_0_1(x) * bf_0_2(x);
     }
     
     static double bf_1_3(const double* x) {
-      return edge_lagrange_p1::bf_1_1(x) * edge_lagrange_p1::bf_0_2(x)
-	+ edge_lagrange_p1::bf_0_1(x) * edge_lagrange_p1::bf_1_2(x);
+      return (bf_1_1(x) * bf_0_2(x) +
+	      bf_0_1(x) * bf_1_2(x));
     }
     
     static double bf_2_3(const double* x) {
-      return edge_lagrange_p1::bf_1_1(x) * edge_lagrange_p1::bf_1_2(x)
-	+ edge_lagrange_p1::bf_1_1(x) * edge_lagrange_p1::bf_1_2(x);
+      return (bf_1_1(x) * bf_1_2(x) +
+	      bf_1_1(x) * bf_1_2(x));
     }
   };
 
-  struct triangle_lagrange_p0 {
+  struct triangle::fe::lagrange_p0 {
     typedef cell::triangle cell_type;
 
     static const std::size_t n_dof_per_element = 1;
@@ -199,7 +205,7 @@ namespace finite_element {
   };
 
   
-  struct triangle_lagrange_p1 {
+  struct triangle::fe::lagrange_p1 {
     typedef cell::triangle cell_type;
 
     static const std::size_t n_dof_per_element = 3;
@@ -258,19 +264,19 @@ namespace finite_element {
     static double bf_01_3(const double* x) { return  1.0; }
   };
 
-  struct triangle_lagrange_p1_bubble: public triangle_lagrange_p1 {
-    using triangle_lagrange_p1::bf_00_1;
-    using triangle_lagrange_p1::bf_00_2;
-    using triangle_lagrange_p1::bf_00_3;
-    using triangle_lagrange_p1::bf_10_1;
-    using triangle_lagrange_p1::bf_10_2;
-    using triangle_lagrange_p1::bf_10_3;
-    using triangle_lagrange_p1::bf_01_1;
-    using triangle_lagrange_p1::bf_01_2;
-    using triangle_lagrange_p1::bf_01_3;
+  struct triangle::fe::lagrange_p1_bubble: public triangle::fe::lagrange_p1 {
+    using triangle::fe::lagrange_p1::bf_00_1;
+    using triangle::fe::lagrange_p1::bf_00_2;
+    using triangle::fe::lagrange_p1::bf_00_3;
+    using triangle::fe::lagrange_p1::bf_10_1;
+    using triangle::fe::lagrange_p1::bf_10_2;
+    using triangle::fe::lagrange_p1::bf_10_3;
+    using triangle::fe::lagrange_p1::bf_01_1;
+    using triangle::fe::lagrange_p1::bf_01_2;
+    using triangle::fe::lagrange_p1::bf_01_3;
     
     
-    using triangle_lagrange_p1::cell_type;
+    using triangle::fe::lagrange_p1::cell_type;
 
     static const std::size_t n_dof_per_element = 4;
     static constexpr std::size_t n_dof[] = {1, 0, 1};
@@ -328,7 +334,7 @@ namespace finite_element {
 							    + bf_00_1(x) * bf_00_2(x) * bf_01_3(x)); }
   };
 
-  struct tetrahedron_lagrange_p0 {
+  struct tetrahedron::fe::lagrange_p0 {
     typedef cell::tetrahedron cell_type;
 
     static const std::size_t n_dof_per_element = 1;
@@ -363,7 +369,7 @@ namespace finite_element {
     }
   };
 
-  struct tetrahedron_lagrange_p1 {
+  struct tetrahedron::fe::lagrange_p1 {
     typedef cell::tetrahedron cell_type;
 
     static const std::size_t n_dof_per_element = 4;

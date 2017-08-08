@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
   using cell_type = cell::triangle;
   mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 30, 30));
   
-  using fe_type = finite_element::triangle_lagrange_p1;
+  using fe_type = cell::triangle::fe::lagrange_p1;
   steady_advection_diffusion<fe_type> sad(m, diffusivity);
 
   sad.set_boundary_value(u_bc);
@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   const auto solution(sad.get_solution());
 
   exporter::ensight6("steady_advection_diffusion_2d",
-		     solution, "u");
+		     to_mesh_vertex_data<fe_type>(solution), "u");
   
   return 0;
 }

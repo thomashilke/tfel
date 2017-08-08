@@ -7,6 +7,7 @@
 
 #include "meta.hpp"
 #include "fes.hpp"
+#include "operator.hpp"
 
 
 template<std::size_t arg, std::size_t rnk, std::size_t derivative>
@@ -141,11 +142,6 @@ private:
 };
 
 
-struct add { static double apply(double x, double y) { return x + y; } };
-struct substract { static double apply(double x, double y) { return x - y; } };
-struct multiply { static double apply(double x, double y) { return x * y; } };
-
-
 template<typename expr_t>
 struct expression {
   expr_t expr;
@@ -260,13 +256,13 @@ struct differentiate<d, form<arg, rnk, 0> > {
 };
 
 template<std::size_t d, typename left, typename right>
-struct differentiate<d, binary_expression<left, right, multiply> > {
-  typedef binary_expression<typename differentiate<d, left>::type, right, multiply> first_type;
-  typedef binary_expression<left, typename differentiate<d, right>::type, multiply> second_type;
-  typedef binary_expression<first_type, second_type, add> type;
+struct differentiate<d, binary_expression<left, right, multiply<double>> > {
+  typedef binary_expression<typename differentiate<d, left>::type, right, multiply<double>> first_type;
+  typedef binary_expression<left, typename differentiate<d, right>::type, multiply<double>> second_type;
+  typedef binary_expression<first_type, second_type, add<double>> type;
 
   static
-  type initialize(const binary_expression<left, right, multiply>& expr) {
+    type initialize(const binary_expression<left, right, multiply<double>>& expr) {
     const first_type t1(differentiate<d, left>::initialize(expr.l), expr.r);
     const second_type t2(expr.l, differentiate<d, right>::initialize(expr.r));
     return type(t1, t2);
@@ -300,42 +296,42 @@ d(const expression<expr>& e) {
 
 
 template<typename left, typename right>
-expression<binary_expression<left, right, multiply> >
+expression<binary_expression<left, right, multiply<double>> >
 operator*(const expression<left>& l, const expression<right>& r) {
-  typedef expression<binary_expression<left, right, multiply> > ret;
-  return ret(binary_expression<left, right, multiply>(l, r));
+  typedef expression<binary_expression<left, right, multiply<double>> > ret;
+  return ret(binary_expression<left, right, multiply<double>>(l, r));
 }
 
 template<typename expr>
-expression<binary_expression<expression<constant>, expr, multiply> >
+expression<binary_expression<expression<constant>, expr, multiply<double>> >
 operator*(double c, const expression<expr>& e) {
-  typedef expression<binary_expression<expression<constant>, expr, multiply> > ret;
+  typedef expression<binary_expression<expression<constant>, expr, multiply<double>> > ret;
   return ret(binary_expression<expression<constant>,
 	     expr,
-	     multiply>(expression<constant>(constant(c)), e));
+	     multiply<double>>(expression<constant>(constant(c)), e));
 }
 
 template<typename expr>
-expression<binary_expression<expression<free_function>, expr, multiply> >
+expression<binary_expression<expression<free_function>, expr, multiply<double>> >
 operator*(double(*f)(const double*), const expression<expr>& e) {
-  typedef expression<binary_expression<expression<free_function>, expr, multiply> > ret;
+  typedef expression<binary_expression<expression<free_function>, expr, multiply<double>> > ret;
   return ret(binary_expression<expression<free_function>,
 	     expr,
-	     multiply>(expression<free_function>(free_function(f)), e));
+	     multiply<double>>(expression<free_function>(free_function(f)), e));
 }
 
 template<typename left, typename right>
-expression<binary_expression<left, right, add> >
+expression<binary_expression<left, right, add<double>> >
 operator+(const expression<left>& l, const expression<right>& r) {
-  typedef expression<binary_expression<left, right, add> > ret;
-  return ret(binary_expression<left, right, add>(l, r));
+  typedef expression<binary_expression<left, right, add<double>> > ret;
+  return ret(binary_expression<left, right, add<double>>(l, r));
 }
 
 template<typename left, typename right>
-expression<binary_expression<left, right, substract> >
+expression<binary_expression<left, right, substract<double>> >
 operator-(const expression<left>& l, const expression<right>& r) {
-  typedef expression<binary_expression<left, right, substract> > ret;
-  return ret(binary_expression<left, right, substract>(l, r));
+  typedef expression<binary_expression<left, right, substract<double>> > ret;
+  return ret(binary_expression<left, right, substract<double>>(l, r));
 }
 
 

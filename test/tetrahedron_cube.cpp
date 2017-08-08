@@ -16,7 +16,7 @@ double f(const double* x) {
 int main(int argc, char *argv[]) {
   try {
     using cell_type = cell::tetrahedron;
-    using fe_type = finite_element::tetrahedron_lagrange_p1;
+    using fe_type = cell::tetrahedron::fe::lagrange_p1;
     using fes_type = finite_element_space<fe_type>;
     
     mesh<cell_type> m(gen_cube_mesh(1.0, 1.0, 1.0, 10, 10, 10));
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     }
 
     exporter::ensight6("cube",
-		       a.solve(f), "solution");
+		       to_mesh_vertex_data<fe_type>(a.solve(f)), "solution");
   }
   catch (const std::string& e) {
     std::cout << e << std::endl;

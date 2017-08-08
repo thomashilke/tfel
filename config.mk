@@ -5,8 +5,8 @@ DEPS_BIN = g++
 DEPSFLAGS = -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR) $(shell mpicxx --showme:compile)
 CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++11 -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR)
 LDFLAGS += -Wall -Wextra -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR) -L./lib/ -L$(SITE_LIB_DIR)
-LDLIBS = -lpetsc -llapacke -Wl,--whole-archive -ltfel -Wl,--no-whole-archive -lalucelldb
-AR = llvm-ar
+LDLIBS = -lpetsc -llapacke -ltfel -lalucelldb
+AR = ar
 ARFLAGS = rc
 MKDIR = mkdir
 MKDIRFLAGS = -p
@@ -38,6 +38,7 @@ SOURCES = \
 	test/alucell_import.cpp \
 	test/tetrahedron_cube.cpp \
 	test/linear_constraint.cpp \
+	test/mesh_data.cpp \
 	src/protocols/stokes_2d/driven_cavity.cpp \
 	src/protocols/steady_advection_diffusion_2d/step.cpp \
 	src/protocols/unsteady_advection_diffusion_2d/rotating_hill.cpp \
@@ -82,7 +83,9 @@ HEADERS = \
 	include/tfel/formulations/unsteady_diffusion_2d.hpp \
 	include/tfel/utility/importer.hpp \
 	include/tfel/core/vector_operation.hpp \
-	include/tfel/core/subdomain.hpp
+	include/tfel/core/subdomain.hpp \
+	include/tfel/core/mesh_data.hpp \
+	include/tfel/core/operator.hpp
 
 
 BIN = \
@@ -103,6 +106,7 @@ BIN = \
 	bin/test_tetrahedron_cube \
 	bin/test_l2_p1_bubble_projection \
 	bin/test_linear_constraint \
+	bin/test_mesh_data \
 	bin/prot_stoke_2d_driven_cavity \
 	bin/prot_steady_advection_diffusion_2d_step \
 	bin/prot_unsteady_advection_diffusion_2d_rotating_hill \
@@ -135,6 +139,7 @@ bin/prot_steady_advection_diffusion_1d_stabilisation: build/src/protocols/steady
 bin/test_alucell_import: build/test/alucell_import.o
 bin/test_tetrahedron_cube: build/test/tetrahedron_cube.o
 bin/test_linear_constraint: build/test/linear_constraint.o
+bin/test_mesh_data: build/test/mesh_data.o
 
 LIB = lib/libtfel.a
 

@@ -6,10 +6,7 @@
 
 #include "../core/cell.hpp"
 #include "../core/mesh.hpp"
-#include "../core/fe.hpp"
-#include "../core/fes.hpp"
-#include "../core/composite_fe.hpp"
-#include "../core/composite_fes.hpp"
+#include "../core/mesh_data.hpp"
 
 namespace importer {
   namespace alucell {
@@ -65,111 +62,33 @@ namespace importer {
 			       &references.at(0));
     }
 
+    template<typename cell_type>
+    mesh_data<double, ::mesh<cell_type> > variable(const std::string& db_filename,
+						   const std::string& mesh_name,
+						   const std::string& var_name,
+						   const ::mesh<cell_type>& m) {
+      ::alucell::database_read_access db(db_filename);
+      ::alucell::database_index index(&db);
 
+      const unsigned int
+	variable_id(index.get_variable_id(mesh_name + "_" + var_name));
 
+      if (db.get_variable_type(variable_id) != ::alucell::data_type::real_array)
+	throw std::string("importer::alucell::variable: only real variables are supported");
 
-    template<typename fe_type>
-    struct variable_impl {
-      using result_type = typename finite_element_space<fe_type>::element;
+      ::alucell::variable::array<double> v(&db, variable_id);
 
-      static
-      result_type call(const std::string& db_filename,
-		       const std::string& mesh_name,
-		       const std::string& var_name,
-		       const finite_element_space<fe_type>& fes) {
-	static_assert(std::is_same<fe_type, finite_element::tetrahedron_lagrange_p1>::value or
-		      std::is_same<fe_type, finite_element::triangle_lagrange_p1>::value or
-		      std::is_same<fe_type, finite_element::edge_lagrange_p1>::value, "");
+      array<double> coefficients{v.get_size(), v.get_components()};
+      v.get_data(&coefficients.at(0, 0));
 
-	/*
-	 *  P0 field are not yet supported, since they require a permutation of the coefficients.
-	 */
-	
-	::alucell::database_read_access db(db_filename);
-	::alucell::database_index index(&db);
-
-	const unsigned int
-	  variable_id(index.get_variable_id(mesh_name + "_" + var_name));
-
-	if (db.get_variable_type(variable_id) != ::alucell::data_type::real_array)
-	  throw std::string("importer::alucell::variable: only real variables are supported");
-
-	::alucell::variable::array<double> v(&db, variable_id);
-
-	if (v.get_components() != 1)
-	  throw std::string("importer::alucell::variable: only scalar variables are supported");
-      
-	array<double> coefficients{v.get_size()};
-	v.get_data(&coefficients.at(0));
-      
-	return typename finite_element_space<fe_type>::element(fes, coefficients);
-      }
-    };
-
-    template<typename ... fe_pack>
-    struct variable_impl<composite_finite_element<fe_pack...> > {
-      using cfe_type = composite_finite_element<fe_pack...>;
-      using cfes_type = composite_finite_element_space<cfe_type>;
-
-      using fe_list = typename cfe_type::fe_list;
-      using unique_fe_list = unique_t<fe_list>;
-      using fe_type = get_element_at_t<0, unique_fe_list>;
-      
-      using result_type = typename cfes_type::element;
-      
-      static
-      result_type call(const std::string& db_filename,
-		       const std::string& mesh_name,
-		       const std::string& var_name,
-		       const composite_finite_element_space<cfe_type>& cfes) {
-	static_assert(list_size<unique_fe_list>::value == 1 and
-		      (std::is_same<fe_type, finite_element::tetrahedron_lagrange_p1>::value or
-		       std::is_same<fe_type, finite_element::triangle_lagrange_p1>::value or
-		       std::is_same<fe_type, finite_element::edge_lagrange_p1>::value), "");
-
-	/*
-	 *  P0 field are not yet supported, since they require a permutation of the coefficients.
-	 */
-	
-	::alucell::database_read_access db(db_filename);
-	::alucell::database_index index(&db);
-
-	const unsigned int
-	  variable_id(index.get_variable_id(mesh_name + "_" + var_name));
-
-	if (db.get_variable_type(variable_id) != ::alucell::data_type::real_array)
-	  throw std::string("importer::alucell::variable: only real variables are supported");
-
-	::alucell::variable::array<double> v(&db, variable_id);
-
-	if (v.get_components() != cfe_type::n_component)
-	  throw std::string("importer::alucell::variable: wrong number of components");
-	
-      
-	array<double>
-	  data{v.get_size(), cfe_type::n_component},
-	  coefficients{v.get_size() * cfe_type::n_component};
-	
-        v.get_data(&data.at(0, 0));
-
-	for (std::size_t n(0); n < cfe_type::n_component; ++n)
-	  for (std::size_t k(0); k < v.get_size(); ++k)
-	    coefficients.at(n * v.get_size() + k) = data.at(k, n);
-
-	return result_type(cfes, coefficients);
-      }
-    };
-
-
-    template<typename fe_type, typename fes_type>
-    typename variable_impl<fe_type>::result_type
-    variable(const std::string& db_filename,
-	     const std::string& mesh_name,
-	     const std::string& var_name,
-	     const fes_type& fes) {
-      return variable_impl<fe_type>::call(db_filename, mesh_name, var_name, fes);
+      using mesh_data_type = mesh_data<double, ::mesh<cell_type> >;
+      if (coefficients.get_size(0) == m.get_vertex_number())
+	return mesh_data<double, ::mesh<cell_type> >(m, mesh_data_kind::vertex, std::move(coefficients));
+      else if (coefficients.get_size(0) == m.get_element_number())
+	return mesh_data<double, ::mesh<cell_type> >(m, mesh_data_kind::cell, std::move(coefficients));
+      else
+	throw std::string("incompatible array size");
     }
-
   }
 }
 

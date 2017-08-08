@@ -16,11 +16,12 @@ void test_triangle_lagrange_p1() {
   unsigned int elements[] = { 0, 1, 3,
 			      0, 2, 3};
 
-  mesh<cell::triangle> m(vertices, 4, 2,
+  using cell_type = cell::triangle;
+  mesh<cell_type> m(vertices, 4, 2,
 			 elements, 2);
 
-  typedef finite_element::triangle_lagrange_p1 fe;
-  finite_element_space<fe> fes(m);
+  using fe_type = cell_type::fe::lagrange_p1;
+  finite_element_space<fe_type> fes(m);
 
   fes.show(std::cout);
 }
@@ -33,11 +34,12 @@ void test_triangle_lagrange_p1_bubble() {
   unsigned int elements[] = { 0, 1, 3,
 			      0, 2, 3};
 
-  mesh<cell::triangle> m(vertices, 4, 2,
+  using cell_type = cell::triangle;
+  mesh<cell_type> m(vertices, 4, 2,
 			 elements, 2);
 
-  typedef finite_element::triangle_lagrange_p1_bubble fe;
-  finite_element_space<fe> fes(m);
+  using fe_type = cell_type::fe::lagrange_p1_bubble;
+  finite_element_space<fe_type> fes(m);
 
   fes.show(std::cout);
 }
@@ -47,11 +49,12 @@ void test_edge_lagrange_p1() {
   unsigned int elements[] = { 0, 1,
 			      1, 2};
 
-  mesh<cell::edge> m(vertices, 3, 1,
+  using cell_type = cell::edge;
+  mesh<cell_type> m(vertices, 3, 1,
 		     elements, 2);
 
-  typedef finite_element::edge_lagrange_p1 fe;
-  finite_element_space<fe> fes(m);
+  using fe_type = cell_type::fe::lagrange_p1;
+  finite_element_space<fe_type> fes(m);
 
   fes.show(std::cout);
 }
@@ -61,11 +64,12 @@ void test_edge_lagrange_p1_bubble() {
   unsigned int elements[] = { 0, 1,
 			      1, 2};
 
-  mesh<cell::edge> m(vertices, 3, 1,
+  using cell_type = cell::edge;
+  mesh<cell_type> m(vertices, 3, 1,
 		     elements, 2);
 
-  typedef finite_element::edge_lagrange_p1_bubble fe;
-  finite_element_space<fe> fes(m);
+  using fe_type = cell_type::fe::lagrange_p1_bubble;
+  finite_element_space<fe_type> fes(m);
 
   fes.show(std::cout);
 }

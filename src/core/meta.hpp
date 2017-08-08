@@ -1,6 +1,8 @@
 #ifndef _META_H_
 #define _META_H_
 
+#include <string>
+#include <iostream>
 #include <cxxabi.h>
 
 template<typename T>
@@ -47,6 +49,10 @@ using bool_constant = integral_constant<bool, b>;
 template<typename T>
 struct is_type { typedef T type; };
 
+
+// Useful for pack expension
+template<typename A, typename B> struct return_2nd: is_type<B> {};
+template<typename A, typename B> using return_2nd_t = typename return_2nd<A, B>::type;
 
 /*
  *  Type list definition

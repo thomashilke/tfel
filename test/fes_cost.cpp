@@ -7,7 +7,7 @@
 
 void build_fes(std::size_t n) {
   const mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, n, n));
-  volatile finite_element_space<finite_element::triangle_lagrange_p1> fes(m);
+  volatile finite_element_space<cell::triangle::fe::lagrange_p1> fes(m);
 }
 
 int main(int argc, char *argv[]) {

@@ -87,17 +87,17 @@ private:
     }
 
     if (supg_stabilisation) {
-      if (not std::is_same<fe_type, finite_element::triangle_lagrange_p1>::value)
+      if (not std::is_same<fe_type, cell::triangle::fe::lagrange_p1>::value)
 	throw std::string("steady advection diffusion 2d:"
 			  " supg stabilisation is not available for non piece wise linear finite elements");
       
       const double delta(1.0);
       const double b_norm(1.0);
       
-      finite_element_space<finite_element::triangle_lagrange_p0> p0_fes(m);
+      finite_element_space<cell::triangle::fe::lagrange_p0> p0_fes(m);
       const auto h(build_element_diameter_function(m, p0_fes));
 
-      a += integrate<volume_quadrature_type>(delta / b_norm * make_expr<finite_element::triangle_lagrange_p0>(h) *
+      a += integrate<volume_quadrature_type>(delta / b_norm * make_expr<cell::triangle::fe::lagrange_p0>(h) *
 					     (make_expr(b_0) * d<1>(u) + make_expr(b_1) * d<2>(u)) *
 					     (make_expr(b_0) * d<1>(v) + make_expr(b_1) * d<2>(v))
 					     , m);
@@ -116,10 +116,10 @@ private:
       const double delta(1.0);
       const double b_norm(1.0);
       
-      finite_element_space<finite_element::triangle_lagrange_p0> p0_fes(m);
+      finite_element_space<cell::triangle::fe::lagrange_p0> p0_fes(m);
       const auto h(build_element_diameter_function(m, p0_fes));
 
-      f += integrate<volume_quadrature_type>(delta / b_norm * make_expr<finite_element::triangle_lagrange_p0>(h) *
+      f += integrate<volume_quadrature_type>(delta / b_norm * make_expr<cell::triangle::fe::lagrange_p0>(h) *
 					     make_expr(src) *
 					     (make_expr(b_0) * d<1>(v) + make_expr(b_1) * d<2>(v))
 					     , m);

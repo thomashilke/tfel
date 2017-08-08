@@ -46,7 +46,10 @@ public:
   using fe_list = type_list<fe_pack...>;
 
   template<std::size_t n>
-  using fe_type = finite_element_space<get_element_at_t<n, fe_list> >;
+  using fes_type = finite_element_space<get_element_at_t<n, fe_list> >;
+
+  template<std::size_t n>
+  using fe_type = get_element_at_t<n, fe_list>;
 
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wunused-value"
@@ -410,10 +413,11 @@ to_composite_p0_finite_element_function(const mesh_data<double, mesh<cell_type> 
 template<std::size_t n, std::size_t n_max, typename result_type, typename element_type>
 struct to_mesh_cell_impl {
   using cell_type = typename element_type::cell_type;
+  using fe_type = get_element_at_t<n, typename element_type::fe_list>;
   
   static void
   unwrap(result_type& result, const element_type& v) {
-    mesh_data<double, mesh<cell_type> > comp(to_mesh_cell_data(v.template get_component<n>()));
+    mesh_data<double, mesh<cell_type> > comp(to_mesh_cell_data<fe_type>(v.template get_component<n>()));
     for (std::size_t k(0); k < v.get_mesh().get_element_number(); ++k)
       result.value(k, n) = comp.value(k, 0);
 
@@ -450,10 +454,11 @@ to_mesh_cell_data(const typename composite_finite_element_space<fe_type>::elemen
 template<std::size_t n, std::size_t n_max, typename result_type, typename element_type>
 struct to_mesh_vertex_impl {
   using cell_type = typename element_type::cell_type;
+  using fe_type = get_element_at_t<n, typename element_type::fe_list>;
   
   static void
   unwrap(result_type& result, const element_type& v) {
-    mesh_data<double, mesh<cell_type> > comp(to_mesh_vertex_data(v.template get_component<n>()));
+    mesh_data<double, mesh<cell_type> > comp(to_mesh_vertex_data<fe_type>(v.template get_component<n>()));
     for (std::size_t k(0); k < v.get_mesh().get_vertex_number(); ++k)
       result.value(k, n) = comp.value(k, 0);
 

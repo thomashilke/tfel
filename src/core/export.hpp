@@ -87,7 +87,7 @@ namespace exporter {
       stream << "model: " << geometry_filename << "\n\n";
       stream << "VARIABLE\n";
       for (std::size_t i(0); i < var_names.size(); ++i) {
-        stream << variable_section_item(var_types[i].first, var_types[i].second) << var_names[i]
+        stream << variable_section_item(var_types[i].first, var_types[i].second) << ": " << var_names[i]
                << " " << var_filenames[i] << '\n';
 
       }

@@ -1,6 +1,8 @@
 #ifndef _META_H_
 #define _META_H_
 
+#include <string>
+#include <iostream>
 #include <cxxabi.h>
 
 template<typename T>

@@ -5,6 +5,15 @@
 #include "fe_value_manager.hpp"
 
 
+struct composite_is_continuous_impl {
+  template<typename fe_type, typename folded_type>
+  struct apply: is_type<bool_constant<folded_type::value and fe_type::is_continuous> > {};
+};
+
+template<typename TL>
+using composite_is_continuous = typename foldr<composite_is_continuous_impl, true_type, TL>::type;
+
+
 /*
  *  A composite finite element is simply a wrapper around a typelist
  *  with an interface to access each of the finite element types in the list.
@@ -20,6 +29,7 @@ struct composite_finite_element {
   using cell_type = get_element_at_t<0, cell_list>;
   
   static const std::size_t n_component = list_size<fe_list>::value;
+  static const bool is_continuous = composite_is_continuous<fe_list>::value;
 };
 
 template<std::size_t n, typename U, typename ... Ts>

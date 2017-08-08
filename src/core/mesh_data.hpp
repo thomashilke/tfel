@@ -1,8 +1,11 @@
 #ifndef _MESH_DATA_H_
 #define _MESH_DATA_H_
 
+#include <spikes/array.hpp>
+
 #include "operator.hpp"
 #include "meta.hpp"
+#include "mesh.hpp"
 
 template<typename value_t, typename mesh_t>
 class mesh_data;

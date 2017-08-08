@@ -220,7 +220,7 @@ struct composite_finite_element_space<composite_finite_element<fe_pack...> >::el
     return *this;
   }
 
-  template<std::size_t component, typename cfes_type>
+  template<std::size_t n, std::size_t n_max, typename cfes_type>
   struct restrict_impl {
     using submesh_type = submesh<cell_type, cell_type>;
     
@@ -228,14 +228,14 @@ struct composite_finite_element_space<composite_finite_element<fe_pack...> >::el
     static typename cfes_type::element
     call(const submesh_type& sm, const cfes_type& sm_cfes, const typename cfes_type::element& element,
 	 Cs&& ... cs) {
-      return restrict_impl<component + 1, cfes_type>::call(
+      return restrict_impl<n + 1, n_max, cfes_type>::call(
         sm, sm_cfes, element, std::forward<Cs>(cs)...,
-	element.template get_component<component>().restrict(sm_cfes.template get_finite_element_space<component>(), sm));
+	element.template get_component<n>().restrict(sm_cfes.template get_finite_element_space<n>(), sm));
     }
   };
 
-  template<typename cfes_type>
-  struct restrict_impl<n_component, cfes_type> {
+  template<std::size_t n, typename cfes_type>
+  struct restrict_impl<n, n, cfes_type> {
     using submesh_type = submesh<cell_type, cell_type>;
     
     template<typename ... Cs>
@@ -249,11 +249,11 @@ struct composite_finite_element_space<composite_finite_element<fe_pack...> >::el
   typename composite_finite_element_space<composite_finite_element<fe_pack...> >::element
   restrict(const composite_finite_element_space<composite_finite_element<fe_pack...> >& sm_cfes,
 	   const submesh<cell_type, cell_type>& sm) const {
-    return restrict_impl<0, cfes_type>::call(sm, sm_cfes, *this);
+    return restrict_impl<0, n_component, cfes_type>::call(sm, sm_cfes, *this);
   }
 
   
-  template<std::size_t component, typename cfes_type>
+  template<std::size_t n, std::size_t n_max, typename cfes_type>
   struct extend_impl {
     using submesh_type = submesh<cell_type, cell_type>;
     
@@ -261,14 +261,14 @@ struct composite_finite_element_space<composite_finite_element<fe_pack...> >::el
     static typename cfes_type::element
     call(const submesh_type& sm, const cfes_type& m_cfes, const typename cfes_type::element& element,
 	 Cs&& ... cs) {
-      return extend_impl<component + 1, cfes_type>::call(
+      return extend_impl<n + 1, n_max, cfes_type>::call(
         sm, m_cfes, element, std::forward<Cs>(cs)...,
-	element.template get_component<component>().extend(m_cfes.template get_finite_element_space<component>(), sm));
+	element.template get_component<n>().extend(m_cfes.template get_finite_element_space<n>(), sm));
     }
   };
 
-  template<typename cfes_type>
-  struct extend_impl<n_component, cfes_type> {
+  template<std::size_t n, typename cfes_type>
+  struct extend_impl<n, n, cfes_type> {
     using submesh_type = submesh<cell_type, cell_type>;
     
     template<typename ... Cs>
@@ -282,7 +282,7 @@ struct composite_finite_element_space<composite_finite_element<fe_pack...> >::el
   typename composite_finite_element_space<composite_finite_element<fe_pack...> >::element
   extend(const composite_finite_element_space<composite_finite_element<fe_pack...> >& m_cfes,
 	 const submesh<cell_type, cell_type>& sm) const {
-    return extend_impl<0, cfes_type>::call(sm, m_cfes, *this);
+    return extend_impl<0, n_component, cfes_type>::call(sm, m_cfes, *this);
   }
 
 private:

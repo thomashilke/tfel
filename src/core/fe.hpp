@@ -218,7 +218,7 @@ namespace finite_element {
 				 const unsigned int* derivative,
 				 const double* x) {
       typedef double (*bf_type)(const double*);
-      static const bf_type bf[3][3] = {{bf_0_1, bf_0_2, bf_0_3},
+      static const bf_type bf[3][3] = {{bf_00_1, bf_00_2, bf_00_3},
 				       {bf_10_1, bf_10_2, bf_10_3},
 				       {bf_01_1, bf_01_2, bf_01_3}};
       if (derivative[0] == 0 and derivative[1] == 0) {
@@ -247,9 +247,9 @@ namespace finite_element {
     }
 
   protected:
-    static double bf_0_1(const double* x) { return 1.0 - x[0] - x[1]; }
-    static double bf_0_2(const double* x) { return x[0]; }
-    static double bf_0_3(const double* x) { return x[1]; }
+    static double bf_00_1(const double* x) { return 1.0 - x[0] - x[1]; }
+    static double bf_00_2(const double* x) { return x[0]; }
+    static double bf_00_3(const double* x) { return x[1]; }
     static double bf_10_1(const double* x) { return -1.0; }
     static double bf_10_2(const double* x) { return  1.0; }
     static double bf_10_3(const double* x) { return  0.0; }
@@ -259,9 +259,9 @@ namespace finite_element {
   };
 
   struct triangle_lagrange_p1_bubble: public triangle_lagrange_p1 {
-    using triangle_lagrange_p1::bf_0_1;
-    using triangle_lagrange_p1::bf_0_2;
-    using triangle_lagrange_p1::bf_0_3;
+    using triangle_lagrange_p1::bf_00_1;
+    using triangle_lagrange_p1::bf_00_2;
+    using triangle_lagrange_p1::bf_00_3;
     using triangle_lagrange_p1::bf_10_1;
     using triangle_lagrange_p1::bf_10_2;
     using triangle_lagrange_p1::bf_10_3;
@@ -289,7 +289,7 @@ namespace finite_element {
 				 const unsigned int* derivative,
 				 const double* x) {
       typedef double(*bf_type)(const double*);
-      static const bf_type bf[3][4] = {{bf_0_1, bf_0_2, bf_0_3, bf_0_4},
+      static const bf_type bf[3][4] = {{bf_00_1, bf_00_2, bf_00_3, bf_00_4},
 				       {bf_10_1, bf_10_2, bf_10_3, bf_10_4},
 				       {bf_01_1, bf_01_2, bf_01_3, bf_01_4}};
 
@@ -319,13 +319,13 @@ namespace finite_element {
     }
 
   protected:
-    static double bf_0_4(const double* x) { return 27.0 * bf_0_1(x) * bf_0_2(x) * bf_0_3(x); }
-    static double bf_10_4(const double* x) { return 27.0 * (bf_10_1(x) * bf_0_2(x) * bf_0_3(x)
-							    + bf_0_1(x) * bf_10_2(x) * bf_0_3(x)
-							    + bf_0_1(x) * bf_0_2(x) * bf_10_3(x)); }
-    static double bf_01_4(const double* x) { return 27.0 * (bf_01_1(x) * bf_0_2(x) * bf_0_3(x)
-							    + bf_0_1(x) * bf_01_2(x) * bf_0_3(x)
-							    + bf_0_1(x) * bf_0_2(x) * bf_01_3(x)); }
+    static double bf_00_4(const double* x) { return    27.0 * bf_00_1(x) * bf_00_2(x) * bf_00_3(x); }
+    static double bf_10_4(const double* x) { return 27.0 * (  bf_10_1(x) * bf_00_2(x) * bf_00_3(x)
+							    + bf_00_1(x) * bf_10_2(x) * bf_00_3(x)
+							    + bf_00_1(x) * bf_00_2(x) * bf_10_3(x)); }
+    static double bf_01_4(const double* x) { return 27.0 * (  bf_01_1(x) * bf_00_2(x) * bf_00_3(x)
+							    + bf_00_1(x) * bf_01_2(x) * bf_00_3(x)
+							    + bf_00_1(x) * bf_00_2(x) * bf_01_3(x)); }
   };
 
   struct tetrahedron_lagrange_p0 {

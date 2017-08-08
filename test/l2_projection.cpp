@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
   typedef finite_element::edge_lagrange_p1 fe_type;
   typedef finite_element_space<fe_type> fes_type;
 
-  const bool export_to_stdout(true);
+  const bool export_to_stdout(false);
   const std::size_t n(4);
   
   try {
@@ -36,5 +36,7 @@ int main(int argc, char *argv[]) {
   } catch (const std::string& e) {
     std::cout << e << std::endl;
   }
+
+  linear_solver_impl::petsc::global_initialize::release();
   return 0;
 }

@@ -2,11 +2,15 @@
 
 int main(int argc, char *argv[]) {
   linear_solver s;
+  bool export_to_stdout(false);
 
   unsigned int n(10000);
   auto petsc_gmres_ilu(s.get_solver(solver::petsc, method::gmres, preconditioner::ilu));
   petsc_gmres_ilu->set_size(n);
 
+  std::vector<int> nz(n, 3);
+  petsc_gmres_ilu->preallocate(&nz[0]);
+  
   const double h(1.0 / n);
   
   array<double> rhs{n};
@@ -28,10 +32,14 @@ int main(int argc, char *argv[]) {
 
   array<double> x(petsc_gmres_ilu->solve(rhs));
 
-  std::cout.precision(12);
-  for(std::size_t i(0); i < n; ++i)
-    std::cout << i * h << ' ' << x.at(i) << '\n';
+  if (export_to_stdout) {
+    std::cout.precision(12);
+    for(std::size_t i(0); i < n; ++i)
+      std::cout << i * h << ' ' << x.at(i) << '\n';
+  }
 
   delete petsc_gmres_ilu;
+  linear_solver_impl::petsc::global_initialize::release();
+  
   return 0;
 }

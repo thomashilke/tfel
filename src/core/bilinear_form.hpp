@@ -23,7 +23,7 @@ public:
   }
 
   template<typename T>
-  void operator+=(const T& integration_proxy) {
+  void operator+=(T integration_proxy) {
     static_assert(T::form_type::rank == 2, "linear_form expects rank-2 expression.");
       
     typedef typename test_fes_type::fe_type test_fe_type;
@@ -34,6 +34,7 @@ public:
 
     const auto& m(integration_proxy.m);
 
+    
     // prepare the quadrature weights
     const std::size_t n_q(quadrature_type::n_point);
     array<double> omega{n_q};
@@ -54,11 +55,16 @@ public:
     if (T::point_set_number == 1) {
       xq_hat = integration_proxy.get_quadrature_points(0);
       fe_values.set_points(xq_hat);
+      xq.fill(0.0);
     }
 
+    const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
+    const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
+    array<double> a_el{n_test_dof, n_trial_dof};
 
     // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
+      a_el.fill(0.0);
 
       // prepare the quadrature points if necessary
       if (T::point_set_number > 1) {
@@ -82,22 +88,24 @@ public:
       const array<double>& phi(fe_values.template get_values<trial_fe_index>());
 
       // evaluate the weak form
-      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
-      const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
       const double volume(m.get_cell_volume(k));
-      for (unsigned int i(0); i < n_test_dof; ++i) {
-	for (unsigned int j(0); j < n_trial_dof; ++j) {
-	  double a_el(0.0);
-	  for (unsigned int q(0); q < n_q; ++q) {
-	    a_el += omega.at(q) * integration_proxy.f(k,
-						      &xq.at(q, 0), &xq_hat.at(q, 0),
-						      &psi.at(q, i, 0),
-						      &phi.at(q, j, 0));
+      for (unsigned int q(0); q < n_q; ++q) {
+	integration_proxy.f.prepare(k, &xq.at(q, 0ul), &xq_hat.at(q, 0ul));
+	
+	for (unsigned int i(0); i < n_test_dof; ++i) {
+	  for (unsigned int j(0); j < n_trial_dof; ++j) {
+	    a_el.at(i, j) += omega.at(q) * integration_proxy.f(k,
+							       &xq.at(q, 0), &xq_hat.at(q, 0),
+							       &psi.at(q, i, 0),
+							       &phi.at(q, j, 0));
 	  }
-	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
-		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), j), a_el * volume);
 	}
       }
+      for (unsigned int i(0); i < n_test_dof; ++i)
+	for (unsigned int j(0); j < n_trial_dof; ++j)
+	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
+		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), j),
+		     a_el.at(i, j) * volume);
     }
 
     dirty = true;
@@ -154,6 +162,9 @@ public:
 	petsc->add_value(v.first.first, v.first.second, v.second);
     }
     petsc->assemble();
+    //petsc->show();
+    
+    
     dirty = false;
   }
   
@@ -179,8 +190,7 @@ public:
     
     if (dirty)
       prepare_solver();
-    //petsc_gmres_ilu->show();
-
+    
     if (constraint_number == 0) {
       return typename trial_fes_type::element(trial_fes, petsc->solve(f));
     } else {
@@ -257,14 +267,19 @@ public:
     fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
     fe_zvalues.clear();
 
-
+    const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
+    array<double> a_el{n_trial_dof};
+    
     // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
+      a_el.fill(0.0);
+      
       // prepare the quadrature points
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
 									m.get_elements(),
 									k, xq_hat));
+
       // prepare the basis function values
       const array<double> jmt(m.get_jmt(k));
       fe_values.set_points(xq_hat);
@@ -274,19 +289,21 @@ public:
       const array<double>& phi(fe_values.template get_values<trial_fe_index>());
 
       // evaluate the weak form
-      const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
       const double volume(m.get_cell_volume(k));
-      for (unsigned int j(0); j < n_trial_dof; ++j) {
-	double a_el(0.0);
-	for (unsigned int q(0); q < n_q; ++q) {
-	  a_el += volume * omega.at(q) * integration_proxy.f(k,
-							     &xq.at(q, 0), &xq_hat.at(q, 0),
-							     &psi.at(q, 0, 0),
-							     &phi.at(q, j, 0));
+      for (unsigned int q(0); q < n_q; ++q) {
+	integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+	
+	for (unsigned int j(0); j < n_trial_dof; ++j) {
+	  a_el.at(j) += omega.at(q) * integration_proxy.f(k,
+							  &xq.at(q, 0), &xq_hat.at(q, 0),
+							  &psi.at(q, 0, 0),
+							  &phi.at(q, j, 0));
 	}
-	b_form.accumulate(b_form.test_fes.get_dof_number() + constraint_id,
-				 b_form.trial_fes.get_dof(integration_proxy.get_global_element_id(k), j), a_el);
       }
+      for (unsigned int j(0); j < n_trial_dof; ++j)
+	b_form.accumulate(b_form.test_fes.get_dof_number() + constraint_id,
+			  b_form.trial_fes.get_dof(integration_proxy.get_global_element_id(k), j),
+			  a_el.at(j) * volume);
     }
 
     b_form.dirty = true;
@@ -309,8 +326,13 @@ public:
     fe_zvalues.clear();
 
 
+    const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
+    array<double> a_el{n_test_dof};
+
     // loop over the elements
     for (unsigned int k(0); k < m.get_element_number(); ++k) {
+      a_el.fill(0.0);
+      
       // prepare the quadrature points
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
@@ -325,20 +347,20 @@ public:
       const array<double>& phi(fe_zvalues.template get_values<trial_fe_index>());
 
       // evaluate the weak form
-      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
       const double volume(m.get_cell_volume(k));
-      for (unsigned int i(0); i < n_test_dof; ++i) {
-	double a_el(0.0);
-	for (unsigned int q(0); q < n_q; ++q) {
-	  a_el += volume * omega.at(q) * integration_proxy.f(k,
-							     &xq.at(q, 0), &xq_hat.at(q, 0),
-							     &psi.at(q, i, 0),
-							     &phi.at(q, 0, 0));
+      for (unsigned int q(0); q < n_q; ++q) {
+	integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+	for (unsigned int i(0); i < n_test_dof; ++i) {
+	  a_el.at(i) += omega.at(q) * integration_proxy.f(k,
+							  &xq.at(q, 0), &xq_hat.at(q, 0),
+							  &psi.at(q, i, 0),
+							  &phi.at(q, 0, 0));
 	}
-	b_form.accumulate(b_form.test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
-				 b_form.trial_fes.get_dof_number() + constraint_id,
-				 a_el);
       }
+      for (unsigned int i(0); i < n_test_dof; ++i)
+	b_form.accumulate(b_form.test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
+			  b_form.trial_fes.get_dof_number() + constraint_id,
+			  a_el.at(i) * volume);
     }
 
     b_form.dirty = true;

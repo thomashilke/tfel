@@ -23,7 +23,7 @@ public:
 				  get_dof_number_impl<test_cfes_type>,
 				  0,
 				  n_test_component>::template fill<const test_cfes_type&>(&test_global_dof_number[0],
-										     test_cfes);
+											  test_cfes);
 
     test_global_dof_offset = std::vector<std::size_t>(n_test_component, 0ul);
     std::partial_sum(test_global_dof_number,
@@ -63,6 +63,7 @@ public:
 	for (unsigned int q(0); q < n_q; ++q) {
 	  select_function_valuation<test_fe_list, m, unique_fe_list>(psi, q, i,
 								     fe_values, fe_zvalues);
+	  integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
 	  rhs_el += volume * omega.at(q)
 	    * expression_call_wrapper<0, n_test_component>::call(integration_proxy.f, psi,
 								 k, &xq.at(q, 0), &xq_hat.at(q, 0));
@@ -111,9 +112,10 @@ public:
 	fe_values.set_points(xq_hat);
       }
 
-      xq = cell_type::map_points_to_space_coordinates(m.get_vertices(),
-						      m.get_elements(),
-						      k, xq_hat);
+      if (form_type::require_space_coordinates)
+	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
+						   m.get_elements(),
+						   k, xq_hat);
       
       // prepare the basis function values
       if (form_type::differential_order > 0) {

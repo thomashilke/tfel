@@ -34,10 +34,11 @@ int main(int argc, char *argv[]) {
       const auto u(a.get_trial_function());
       const auto v(a.get_test_function());
 
-      a += integrate<quad::tetrahedron::qf1pTet>(d<1>(u) * d<1>(v) +
-					  d<2>(u) * d<2>(v) +
-					  d<3>(u) * d<3>(v)
-					  , m);
+      a += integrate<quad::tetrahedron::qf1pTet>(
+	d<1>(u) * d<1>(v) +
+	d<2>(u) * d<2>(v) +
+	d<3>(u) * d<3>(v)
+	, m);
 
       //a.show(std::cout);
     }
@@ -45,8 +46,9 @@ int main(int argc, char *argv[]) {
     linear_form<fes_type> f(fes); {
       const auto v(f.get_test_function());
 
-      f += integrate<quad::tetrahedron::qf1pTet>(::f * v,
-						 m);
+      f += integrate<quad::tetrahedron::qf1pTet>(
+	::f * v,
+	m);
     }
 
     exporter::ensight6("cube",

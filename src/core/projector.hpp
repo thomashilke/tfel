@@ -80,7 +80,8 @@ namespace projector {
 	m.get_elements(),
 	k,
 	x_hat));
-      
+
+      expr.prepare(k, &x.at(0,0), &x_hat.at(0,0));
       coefficients.at(i) = expr(k, &x.at(0,0), &x_hat.at(0,0));
     }
     

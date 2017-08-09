@@ -40,11 +40,13 @@ template<typename ... fe_pack>
 class composite_finite_element_space<composite_finite_element<fe_pack...> > {
 public:
   struct element;
-  using cfe_type = composite_finite_element<fe_pack...>;
-  using cell_list = unique_t<transform<get_cell_type, typename cfe_type::fe_list> >;
-  using cell_type = get_element_at_t<0, cell_list>;
   using fe_list = type_list<fe_pack...>;
-
+  using cfe_type = composite_finite_element<fe_pack...>;
+  using cell_list = unique_t<transform<get_cell_type, fe_list> >;
+  using cell_type = get_element_at_t<0, cell_list>;
+  
+  static_assert(list_size<cell_list>::value == 1, "");
+  
   template<std::size_t n>
   using fes_type = finite_element_space<get_element_at_t<n, fe_list> >;
 

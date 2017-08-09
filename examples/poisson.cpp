@@ -15,7 +15,7 @@ double src(const double* x) {
 
 int main(int argc, char *argv[]) {
   using cell_type    = cell::triangle;
-  using fe_type      = finite_element::triangle_lagrange_p1;
+  using fe_type      = cell_type::fe::lagrange_p1;
   using fes_type     = finite_element_space<fe_type>;
   using element_type = fes_type::element;
   using v_quad_type  = quad::triangle::qf5pT;
@@ -43,9 +43,9 @@ int main(int argc, char *argv[]) {
   }
 
   element_type solution(a.solve(f));
-  exporter::ensight6("laplacian"
-		     , solution, "solution"
-		     , projector::lagrange<fe_type>(src, fes), "source");
+  exporter::ensight6("poisson"
+		     , to_mesh_vertex_data<fe_type>(solution), "solution"
+		     , to_mesh_vertex_data<fe_type>(projector::lagrange<fe_type>(src, fes)), "source");
 
   
   return 0;

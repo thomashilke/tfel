@@ -343,7 +343,7 @@ to_mesh_cell_data(const typename finite_element_space<fe_type>::element& v) {
   const finite_element_space<fe_type>& fes(v.get_finite_element_space());
   const mesh<cell_type>& m(fes.get_mesh());
   
-  array<double> values{fes.get_dof_number(), 1};
+  array<double> values{m.get_element_number(), 1};
 
   const array<double> bc_hat(cell_type::barycenter());
   for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
@@ -366,7 +366,7 @@ to_mesh_vertex_data(const typename finite_element_space<fe_type>::element& v) {
   const finite_element_space<fe_type>& fes(v.get_finite_element_space());
   const mesh<cell_type>& m(fes.get_mesh());
   
-  array<double> values{fes.get_dof_number(), 1};
+  array<double> values{m.get_vertex_number(), 1};
 
 #warning "FIXME: This works only for finite element with nodes on the cell vertices"
   for (std::size_t k(0); k < m.get_element_number(); ++k)

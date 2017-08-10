@@ -150,6 +150,17 @@ namespace exporter {
     void write_static_variable_file(std::ostream& stream,
 				    const mesh_data<double, mesh_type>& data,
 				    const std::string& var_name) {
+      std::size_t fill(1);
+      switch (data.get_component_number()) {
+      case 1:
+	fill = 1; break;
+      case 2:
+      case 3:
+	fill = 3; break;
+      default:
+	throw std::string("write_static_variable_file: unsupported component number");
+      }
+      
       switch (data.get_kind()) {
       case mesh_data_kind::cell: {
 	stream << var_name << '\n';
@@ -157,12 +168,19 @@ namespace exporter {
 	stream << ensight_cell_name<typename mesh_type::cell_type>::value;
 	for (std::size_t k(0); k < data.get_values().get_size(0); ++k) {
           for (std::size_t n(0); n < data.get_component_number(); ++n) {
-            std::size_t value_id(k * data.get_component_number() + n);
+            std::size_t value_id(k * fill + n);
             if (value_id % 6 == 0)
               stream << '\n';
             stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
                    << data.value(k, n);
           }
+	  for (std::size_t n(data.get_component_number()); n < fill; ++n) {
+	    std::size_t value_id(k * fill + n);
+	    if (value_id % 6 == 0)
+              stream << '\n';
+	    stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+                   << 0.0;
+	  }
 	}
       }
 	break;
@@ -171,12 +189,19 @@ namespace exporter {
 	stream << var_name;
 	for (std::size_t k(0); k < data.get_values().get_size(0); ++k) {
           for (std::size_t n(0); n < data.get_component_number(); ++n) {
-            std::size_t value_id(k * data.get_component_number() + n);
+            std::size_t value_id(k * fill + n);
             if (value_id % 6 == 0)
               stream << '\n';
             stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
                    << data.value(k, n);
           }
+	  for (std::size_t n(data.get_component_number()); n < fill; ++n) {
+	    std::size_t value_id(k * fill + n);
+	    if (value_id % 6 == 0)
+              stream << '\n';
+	    stream << std::setw(12) << std::right << std::setprecision(5) << std::scientific
+                   << 0.0;
+	  }
 	}
       }
 	break;

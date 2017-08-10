@@ -12,8 +12,10 @@ double u_1_bc(const double* x) {
 
 int main(int argc, char *argv[]) {
   using cell_type = cell::triangle;
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
-
+  using mesh_type = mesh<cell_type>;
+  
+  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 50, 50));
+  
   stokes_2d<> s2d(m, 0.1);
   s2d.set_velocity_condition(u_0_bc, u_1_bc);
   s2d.set_force(f_0, f_1);
@@ -21,8 +23,9 @@ int main(int argc, char *argv[]) {
 
   const auto solution(s2d.get_solution());
   exporter::ensight6("stokes_p",
-		     to_mesh_vertex_data<stokes_2d<>::velocity_fe_type>(solution.get_component<0>()), "u0",
-		     to_mesh_vertex_data<stokes_2d<>::velocity_fe_type>(solution.get_component<1>()), "u1",
+		     mesh_data<double, mesh_type>(m, mesh_data_kind::vertex,
+		       to_mesh_vertex_data<stokes_2d<>::velocity_fe_type>(solution.get_component<0>()),
+                       to_mesh_vertex_data<stokes_2d<>::velocity_fe_type>(solution.get_component<1>())), "u",
 		     to_mesh_vertex_data<stokes_2d<>::pressure_fe_type>(solution.get_component<2>()), "p");
 
   {

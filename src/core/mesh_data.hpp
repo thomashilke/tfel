@@ -214,6 +214,29 @@ DECL_NUMERIC_BINARY_LOGICAL_OP(||, logical_or)
 
 enum class mesh_data_kind {cell, vertex};
 
+template<typename value_type, typename ... array_types>
+struct concat_arrays;
+
+template<typename value_type, typename array_type, typename ... array_types>
+struct concat_arrays<value_type, array_type, array_types...> {
+  static void call(array<value_type>& dst, const array_type& a, const array_types& ... as) {
+    assert(a.get_rank() == 2 and a.get_size(1) == 1);
+    assert(a.get_size(0) == dst.get_size(0));
+    assert(dst.get_rank() == 2);
+    assert(dst.get_size(1) >= sizeof...(array_types));
+    
+    const std::size_t m(dst.get_size(1) - (sizeof...(array_types) + 1));
+    for (std::size_t n(0); n < a.get_size(0); ++n)
+      dst.at(n, m) = a.at(n, 0);
+
+    concat_arrays<value_type, array_types...>::call(dst, as...);
+  }
+};
+
+template<typename value_type>
+struct concat_arrays<value_type> {
+  static void call(array<value_type>& dst) {}
+};
 
 template<typename value_t, typename mesh_t>
 class mesh_data {
@@ -243,6 +266,12 @@ public:
 	  values.at(k, n) = expr(k, n);
   }
 
+  template<typename ...  mesh_data_types>
+  mesh_data(const mesh_type& m, mesh_data_kind t, const mesh_data_types& ... datas)
+    : m(m), type(t), values{value_number(t), sizeof...(mesh_data_types)}{
+    concat_arrays<double, array<typename mesh_data_types::value_type>...>::call(values, (datas.get_values())...);
+  }
+  
   const value_type& value(std::size_t k, std::size_t n) const { return values.at(k, n); }
   value_type& value(std::size_t k, std::size_t n) { return values.at(k, n); }
 

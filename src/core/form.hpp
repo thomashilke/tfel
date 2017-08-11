@@ -17,7 +17,7 @@
 
 template<typename cell_t, typename quadrature_t, typename form_t>
 struct mesh_integration_proxy {
-  mesh_integration_proxy(const form_t& f, const mesh<cell_t>& m)
+  mesh_integration_proxy(const form_t& f, const fe_mesh<cell_t>& m)
     : f(f), m(m), xq{quadrature_t::n_point, quadrature_type::n_point_space_dimension} {
     xq.set_data(&quadrature_t::x[0][0]);
   }
@@ -29,7 +29,7 @@ struct mesh_integration_proxy {
   const static std::size_t point_set_number = 1;
   
   form_type f;
-  const mesh<cell_type>& m;
+  const fe_mesh<cell_type>& m;
   array<double> xq;
 
   std::size_t get_global_element_id(std::size_t k) const {
@@ -74,7 +74,7 @@ template<typename quadrature_type, typename cell_type, typename form_type>
 typename std::enable_if<(form_type::rank > 0),
 		 mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >
 		 >::type
-integrate(const expression<form_type>& f, const mesh<cell_type>& m) {
+integrate(const expression<form_type>& f, const fe_mesh<cell_type>& m) {
   return mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> >(f, m);
 }
 
@@ -128,7 +128,7 @@ double integrate_with_proxy(const T& integration_proxy) {
 
 template<typename quadrature_type, typename cell_type, typename form_type>
 typename std::enable_if<form_type::rank == 0, double>::type
-integrate(const expression<form_type>& f, const mesh<cell_type>& m) {
+integrate(const expression<form_type>& f, const fe_mesh<cell_type>& m) {
   mesh_integration_proxy<cell_type, quadrature_type, expression<form_type> > proxy(f, m);
   return integrate_with_proxy(proxy);
 }

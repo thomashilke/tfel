@@ -72,7 +72,7 @@ double error(std::size_t M, std::size_t N) {
     
   
   using cell_type = cell::triangle;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   mesh_type m(gen_square_mesh(1.0, 1.0, N, N));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
@@ -93,7 +93,7 @@ double error(std::size_t M, std::size_t N) {
     });
 
 
-  exporter::ensight6_geometry("inflow", mesh<cell::edge>(inflow));
+  exporter::ensight6_geometry("inflow", fe_mesh<cell::edge>(inflow));
   
   exporter::ensight6_transient<mesh_type>
     ens("unsteady_advection_diffusion_rotating_hill",

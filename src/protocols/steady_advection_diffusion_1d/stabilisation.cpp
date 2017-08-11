@@ -6,9 +6,9 @@ int main(
   char *argv[])
 {
   using cell_type = cell::edge;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   using fe_type = cell::edge::fe::lagrange_p1;
-  mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, 40));
+  fe_mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, 40));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
   submesh<cell_type>

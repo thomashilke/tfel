@@ -18,7 +18,7 @@ public:
   using boundary_quadrature_type = typename basic_fe_formulation<fe>::boundary_quadrature_type;
 
 
-  unsteady_advection_diffusion(const mesh<cell_type>& m,
+  unsteady_advection_diffusion(const fe_mesh<cell_type>& m,
 			       const submesh<cell_type>& dm,
 			       double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
@@ -28,7 +28,7 @@ public:
       bk_norm(p0_fes), h(build_element_diameter_function<cell_type>(m, p0_fes)),
       b_0(null_function), b_1(null_function), src(null_function) {}
 
-  unsteady_advection_diffusion(const mesh<cell_type>& m, double delta_t, double diffusivity)
+  unsteady_advection_diffusion(const fe_mesh<cell_type>& m, double delta_t, double diffusivity)
     : unsteady_advection_diffusion(m, submesh<cell_type>(m), delta_t, diffusivity) {}
 
   void set_boundary_value(const std::function<double(const double*)>& u_bc) {
@@ -86,7 +86,7 @@ private:
   const double supg_delta = 1.0;
 
   
-  const mesh<cell_type>& m;
+  const fe_mesh<cell_type>& m;
   const submesh<cell_type> dm;
   
   fes_type fes;

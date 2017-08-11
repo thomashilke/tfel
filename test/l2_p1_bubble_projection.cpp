@@ -10,7 +10,7 @@ double f(const double* x) {
 int main(int argc, char *argv[]) {
   using fe_type = cell::triangle::fe::lagrange_p1_bubble;
 
-  mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, 100, 100));
+  fe_mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, 100, 100));
   finite_element_space<fe_type> fes(m);
 
   const auto f_h(projector::l2<fe_type, quad::triangle::qf5pT>(f, fes));

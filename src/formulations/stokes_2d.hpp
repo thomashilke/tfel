@@ -44,7 +44,7 @@ public:
   using velocity_fes_type = finite_element_space<velocity_fe_type>;
   using pressure_fes_type = finite_element_space<pressure_fe_type>;
   
-  stokes_2d(const mesh<cell_type>& m, double mu)
+  stokes_2d(const fe_mesh<cell_type>& m, double mu)
     : viscosity(mu),
       m(m), dm(m.get_boundary_submesh()),
       pressure_point_m(m.get_point_submesh(0)),
@@ -94,7 +94,7 @@ public:
 private:
   double viscosity;
 
-  const mesh<cell_type>& m;
+  const fe_mesh<cell_type>& m;
   const submesh<cell_type> dm;
   const submesh<cell_type, cell::point> pressure_point_m;
   

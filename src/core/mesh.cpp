@@ -1,6 +1,6 @@
 #include "mesh.hpp"
 
-mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n) {
+fe_mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n) {
   std::vector<double> vertices(n + 1);
   std::vector<unsigned int> elements(2 * n);
 
@@ -12,12 +12,12 @@ mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n) {
     elements[2 * k + 1] = k + 1;
   }
 
-  return mesh<cell::edge>(&vertices[0], n + 1, 1,
+  return fe_mesh<cell::edge>(&vertices[0], n + 1, 1,
 			  &elements[0], n);
 }
 
-mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
-				     unsigned int n_1, unsigned int n_2) {
+fe_mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
+                                        unsigned int n_1, unsigned int n_2) {
   std::vector<double> vertices((n_1 + 1) * (n_2 + 1) * 2);
   std::vector<unsigned int> elements(2 * n_1 * n_2 * 3);
 
@@ -37,13 +37,13 @@ mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
       elements[6 * (n_1 * j + i) + 5] = (j + 1) * (n_1 + 1) + (i + 1);
     }
 
-  return mesh<cell::triangle>(&vertices[0], (n_1 + 1) * (n_2 + 1), 2,
-			      &elements[0], n_1 * n_2 * 2);
+  return fe_mesh<cell::triangle>(&vertices[0], (n_1 + 1) * (n_2 + 1), 2,
+                                 &elements[0], n_1 * n_2 * 2);
 }
 
 
-mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
-				      unsigned int n_1, unsigned int n_2, unsigned int n_3) {
+fe_mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
+                                         unsigned int n_1, unsigned int n_2, unsigned int n_3) {
   array<double> vertices{n_3 + 1, n_2 + 1, n_1 + 1, 3};
   array<unsigned int> v_ids{n_3 + 1, n_2 + 1, n_1 + 1};
   array<unsigned int> elements{n_3, n_2, n_1, 5, 4};
@@ -121,6 +121,6 @@ mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
 	}
       }
   
-  return mesh<cell::tetrahedron>(&vertices.at(0,0,0,0), (n_1 + 1) * (n_2 + 1) * (n_3 + 1), 3,
-				 &elements.at(0,0,0,0,0), n_1 * n_2 * n_3 * 5);
+  return fe_mesh<cell::tetrahedron>(&vertices.at(0,0,0,0), (n_1 + 1) * (n_2 + 1) * (n_3 + 1), 3,
+                                    &elements.at(0,0,0,0,0), n_1 * n_2 * n_3 * 5);
 }

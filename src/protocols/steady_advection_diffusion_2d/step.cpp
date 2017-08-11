@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   const double diffusivity(1e-3);
   
   using cell_type = cell::triangle;
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 30, 30));
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 30, 30));
   
   using fe_type = cell::triangle::fe::lagrange_p1;
   steady_advection_diffusion<fe_type> sad(m, diffusivity);

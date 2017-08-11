@@ -20,7 +20,7 @@ void projection(std::size_t n) {
   const std::size_t n_x(n), n_y(n);
   
   try {
-    mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, n_x, n_y));
+    fe_mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, n_x, n_y));
     std::cout << std::setw(40) << "mesh: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     

@@ -32,7 +32,7 @@ double u_1_bc(const double* x) {
 int main(int argc, char *argv[]) {
   try {
     using cell_type = cell::triangle;
-    mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 50, 50));
+    fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 50, 50));
 
     using vfe = cell::triangle::fe::lagrange_p1_bubble;
     //using vfe = finite_element::triangle_lagrange_p1;

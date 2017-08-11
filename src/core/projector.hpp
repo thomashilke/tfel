@@ -62,7 +62,7 @@ namespace projector {
     static_assert(fe_type::is_lagrangian,
 		  "lagrange projector is only defined for lagrangian finite element space.");
 
-    const mesh<cell_type>& m(fes.get_mesh());
+    const fe_mesh<cell_type>& m(fes.get_mesh());
     
     array<double> coefficients{fes.get_dof_number()};
     for (std::size_t i(0); i < fes.get_dof_number(); ++i) {

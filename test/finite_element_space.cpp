@@ -17,7 +17,7 @@ void test_triangle_lagrange_p1() {
 			      0, 2, 3};
 
   using cell_type = cell::triangle;
-  mesh<cell_type> m(vertices, 4, 2,
+  fe_mesh<cell_type> m(vertices, 4, 2,
 			 elements, 2);
 
   using fe_type = cell_type::fe::lagrange_p1;
@@ -35,7 +35,7 @@ void test_triangle_lagrange_p1_bubble() {
 			      0, 2, 3};
 
   using cell_type = cell::triangle;
-  mesh<cell_type> m(vertices, 4, 2,
+  fe_mesh<cell_type> m(vertices, 4, 2,
 			 elements, 2);
 
   using fe_type = cell_type::fe::lagrange_p1_bubble;
@@ -50,7 +50,7 @@ void test_edge_lagrange_p1() {
 			      1, 2};
 
   using cell_type = cell::edge;
-  mesh<cell_type> m(vertices, 3, 1,
+  fe_mesh<cell_type> m(vertices, 3, 1,
 		     elements, 2);
 
   using fe_type = cell_type::fe::lagrange_p1;
@@ -65,7 +65,7 @@ void test_edge_lagrange_p1_bubble() {
 			      1, 2};
 
   using cell_type = cell::edge;
-  mesh<cell_type> m(vertices, 3, 1,
+  fe_mesh<cell_type> m(vertices, 3, 1,
 		     elements, 2);
 
   using fe_type = cell_type::fe::lagrange_p1_bubble;

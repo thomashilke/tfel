@@ -18,7 +18,7 @@ public:
   using boundary_quadrature_type = typename basic_fe_formulation<fe>::boundary_quadrature_type;
 
 
-  steady_advection_diffusion(const mesh<cell_type>& m, double diffusivity)
+  steady_advection_diffusion(const fe_mesh<cell_type>& m, double diffusivity)
     : diffusivity(diffusivity),
       m(m), dm(m.get_boundary_submesh()), fes(m, dm),
       a(fes, fes), f(fes),
@@ -50,7 +50,7 @@ public:
 private:
   const double diffusivity;
   
-  const mesh<cell_type>& m;
+  const fe_mesh<cell_type>& m;
   const submesh<cell_type> dm;
   
   fes_type fes;

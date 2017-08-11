@@ -14,7 +14,7 @@ public:
   using typename basic_fe_formulation<fe>::volume_quadrature_type;
   using typename basic_fe_formulation<fe>::boundary_quadrature_type;
   
-  unsteady_diffusion_2d(const mesh<cell_type>& m,
+  unsteady_diffusion_2d(const fe_mesh<cell_type>& m,
 			double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
       m(m), dm(m.get_boundary_submesh()),
@@ -23,7 +23,7 @@ public:
     assemble_bilinear_form();
   }
 
-  unsteady_diffusion_2d(const mesh<cell_type>& m,
+  unsteady_diffusion_2d(const fe_mesh<cell_type>& m,
 			const submesh<cell_type>& dm,
 			double delta_t, double diffusivity)
     : delta_t(delta_t), diffusivity(diffusivity),
@@ -57,7 +57,7 @@ public:
 private:
   const double delta_t, diffusivity;
   
-  const mesh<cell_type>& m;
+  const fe_mesh<cell_type>& m;
   const submesh<cell_type>& dm;
   fes_type fes;
 

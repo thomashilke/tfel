@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     using fe_type = cell::tetrahedron::fe::lagrange_p1;
     using fes_type = finite_element_space<fe_type>;
     
-    mesh<cell_type> m(gen_cube_mesh(1.0, 1.0, 1.0, 10, 10, 10));
+    fe_mesh<cell_type> m(gen_cube_mesh(1.0, 1.0, 1.0, 10, 10, 10));
     //m.show(std::cout);
 
     submesh<cell_type> dm(m.get_boundary_submesh());

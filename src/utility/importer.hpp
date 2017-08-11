@@ -11,7 +11,7 @@
 namespace importer {
   namespace alucell {
     template<typename cell_type>
-    mesh<cell_type> mesh(const std::string& db_filename,
+    fe_mesh<cell_type> mesh(const std::string& db_filename,
 			 const std::string& mesh_name) {
       ::alucell::database_read_access db(db_filename);
       ::alucell::database_index index(&db);
@@ -57,16 +57,16 @@ namespace importer {
 	  elements.at(i, j) = e.get_value(i, j) - 1;
       }
       
-      return ::mesh<cell_type>(&vertices.at(0,0), vertices.get_size(0), vertices.get_size(1),
+      return ::fe_mesh<cell_type>(&vertices.at(0,0), vertices.get_size(0), vertices.get_size(1),
 			       &elements.at(0,0), elements.get_size(0),
 			       &references.at(0));
     }
 
     template<typename cell_type>
-    mesh_data<double, ::mesh<cell_type> > variable(const std::string& db_filename,
+    mesh_data<double, ::fe_mesh<cell_type> > variable(const std::string& db_filename,
 						   const std::string& mesh_name,
 						   const std::string& var_name,
-						   const ::mesh<cell_type>& m) {
+						   const ::fe_mesh<cell_type>& m) {
       ::alucell::database_read_access db(db_filename);
       ::alucell::database_index index(&db);
 
@@ -81,11 +81,11 @@ namespace importer {
       array<double> coefficients{v.get_size(), v.get_components()};
       v.get_data(&coefficients.at(0, 0));
 
-      using mesh_data_type = mesh_data<double, ::mesh<cell_type> >;
+      using mesh_data_type = mesh_data<double, ::fe_mesh<cell_type> >;
       if (coefficients.get_size(0) == m.get_vertex_number())
-	return mesh_data<double, ::mesh<cell_type> >(m, mesh_data_kind::vertex, std::move(coefficients));
+	return mesh_data<double, ::fe_mesh<cell_type> >(m, mesh_data_kind::vertex, std::move(coefficients));
       else if (coefficients.get_size(0) == m.get_element_number())
-	return mesh_data<double, ::mesh<cell_type> >(m, mesh_data_kind::cell, std::move(coefficients));
+	return mesh_data<double, ::fe_mesh<cell_type> >(m, mesh_data_kind::cell, std::move(coefficients));
       else
 	throw std::string("incompatible array size");
     }

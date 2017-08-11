@@ -12,9 +12,9 @@ double u_1_bc(const double* x) {
 
 int main(int argc, char *argv[]) {
   using cell_type = cell::triangle;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 50, 50));
+  mesh_type m(gen_square_mesh(1.0, 1.0, 50, 50));
   
   stokes_2d<> s2d(m, 0.1);
   s2d.set_velocity_condition(u_0_bc, u_1_bc);

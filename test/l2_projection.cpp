@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   const std::size_t n(4);
   
   try {
-    mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, n));
+    fe_mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, n));
     fes_type fes(m);
     const auto func_h(projector::l2<fe_type, quad::edge::gauss3>(func, fes));
 

@@ -21,9 +21,9 @@ double b2(const double* x) {
 
 void test_1() {
   using cell_type = cell::triangle;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 10, 10));
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 10, 10));
 
   mesh_data<double, mesh_type> data(evaluate_on_vertices(m, b0, b1, b2));
 
@@ -32,9 +32,9 @@ void test_1() {
 
 void test_2() {
   using cell_type = cell::triangle;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 10, 10));
+  mesh_type m(gen_square_mesh(1.0, 1.0, 10, 10));
   using fe_type = cell_type::fe::lagrange_p1;
   using cfe_type = composite_finite_element<fe_type, fe_type, fe_type>;
   using cfes_type = composite_finite_element_space<cfe_type>;
@@ -54,9 +54,9 @@ void test_2() {
 
 void test_3() {
   using cell_type = cell::triangle;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 10, 10));
+  mesh_type m(gen_square_mesh(1.0, 1.0, 10, 10));
   using fe_type = cell_type::fe::lagrange_p1;
   using cfe_type = composite_finite_element<fe_type, fe_type, fe_type>;
   using cfes_type = composite_finite_element_space<cfe_type>;

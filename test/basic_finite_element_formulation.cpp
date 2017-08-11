@@ -29,7 +29,7 @@ double heat_source(const double* x) {
 int main(int argc, char *argv[]) {
 
   typedef cell::triangle::fe::lagrange_p1 fe_type;
-  typedef mesh<fe_type::cell_type> mesh_type;
+  typedef fe_mesh<fe_type::cell_type> mesh_type;
   typedef submesh<fe_type::cell_type> submesh_type;
 
   unsigned int M(200);

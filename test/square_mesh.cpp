@@ -18,7 +18,7 @@ double b_1(const double* x) {
 }
 
 int main(int argc, char *argv[]) {
-  mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, 4, 4));
+  fe_mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, 4, 4));
   m.show(std::cout);
 
   submesh<cell::triangle> dm(m.get_boundary_submesh());
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     (n[0] * b_bc[0] + n[1] * b_bc[1]) < -1.0e-6 );
 
   //submesh<cell::triangle, cell::edge> inflow_m(dm.submesh_from_selection(inflow_boundary_cells));
-  mesh<cell::edge> inflow_m(dm.submesh_from_selection(inflow_boundary_cells));
+  fe_mesh<cell::edge> inflow_m(dm.submesh_from_selection(inflow_boundary_cells));
   inflow_m.show(std::cout);
 
   exporter::ensight6_geometry("square", m);

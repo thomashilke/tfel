@@ -51,9 +51,9 @@ int main(int, char**) {
   timer t;
   try {
     const std::size_t n(10);
-    using mesh_type = mesh<cell::edge>;
+    using mesh_type = fe_mesh<cell::edge>;
     
-    mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
+    fe_mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
     submesh<cell::edge> left_boundary(dm.query_elements([](const double* x) -> bool {
 	  return *x < 1.0 / 2.0;

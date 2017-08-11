@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   using fe_type = cell::triangle::fe::lagrange_p1;
   using fes_type = finite_element_space<fe_type>;
 
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
   submesh<cell_type, cell::point> dm(m.get_point_submesh(0));
   fes_type fes(m);
 

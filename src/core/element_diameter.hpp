@@ -8,7 +8,7 @@
 
 template<typename cell_type>
 typename finite_element_space<typename cell_type::fe::lagrange_p0>::element
-build_element_diameter_function(const mesh<cell_type>& m,
+build_element_diameter_function(const fe_mesh<cell_type>& m,
 				const finite_element_space<typename cell_type::fe::lagrange_p0>& fes) {
   array<double> coef{fes.get_dof_number()};
   for (std::size_t k(0); k < m.get_element_number(); ++k)

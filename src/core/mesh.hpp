@@ -18,7 +18,7 @@ template<typename value_t, typename mesh_t>
 class mesh_data;
 
 template<typename cell_t>
-class mesh;
+class fe_mesh;
 
 
 template<typename p_cell_type, typename cell_t = typename p_cell_type::boundary_cell_type>
@@ -27,7 +27,7 @@ public:
   typedef p_cell_type parent_cell_type;
   typedef cell_t cell_type;
 
-  submesh(const mesh<parent_cell_type>& parent,
+  submesh(const fe_mesh<parent_cell_type>& parent,
 	  const array<unsigned int>& el,
 	  const array<unsigned int>& el_id,
 	  const array<unsigned int>& sd_id)
@@ -36,7 +36,7 @@ public:
       parent_element_id(el_id),
       parent_subdomain_id(sd_id) {}
   
-  submesh(const mesh<parent_cell_type>& parent)
+  submesh(const fe_mesh<parent_cell_type>& parent)
     : m(parent),
       elements{0, 0},
       parent_element_id{0},
@@ -49,7 +49,7 @@ public:
   array<double> get_jmt(std::size_t k) const { return m.get_jmt(parent_element_id.at(k)); }
   std::size_t get_subdomain_id(std::size_t k) const { return parent_subdomain_id.at(k); }
   std::size_t get_parent_element_id(std::size_t k) const { return parent_element_id.at(k); }
-  const mesh<parent_cell_type>& get_mesh() const {return m;}
+  const fe_mesh<parent_cell_type>& get_mesh() const {return m;}
 
   const array<double>& get_vertices() const { return m.get_vertices(); }
   const array<unsigned int>& get_elements() const { return elements; }
@@ -101,7 +101,7 @@ public:
   }
   
 private:
-  const mesh<parent_cell_type>& m;
+  const fe_mesh<parent_cell_type>& m;
 
   array<unsigned int> elements;
   array<unsigned int> parent_element_id;
@@ -134,11 +134,11 @@ private:
 };
 
 template<typename cell>
-class mesh {
+class fe_mesh {
 public:
   typedef cell cell_type;
 
-  mesh(const double* vertices,
+  fe_mesh(const double* vertices,
        unsigned int n_vertices, unsigned int n_components,
        const unsigned int* elements, unsigned int n_elements)
     : vertices{n_vertices, n_components},
@@ -160,16 +160,16 @@ public:
     compute_jmt();
   }
 
-  mesh(const double* vertices,
+  fe_mesh(const double* vertices,
        unsigned int n_vertices, unsigned int n_components,
        const unsigned int* elements, unsigned int n_elements,
        const unsigned int* references)
-    : mesh(vertices, n_vertices, n_components, elements, n_elements) {
+    : fe_mesh(vertices, n_vertices, n_components, elements, n_elements) {
     (this->references).set_data(references);
   }
 
   template<typename parent_cell_type>
-  mesh(const submesh<parent_cell_type, cell_type>& m)
+  fe_mesh(const submesh<parent_cell_type, cell_type>& m)
     : vertices{0},
       elements{m.get_element_number(),
 	       cell_type::n_vertex_per_element},
@@ -422,10 +422,10 @@ private:
 };
 
 
-mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n);
-mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
+fe_mesh<cell::edge> gen_segment_mesh(double x_1, double x_2, unsigned int n);
+fe_mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
 				     unsigned int n_1, unsigned int n_2);
-mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
+fe_mesh<cell::tetrahedron> gen_cube_mesh(double x_1, double x_2, double x_3,
 				      unsigned int n_1, unsigned int n_2, unsigned int n_3);
 
 #endif /* _MESH_H_ */

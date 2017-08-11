@@ -86,7 +86,7 @@ void test_cfe() {
   using fe_type = composite_finite_element<fe_0_type, fe_1_type>;
   using fes_type = composite_finite_element_space<fe_type>;
   
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, 100, 100));
   submesh<cell_type> dm(m.get_boundary_submesh());
   fes_type fes(m);
 

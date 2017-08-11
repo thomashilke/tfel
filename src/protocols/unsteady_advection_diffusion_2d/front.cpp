@@ -42,8 +42,8 @@ double error(std::size_t M, std::size_t N) {
     
   
   using cell_type = cell::triangle;
-  using mesh_type = mesh<cell_type>;
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, N, N));
+  using mesh_type = fe_mesh<cell_type>;
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, N, N));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
   /*
@@ -83,7 +83,7 @@ double error(std::size_t M, std::size_t N) {
   finite_element_space<fe_type> fes(m);
   exporter::ensight6("exact_sol"
 		     ,
-		     evaluate_on_vertices<mesh<cell_type> >(m, [=](const double* x) -> double { return exact_solution(time, x) ;})
+		     evaluate_on_vertices<fe_mesh<cell_type> >(m, [=](const double* x) -> double { return exact_solution(time, x) ;})
 		     //projector::lagrange<fe_type>(, fes)
 		     , "solution");
   

@@ -52,10 +52,10 @@ int main(int argc, char *argv[]) {
   typedef finite_element_space<fe_type> fes_type;
   typedef typename finite_element_space<fe_type>::element element_type;
   typedef quad::triangle::qf5pT q_type;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   
   const std::size_t n(100);
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
   fes_type fes(m, dm, bc);

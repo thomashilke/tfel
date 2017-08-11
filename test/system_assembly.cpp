@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 
     using cell_type = cell::edge;
     
-    mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, n));
+    fe_mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell_type> dm(m.get_boundary_submesh());
     submesh<cell_type> left_boundary(dm.query_elements([](const double* x) -> bool {
 	  return *x < 1.0 / 2.0;

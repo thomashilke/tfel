@@ -15,7 +15,7 @@ public:
   typedef typename fe_type::cell_type cell_type;
   struct element;
 
-  finite_element_space(const mesh<cell_type>& m)
+  finite_element_space(const fe_mesh<cell_type>& m)
     : m(m),
       dof_map{m.get_element_number(),
       fe_type::n_dof_per_element},
@@ -77,13 +77,13 @@ public:
   }
 
   template<typename c_cell_type>
-  finite_element_space(const mesh<cell_type>& m, const submesh<cell_type, c_cell_type>& dm)
+  finite_element_space(const fe_mesh<cell_type>& m, const submesh<cell_type, c_cell_type>& dm)
     : finite_element_space(m) {
     f_bc = default_f_bc;
     set_dirichlet_boundary(dm);
   }
 
-  finite_element_space(const mesh<cell_type>& m,
+  finite_element_space(const fe_mesh<cell_type>& m,
 		       const submesh<cell_type>& dm,
 		       double (*f_bc)(const double*)): finite_element_space(m, dm) {
     this->f_bc = std::function<double(const double*)>(f_bc);
@@ -153,7 +153,7 @@ public:
     }
   }
 
-  const mesh<cell_type>& get_mesh() const { return m; }
+  const fe_mesh<cell_type>& get_mesh() const { return m; }
 
   double boundary_value(const double* x) const { return f_bc(x); }
 
@@ -175,7 +175,7 @@ public:
   std::size_t get_dof_local_id(std::size_t i) const { return global_dof_to_local_dof.at(i, 1); }
   
 private:
-  const mesh<cell_type>& m;
+  const fe_mesh<cell_type>& m;
   array<unsigned int> dof_map;
   array<unsigned int> global_dof_to_local_dof;
   std::size_t dof_number;
@@ -213,7 +213,7 @@ public:
 
   const finite_element_space<fe>& get_finite_element_space() const { return fes; }
   
-  const mesh<typename fe::cell_type>& get_mesh() const { return fes.get_mesh(); }
+  const fe_mesh<typename fe::cell_type>& get_mesh() const { return fes.get_mesh(); }
 
   const array<double>& get_coefficients() const { return coefficients; }
 
@@ -278,7 +278,7 @@ private:
 
 template<typename cell_type>
 typename finite_element_space<typename cell_type::fe::lagrange_p1>::element
-to_p1_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
+to_p1_finite_element_function(const mesh_data<double, fe_mesh<cell_type> >& data,
                               const finite_element_space<typename cell_type::fe::lagrange_p1>& fes) {
   using return_type = typename finite_element_space<typename cell_type::fe::lagrange_p1>::element;
 
@@ -288,7 +288,7 @@ to_p1_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
   if (data.get_component_number() != 1)
     throw std::string("wrong component number");
 
-  const mesh<cell_type>& m(fes.get_mesh());
+  const fe_mesh<cell_type>& m(fes.get_mesh());
   
   array<double> coefficients{fes.get_dof_number()};
 
@@ -305,14 +305,14 @@ template<typename cell_type, typename expr_type>
 typename finite_element_space<typename cell_type::fe::lagrange_p1>::element
 to_p1_finite_element_function(const mesh_data_expression<expr_type>& expr,
                               const finite_element_space<typename cell_type::fe::lagrange_p1>& fes) {
-  return to_p1_finite_element_function(mesh_data<double, mesh<cell_type> >(fes.get_mesh(),
+  return to_p1_finite_element_function(mesh_data<double, fe_mesh<cell_type> >(fes.get_mesh(),
                                                                            mesh_data_kind::vertex,
                                                                            expr), fes);
 }
 
 template<typename cell_type>
 typename finite_element_space<typename cell_type::fe::lagrange_p0>::element
-to_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
+to_p0_finite_element_function(const mesh_data<double, fe_mesh<cell_type> >& data,
                               const finite_element_space<typename cell_type::fe::lagrange_p0>& fes) {
   using return_type = typename finite_element_space<typename cell_type::fe::lagrange_p0>::element;
 
@@ -322,7 +322,7 @@ to_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
   if (data.get_component_number() != 1)
     throw std::string("wrong component number");
 
-  const mesh<cell_type>& m(fes.get_mesh());
+  const fe_mesh<cell_type>& m(fes.get_mesh());
   
   array<double> coefficients{fes.get_dof_number()};
 
@@ -335,13 +335,13 @@ to_p0_finite_element_function(const mesh_data<double, mesh<cell_type> >& data,
 }
 
 template<typename fe_type>
-mesh_data<double, mesh<typename fe_type::cell_type> >
+mesh_data<double, fe_mesh<typename fe_type::cell_type> >
 to_mesh_cell_data(const typename finite_element_space<fe_type>::element& v) {
-  using return_type = mesh_data<double, mesh<typename fe_type::cell_type> >;
+  using return_type = mesh_data<double, fe_mesh<typename fe_type::cell_type> >;
   using cell_type = typename fe_type::cell_type;
 
   const finite_element_space<fe_type>& fes(v.get_finite_element_space());
-  const mesh<cell_type>& m(fes.get_mesh());
+  const fe_mesh<cell_type>& m(fes.get_mesh());
   
   array<double> values{m.get_element_number(), 1};
 
@@ -354,17 +354,17 @@ to_mesh_cell_data(const typename finite_element_space<fe_type>::element& v) {
 }
 
 template<typename fe_type>
-mesh_data<double, mesh<typename fe_type::cell_type> >
+mesh_data<double, fe_mesh<typename fe_type::cell_type> >
 to_mesh_vertex_data(const typename finite_element_space<fe_type>::element& v) {
   static_assert(is_continuous<fe_type>::value,
 		"conversion to vertex data is only defined "
 		"for continuous finite element spaces.");
   
-  using return_type = mesh_data<double, mesh<typename fe_type::cell_type> >;
+  using return_type = mesh_data<double, fe_mesh<typename fe_type::cell_type> >;
   using cell_type = typename fe_type::cell_type;
 
   const finite_element_space<fe_type>& fes(v.get_finite_element_space());
-  const mesh<cell_type>& m(fes.get_mesh());
+  const fe_mesh<cell_type>& m(fes.get_mesh());
   
   array<double> values{m.get_vertex_number(), 1};
 

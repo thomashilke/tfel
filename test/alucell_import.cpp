@@ -14,15 +14,15 @@ double f(const double* x) {
 
 void test_restriction_extension() {
   using cell_type = cell::edge;
-  using mesh_type = mesh<cell_type>;
+  using mesh_type = fe_mesh<cell_type>;
   using fe_type = cell::edge::fe::lagrange_p1_bubble;
   using fes_type = finite_element_space<fe_type>;
   
-  mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, 40));
+  fe_mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, 40));
   submesh<cell_type, cell_type> center_sm(m.query_elements([] (const double* x) -> bool {
     return x[0] > 0.25 and x[0] < 0.75;
   }));
-  mesh<cell_type> center(center_sm);
+  fe_mesh<cell_type> center(center_sm);
 
   fes_type
     m_fes(m),
@@ -42,11 +42,11 @@ void test_restriction_extension() {
 void test_alucell_import() {
   try {
     using cell_type = cell::tetrahedron;
-    using mesh_type = mesh<cell_type>;
+    using mesh_type = fe_mesh<cell_type>;
   
-    mesh<cell_type> cuve(importer::alucell::mesh<cell_type>("/home/thomas/git/alu-data/AP32/stat/dbfile_stat", "cuveb"));
+    fe_mesh<cell_type> cuve(importer::alucell::mesh<cell_type>("/home/thomas/git/alu-data/AP32/stat/dbfile_stat", "cuveb"));
     submesh<cell_type, cell_type> electrolyte(cuve.get_submesh_with_reference(2));
-    mesh<cell_type> electrolyte_m(electrolyte);
+    fe_mesh<cell_type> electrolyte_m(electrolyte);
 
     using fe_type = cell::tetrahedron::fe::lagrange_p1;
     using cfe_type = composite_finite_element<fe_type, fe_type, fe_type>;

@@ -14,7 +14,7 @@ double f_2(const double* x) {
 
 template<typename Q>
 double error(unsigned int n) {
-  const mesh<cell::triangle> m(gen_square_mesh(M_PI, M_PI, n, n));
+  const fe_mesh<cell::triangle> m(gen_square_mesh(M_PI, M_PI, n, n));
   return std::abs(integrate<Q>(make_expr(f_2), m) - 4.0 * M_PI); 
 }
 

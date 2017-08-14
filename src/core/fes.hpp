@@ -17,11 +17,11 @@ public:
 
   finite_element_space(const fe_mesh<cell_type>& m)
     : m(m),
-      dof_map{m.get_element_number(),
+      dof_map{m.get_cell_number(),
       fe_type::n_dof_per_element},
       global_dof_to_local_dof{0},
       f_bc(default_f_bc) {
-    const array<unsigned int>& elements(m.get_elements());
+    const array<unsigned int>& elements(m.get_cells());
     
     using cell::subdomain_type;
 
@@ -44,7 +44,7 @@ public:
 	const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
 	const std::size_t hat_n(cell_type::n_subdomain(sd));
 
-	for (unsigned int k(0); k < m.get_element_number(); ++k) {
+	for (unsigned int k(0); k < m.get_cell_number(); ++k) {
 	  for (unsigned int hat_j(0); hat_j < hat_n; ++hat_j) {
 	    // for subdomain hat_j:
 	    subdomain_type subdomain(cell_type::get_subdomain(elements, k, sd, hat_j));
@@ -99,7 +99,7 @@ public:
     for (std::size_t sd(0); sd < submesh<cell_type>::cell_type::n_subdomain_type; ++sd) {
       const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
       if (fe_type::n_dof_per_subdomain(sd)) {
-	const array<unsigned int>& elements(dm.get_elements());
+	const array<unsigned int>& elements(dm.get_cells());
 	std::set<subdomain_type> subdomains(submesh<cell_type>::cell_type::get_subdomain_list(elements, sd));
 	for (const auto& subdomain: subdomains) {
 	  const std::size_t j(std::distance(subdomain_list[sd].begin(),
@@ -147,7 +147,7 @@ public:
     stream << std::endl;
 
     stream << "dof map:" << std::endl;
-    for (std::size_t k(0); k < m.get_element_number(); ++k) {
+    for (std::size_t k(0); k < m.get_cell_number(); ++k) {
       for (std::size_t n(0); n < fe_type::n_dof_per_element; ++n)
 	stream << "local dof (k = " << k << ", n = " << n << ") -> " << get_dof(k, n) << std::endl;
     }
@@ -166,7 +166,7 @@ public:
 	      &x.at(0, 0));
 
     return cell_type::map_points_to_space_coordinates(m.get_vertices(),
-						      m.get_elements(),
+						      m.get_cells(),
 						      global_dof_to_local_dof.at(i,0),
 						      x);
   }
@@ -228,12 +228,12 @@ public:
   }
 
   double evaluate(const double* x) const {
-    std::size_t k(get_mesh().get_element_at(x));
+    std::size_t k(get_mesh().get_cell_at(x));
     
     const array<double>
       bc_coord(cell_type::get_barycentric_coordinates(
         get_mesh().get_vertices(),
-	get_mesh().get_elements(),
+	get_mesh().get_cells(),
 	k, x));
 
     return evaluate(k, &bc_coord.at(1));
@@ -251,9 +251,9 @@ public:
     array<double> sm_coefficients{sm_fes.get_dof_number()};
     sm_coefficients.fill(0.0);
 
-    for (std::size_t k(0); k < sm.get_element_number(); ++k)
+    for (std::size_t k(0); k < sm.get_cell_number(); ++k)
       for (std::size_t i(0); i < fe::n_dof_per_element; ++i)
-	sm_coefficients.at(sm_fes.get_dof(k, i)) = this->coefficients.at(fes.get_dof(sm.get_parent_element_id(k), i));
+	sm_coefficients.at(sm_fes.get_dof(k, i)) = this->coefficients.at(fes.get_dof(sm.get_parent_cell_id(k), i));
     
     return typename finite_element_space<fe>::element(sm_fes, sm_coefficients);
   }
@@ -263,9 +263,9 @@ public:
     array<double> m_coefficients{m_fes.get_dof_number()};
     m_coefficients.fill(0.0);
 
-    for (std::size_t k(0); k < fes.get_mesh().get_element_number(); ++k)
+    for (std::size_t k(0); k < fes.get_mesh().get_cell_number(); ++k)
       for (std::size_t i(0); i < fe::n_dof_per_element; ++i)
-	m_coefficients.at(m_fes.get_dof(sm.get_parent_element_id(k), i)) = this->coefficients.at(fes.get_dof(k, i));
+	m_coefficients.at(m_fes.get_dof(sm.get_parent_cell_id(k), i)) = this->coefficients.at(fes.get_dof(k, i));
 
     return typename finite_element_space<fe>::element(m_fes, m_coefficients);
   }
@@ -295,7 +295,7 @@ to_p1_finite_element_function(const mesh_data<double, fe_mesh<cell_type> >& data
   for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
     const std::size_t element_id(fes.get_dof_element(k));
     const std::size_t dof_local_id(fes.get_dof_local_id(k));
-    coefficients.at(k) = data.value(m.get_elements().at(element_id, dof_local_id), 0);
+    coefficients.at(k) = data.value(m.get_cells().at(element_id, dof_local_id), 0);
   }
   
   return return_type(fes, coefficients);
@@ -343,7 +343,7 @@ to_mesh_cell_data(const typename finite_element_space<fe_type>::element& v) {
   const finite_element_space<fe_type>& fes(v.get_finite_element_space());
   const fe_mesh<cell_type>& m(fes.get_mesh());
   
-  array<double> values{m.get_element_number(), 1};
+  array<double> values{m.get_cell_number(), 1};
 
   const array<double> bc_hat(cell_type::barycenter());
   for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
@@ -369,9 +369,9 @@ to_mesh_vertex_data(const typename finite_element_space<fe_type>::element& v) {
   array<double> values{m.get_vertex_number(), 1};
 
 #warning "FIXME: This works only for finite element with nodes on the cell vertices"
-  for (std::size_t k(0); k < m.get_element_number(); ++k)
-    for (std::size_t n(0); n < cell_type::n_vertex_per_element; ++n)
-      values.at(m.get_elements().at(k, n), 0) = v.get_coefficients().at(fes.get_dof(k, n));
+  for (std::size_t k(0); k < m.get_cell_number(); ++k)
+    for (std::size_t n(0); n < cell_type::n_vertex_per_cell; ++n)
+      values.at(m.get_cells().at(k, n), 0) = v.get_coefficients().at(fes.get_dof(k, n));
   
   return return_type(m, mesh_data_kind::vertex, values);
 }

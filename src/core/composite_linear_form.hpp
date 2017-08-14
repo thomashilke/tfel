@@ -68,7 +68,7 @@ public:
 	    * expression_call_wrapper<0, n_test_component>::call(integration_proxy.f, psi,
 								 k, &xq.at(q, 0), &xq_hat.at(q, 0));
 	}
-	linear_form.f.at(linear_form.test_cfes.template get_dof<m>(integration_proxy.get_global_element_id(k), i)
+	linear_form.f.at(linear_form.test_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i)
 			 + linear_form.test_global_dof_offset[m]) += rhs_el;
       }
     }
@@ -104,7 +104,7 @@ public:
       fe_values.set_points(xq_hat);
     }
     
-    for (unsigned int k(0); k < m.get_element_number(); ++k) {
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
 
       // prepare the quadrature points
       if (T::point_set_number > 1) {
@@ -114,7 +114,7 @@ public:
 
       if (form_type::require_space_coordinates)
 	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
-						   m.get_elements(),
+						   m.get_cells(),
 						   k, xq_hat);
       
       // prepare the basis function values

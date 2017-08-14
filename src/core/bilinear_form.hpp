@@ -63,7 +63,7 @@ public:
     array<double> a_el{n_test_dof, n_trial_dof};
 
     // loop over the elements
-    for (unsigned int k(0); k < m.get_element_number(); ++k) {
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
       a_el.fill(0.0);
 
       // prepare the quadrature points if necessary
@@ -75,7 +75,7 @@ public:
       if (form_type::require_space_coordinates)
 	cell_type::map_points_to_space_coordinates(xq,
 						   m.get_vertices(),
-						   m.get_elements(),
+						   m.get_cells(),
 						   k, xq_hat);
 
       if (form_type::differential_order == 1ul) {
@@ -103,8 +103,8 @@ public:
       }
       for (unsigned int i(0); i < n_test_dof; ++i)
 	for (unsigned int j(0); j < n_trial_dof; ++j)
-	  accumulate(test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
-		     trial_fes.get_dof(integration_proxy.get_global_element_id(k), j),
+	  accumulate(test_fes.get_dof(integration_proxy.get_global_cell_id(k), i),
+		     trial_fes.get_dof(integration_proxy.get_global_cell_id(k), j),
 		     a_el.at(i, j) * volume);
     }
 
@@ -271,13 +271,13 @@ public:
     array<double> a_el{n_trial_dof};
     
     // loop over the elements
-    for (unsigned int k(0); k < m.get_element_number(); ++k) {
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
       a_el.fill(0.0);
       
       // prepare the quadrature points
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_elements(),
+									m.get_cells(),
 									k, xq_hat));
 
       // prepare the basis function values
@@ -302,7 +302,7 @@ public:
       }
       for (unsigned int j(0); j < n_trial_dof; ++j)
 	b_form.accumulate(b_form.test_fes.get_dof_number() + constraint_id,
-			  b_form.trial_fes.get_dof(integration_proxy.get_global_element_id(k), j),
+			  b_form.trial_fes.get_dof(integration_proxy.get_global_cell_id(k), j),
 			  a_el.at(j) * volume);
     }
 
@@ -330,13 +330,13 @@ public:
     array<double> a_el{n_test_dof};
 
     // loop over the elements
-    for (unsigned int k(0); k < m.get_element_number(); ++k) {
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
       a_el.fill(0.0);
       
       // prepare the quadrature points
       const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
       const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_elements(),
+									m.get_cells(),
 									k, xq_hat));
       // prepare the basis function values
       const array<double> jmt(m.get_jmt(k));
@@ -358,7 +358,7 @@ public:
 	}
       }
       for (unsigned int i(0); i < n_test_dof; ++i)
-	b_form.accumulate(b_form.test_fes.get_dof(integration_proxy.get_global_element_id(k), i),
+	b_form.accumulate(b_form.test_fes.get_dof(integration_proxy.get_global_cell_id(k), i),
 			  b_form.trial_fes.get_dof_number() + constraint_id,
 			  a_el.at(i) * volume);
     }

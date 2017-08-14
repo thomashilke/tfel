@@ -19,7 +19,7 @@ void test_restriction_extension() {
   using fes_type = finite_element_space<fe_type>;
   
   fe_mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, 40));
-  submesh<cell_type, cell_type> center_sm(m.query_elements([] (const double* x) -> bool {
+  submesh<cell_type, cell_type> center_sm(m.query_cells([] (const double* x) -> bool {
     return x[0] > 0.25 and x[0] < 0.75;
   }));
   fe_mesh<cell_type> center(center_sm);

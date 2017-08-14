@@ -12,8 +12,8 @@ int main(
   submesh<cell_type> dm(m.get_boundary_submesh());
 
   submesh<cell_type>
-    left_boundary(dm.query_elements([](const double* x) { return x[0] < 0.5;} )),
-    right_boundary(dm.query_elements([](const double* x) { return x[0] > 0.5;} ));
+    left_boundary(dm.query_cells([](const double* x) { return x[0] < 0.5;} )),
+    right_boundary(dm.query_cells([](const double* x) { return x[0] > 0.5;} ));
 
   steady_advection_diffusion<fe_type> sad(m, dm, 1.0/50.0);
   sad.set_boundary_value([](const double* x) { return x[0]; });

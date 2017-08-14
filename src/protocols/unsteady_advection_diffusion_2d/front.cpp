@@ -55,7 +55,7 @@ double error(std::size_t M, std::size_t N) {
     }));
   */
 
-  submesh<cell_type> inflow_boundary(dm.query_elements([](const double* x) {
+  submesh<cell_type> inflow_boundary(dm.query_cells([](const double* x) {
 	return x[0] < 0.0001;
       }));
   

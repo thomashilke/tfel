@@ -41,8 +41,8 @@ namespace exporter {
       
     case mesh_data_kind::cell: {
 
-    for (std::size_t k(0); k < m.get_element_number(); ++k) {
-      const auto bc(cell_type::barycenter(m.get_vertices(), m.get_elements(), k));
+    for (std::size_t k(0); k < m.get_cell_number(); ++k) {
+      const auto bc(cell_type::barycenter(m.get_vertices(), m.get_cells(), k));
       for (std::size_t n(0); n < m.get_embedding_space_dimension(); ++n)
 	file << bc.at(n) << " ";
       
@@ -132,11 +132,11 @@ namespace exporter {
       stream << "part" << std::setw(8) << std::right << 1 << '\n';
       stream << part_name << '\n';
       stream << ensight_cell_name<cell_type>::value << '\n';
-      stream << std::setw(8) << std::right << m.get_elements().get_size(0) << '\n';
+      stream << std::setw(8) << std::right << m.get_cells().get_size(0) << '\n';
 
-      for (std::size_t n(0); n < m.get_elements().get_size(0); ++n) {
-	for (std::size_t k(0); k < cell_type::n_vertex_per_element ; ++k)
-	  stream << std::setw(8) << std::right << m.get_elements().at(n, k) + 1;
+      for (std::size_t n(0); n < m.get_cells().get_size(0); ++n) {
+	for (std::size_t k(0); k < cell_type::n_vertex_per_cell ; ++k)
+	  stream << std::setw(8) << std::right << m.get_cells().at(n, k) + 1;
 	stream << '\n';
       }
     }

@@ -25,10 +25,10 @@ int main(int argc, char *argv[]) {
     
     fe_mesh<cell_type> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell_type> dm(m.get_boundary_submesh());
-    submesh<cell_type> left_boundary(dm.query_elements([](const double* x) -> bool {
+    submesh<cell_type> left_boundary(dm.query_cells([](const double* x) -> bool {
 	  return *x < 1.0 / 2.0;
 	}));
-    submesh<cell_type> right_boundary(dm.query_elements([](const double* x) -> bool {
+    submesh<cell_type> right_boundary(dm.query_cells([](const double* x) -> bool {
 	  return *x > 1.0 / 2.0;
 	}));
     std::cout << std::setw(40) << "mesh: "
@@ -65,11 +65,11 @@ int main(int argc, char *argv[]) {
 	  phi.at(i, q) = fe::phi(i, &xq.at(q, 0));
       }
 
-      for (unsigned int k(0); k < m.get_element_number(); ++k) {
+      for (unsigned int k(0); k < m.get_cell_number(); ++k) {
 
 	// prepare the quadrature point space coordinates
 	array<double> hat_xq(fe::cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									    m.get_elements(),
+									    m.get_cells(),
 									    k, xq));
 
 	// prepare the basis function derivatives on the quadrature points
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
     if (false) {
       // integration over dm:
       // well, there's nothing in this case
-      for (std::size_t k(0); k < dm.get_element_number(); ++k) {
+      for (std::size_t k(0); k < dm.get_cell_number(); ++k) {
 	for (std::size_t i(0); i < fe::n_dof_per_element; ++i) {
 	  for (std::size_t j(0); j < fe::n_dof_per_element; ++j) {
 	    typedef quad::point::eval dm_quad;
@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
 
 	      a_el += volume * omega.at(q) * 0.0;
 	    }
-	    sys.accumulate(fes.get_dof(dm.get_parent_element_id(k), j),
-			   fes.get_dof(dm.get_parent_element_id(k), i), a_el);
+	    sys.accumulate(fes.get_dof(dm.get_parent_cell_id(k), j),
+			   fes.get_dof(dm.get_parent_cell_id(k), i), a_el);
 	  }
 	}
       }
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     // assemble contribution of the volume to the rhs:
     {
       const std::size_t dim(m.get_embedding_space_dimension());
-      for (unsigned int k(0); k < m.get_element_number(); ++k) {
+      for (unsigned int k(0); k < m.get_cell_number(); ++k) {
 	// prepare the quadrature points and weights
 	typedef quad::edge::gauss3 m_quad;
 	const std::size_t n_q(m_quad::n_point);
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
     // assemble contribution of the right boundary to the rhs:
     {
       const std::size_t dim(m.get_embedding_space_dimension());
-      for (std::size_t k(0); k < right_boundary.get_element_number(); ++k) {
+      for (std::size_t k(0); k < right_boundary.get_cell_number(); ++k) {
 	// prepare the quadrature points and weights
 	typedef quad::point::eval dm_quad;
 	const std::size_t n_q(dm_quad::n_point);
@@ -253,7 +253,7 @@ int main(int argc, char *argv[]) {
 	    rhs_el += volume * omega.at(q) * 1.0 * phi.at(j, q);
 	  }
 	  // specific to the boundary
-	  rhs.at(fes.get_dof(right_boundary.get_parent_element_id(k), j)) += rhs_el;
+	  rhs.at(fes.get_dof(right_boundary.get_parent_cell_id(k), j)) += rhs_el;
 	}
       }
     }

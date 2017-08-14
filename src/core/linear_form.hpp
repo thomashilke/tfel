@@ -20,7 +20,7 @@ public:
     typedef typename test_fes_type::fe_type test_fe_type;
     const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
     
-    std::size_t n_element(integration_proxy.m.get_element_number());
+    std::size_t n_element(integration_proxy.m.get_cell_number());
     std::size_t n_thread(tp.size());
 
     std::vector<array<double> > rhs_els(n_thread, array<double>{});
@@ -58,7 +58,7 @@ public:
 
       for (std::size_t k(k_begin); k < k_end; ++k)
 	for (std::size_t j(0); j < n_test_dof; ++j)
-	  f.at(test_fes.get_dof(integration_proxy.get_global_element_id(k), j)) += rhs_els[n].at(k - k_begin, j);
+	  f.at(test_fes.get_dof(integration_proxy.get_global_cell_id(k), j)) += rhs_els[n].at(k - k_begin, j);
     }
   }
 
@@ -113,7 +113,7 @@ public:
 
       if (form_type::require_space_coordinates)
 	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
-						   m.get_elements(),
+						   m.get_cells(),
 						   k, xq_hat);
 
       // prepare the basis function values if necessary

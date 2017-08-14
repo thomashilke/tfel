@@ -103,10 +103,10 @@ public:
 	  }
 	  bilinear_form.accumulate_in_block<m, n>(bilinear_form.test_cfes.
 						  template get_dof<m>(integration_proxy.
-								      get_global_element_id(k), i),
+								      get_global_cell_id(k), i),
 						  bilinear_form.trial_cfes.
 						  template get_dof<n>(integration_proxy.
-								      get_global_element_id(k), j), a_el);
+								      get_global_cell_id(k), j), a_el);
 	}
       }
     }
@@ -142,7 +142,7 @@ public:
       fe_values.set_points(xq_hat);
     }
     
-    for (unsigned int k(0); k < m.get_element_number(); ++k) {
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
       // prepare the quadrature points
       if (T::point_set_number > 1) {
 	xq_hat = integration_proxy.get_quadrature_points(k);
@@ -151,7 +151,7 @@ public:
 
       if (form_type::require_space_coordinates)
 	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
-						   m.get_elements(),
+						   m.get_cells(),
 						   k, xq_hat);
       
       // prepare the basis function values

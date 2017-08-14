@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   
   mesh_type m(gen_square_mesh(1.0, 1.0, n, n));
   submesh_type dm(m.get_boundary_submesh());
-  submesh_type dirichlet_boundary(dm.query_elements([&](const double* x) -> bool {
+  submesh_type dirichlet_boundary(dm.query_cells([&](const double* x) -> bool {
 	  return not ((x[1] < 1.0 / (2.0 * n))
 		      and x[0] > 1.0 / 3.0
 		      and x[0] < 2.0 / 3.0);

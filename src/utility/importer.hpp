@@ -33,7 +33,7 @@ namespace importer {
       if (n.get_components() != 3)
 	throw std::string("importer::alucell::mesh: the nodes array is expected to have 3 components");
 
-      if (e.get_components() != cell_type::n_vertex_per_element)
+      if (e.get_components() != cell_type::n_vertex_per_cell)
 	throw std::string("importer::alucell::mesh: the element array is expected to have the same "
 			  "number of components as the number of vertices per element.");
 
@@ -84,7 +84,7 @@ namespace importer {
       using mesh_data_type = mesh_data<double, ::fe_mesh<cell_type> >;
       if (coefficients.get_size(0) == m.get_vertex_number())
 	return mesh_data<double, ::fe_mesh<cell_type> >(m, mesh_data_kind::vertex, std::move(coefficients));
-      else if (coefficients.get_size(0) == m.get_element_number())
+      else if (coefficients.get_size(0) == m.get_cell_number())
 	return mesh_data<double, ::fe_mesh<cell_type> >(m, mesh_data_kind::cell, std::move(coefficients));
       else
 	throw std::string("incompatible array size");

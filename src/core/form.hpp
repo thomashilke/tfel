@@ -32,7 +32,7 @@ struct mesh_integration_proxy {
   const fe_mesh<cell_type>& m;
   array<double> xq;
 
-  std::size_t get_global_element_id(std::size_t k) const {
+  std::size_t get_global_cell_id(std::size_t k) const {
     return k;
   }
 
@@ -59,8 +59,8 @@ struct submesh_integration_proxy {
   const submesh<cell_t>& m;
   array<double> xq;
   
-  std::size_t get_global_element_id(std::size_t k) const {
-    return m.get_parent_element_id(k);
+  std::size_t get_global_cell_id(std::size_t k) const {
+    return m.get_parent_cell_id(k);
   }
   
   array<double> get_quadrature_points(std::size_t k) const {
@@ -104,11 +104,11 @@ double integrate_with_proxy(const T& integration_proxy) {
 
   array<double> xq{n_q, cell_type::n_dimension};
   double result(0.0);
-  for (unsigned int k(0); k < m.get_element_number(); ++k) {
+  for (unsigned int k(0); k < m.get_cell_number(); ++k) {
     const array<double>& xq_hat(integration_proxy.get_quadrature_points(k));
     cell_type::map_points_to_space_coordinates(xq,
 					       m.get_vertices(),
-					       m.get_elements(),
+					       m.get_cells(),
 					       k, xq_hat);
     // evaluate the expression
     const double volume(m.get_cell_volume(k));

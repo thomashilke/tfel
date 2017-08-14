@@ -55,10 +55,10 @@ int main(int, char**) {
     
     fe_mesh<cell::edge> m(gen_segment_mesh(0.0, 1.0, n));
     submesh<cell::edge> dm(m.get_boundary_submesh());
-    submesh<cell::edge> left_boundary(dm.query_elements([](const double* x) -> bool {
+    submesh<cell::edge> left_boundary(dm.query_cells([](const double* x) -> bool {
 	  return *x < 1.0 / 2.0;
 	}));
-    submesh<cell::edge> right_boundary(dm.query_elements([](const double* x) -> bool {
+    submesh<cell::edge> right_boundary(dm.query_cells([](const double* x) -> bool {
 	  return *x > 1.0 / 2.0;
 	}));
     std::cout << std::setw(40) << "mesh: "

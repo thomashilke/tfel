@@ -309,7 +309,7 @@ private:
 
   std::size_t value_number(mesh_data_kind type) const {
     switch (type) {
-    case mesh_data_kind::cell: return m.get_element_number();
+    case mesh_data_kind::cell: return m.get_cell_number();
     case mesh_data_kind::vertex: return m.get_vertex_number();
     }
   }
@@ -322,10 +322,10 @@ compute_boundary_normals(const submesh<cell_type>& dm) {
     result(dm, mesh_data_kind::cell,
 	   dm.get_embedding_space_dimension());
   
-  for (std::size_t k(0); k < dm.get_element_number(); ++k) {
+  for (std::size_t k(0); k < dm.get_cell_number(); ++k) {
     const auto normal(cell_type::subdomain_normal(dm.get_vertices(),
-						  dm.get_mesh().get_elements(),
-						  dm.get_parent_element_id(k),
+						  dm.get_mesh().get_cells(),
+						  dm.get_parent_cell_id(k),
 						  dm.get_subdomain_id(k)));
 
     for (std::size_t n(0); n < dm.get_embedding_space_dimension(); ++n)
@@ -344,8 +344,8 @@ evaluate_on_cells(const mesh_type& m, Fs... fs) {
   mesh_data<double, mesh_type> result(m, mesh_data_kind::cell,
 				      sizeof...(Fs));
 
-  for (std::size_t k(0); k < m.get_element_number(); ++k) {
-    const auto x(cell_type::barycenter(m.get_vertices(), m.get_elements(), k));
+  for (std::size_t k(0); k < m.get_cell_number(); ++k) {
+    const auto x(cell_type::barycenter(m.get_vertices(), m.get_cells(), k));
     double values[sizeof...(Fs)];
     array_from<double, return_2nd_t<Fs, double>...>::parameters(values, fs(&x.at(0))...);
     for (std::size_t n(0); n < sizeof...(Fs); ++n)

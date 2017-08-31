@@ -37,6 +37,8 @@ namespace exporter {
     }
       
     }
+      break;
+      
     case mesh_data_kind::cell: {
 
     for (std::size_t k(0); k < m.get_element_number(); ++k) {
@@ -50,6 +52,7 @@ namespace exporter {
     }
       
     }
+      break;
     }
   }
 

@@ -269,11 +269,82 @@ public:
 
     return typename finite_element_space<fe>::element(m_fes, m_coefficients);
   }
+
+  typename finite_element_space<fe>::element&
+  operator*=(double s) {
+    for (std::size_t i(0); i < coefficients.get_size(0); ++i)
+      coefficients.at(i) *= s;
+
+    return *this;
+  }
+
+  typename finite_element_space<fe>::element&
+  operator+=(const finite_element_space<fe>::element& op) {
+    for (std::size_t i(0); i < coefficients.get_size(0); ++i)
+      coefficients.at(i) += op.coefficients.at(i);
+
+    return *this;
+  }
+
+  typename finite_element_space<fe>::element&
+  operator/=(double s) {
+    for (std::size_t i(0); i < coefficients.get_size(0); ++i)
+      coefficients.at(i) /= s;
+    
+    return *this;
+  }
+
+  typename finite_element_space<fe>::element&
+  operator-=(const finite_element_space<fe>::element& op) {
+    for (std::size_t i(0); i < coefficients.get_size(0); ++i)
+      coefficients.at(i) -= op.coefficients.at(i);
+    
+    return *this;
+  }
   
 private:
   array<double> coefficients;
   const finite_element_space<fe>& fes;
 };
+
+template<typename fe>
+typename finite_element_space<fe>::element
+operator+(const typename finite_element_space<fe>::element& op1,
+          const typename finite_element_space<fe>::element& op2) {
+  typename finite_element_space<fe>::element result(op1);
+  return op1 += op2;
+}
+
+template<typename fe>
+typename finite_element_space<fe>::element
+operator-(const typename finite_element_space<fe>::element& op1,
+          const typename finite_element_space<fe>::element& op2) {
+  typename finite_element_space<fe>::element result(op1);
+  return op1 -= op2;
+}
+
+template<typename fe>
+typename finite_element_space<fe>::element
+operator*(double s,
+          const typename finite_element_space<fe>::element& op) {
+  typename finite_element_space<fe>::element result(op);
+  return op *= s;
+}
+
+template<typename fe>
+typename finite_element_space<fe>::element
+operator*(const typename finite_element_space<fe>::element& op,
+          double s) {
+  return s * op;
+}
+
+template<typename fe>
+typename finite_element_space<fe>::element
+operator/(const typename finite_element_space<fe>::element& op,
+          double s) {
+  typename finite_element_space<fe>::element result(op);
+  return op /= s;
+}
 
 
 template<typename cell_type>

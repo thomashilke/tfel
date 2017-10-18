@@ -271,6 +271,21 @@ public:
   }
 
   typename finite_element_space<fe>::element&
+  transform(const std::function<double(double)>& f) {
+    for (std::size_t i(0); i < coefficients.get_size(0); ++i)
+      coefficients.at(i) = f(coefficients.at(i));
+
+    return *this;
+  }
+
+  typename finite_element_space<fe>::element
+  transformed(const std::function<double(double)>& f) {
+    finite_element_space<fe>::element result(*this);
+    result.transform(f);
+    return result;
+  }
+
+  typename finite_element_space<fe>::element&
   operator*=(double s) {
     for (std::size_t i(0); i < coefficients.get_size(0); ++i)
       coefficients.at(i) *= s;

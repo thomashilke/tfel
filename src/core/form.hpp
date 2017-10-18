@@ -100,7 +100,7 @@ double integrate_with_proxy(const T& integration_proxy) {
   array<double> omega{n_q};
   omega.set_data(&quadrature_type::w[0]);
 
-  timer t;
+  //timer t;
 
   array<double> xq{n_q, cell_type::n_dimension};
   double result(0.0);
@@ -122,7 +122,7 @@ double integrate_with_proxy(const T& integration_proxy) {
     result += rhs_el * volume;
   }
 
-  std::cerr << "integrate_with_proxy: loop : "  << t.tic() << std::endl;
+  //std::cerr << "integrate_with_proxy: loop : "  << t.tic() << std::endl;
   return result;
 }
 

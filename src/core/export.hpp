@@ -20,8 +20,10 @@ namespace exporter {
     const mesh_type& m(data.get_mesh());
     
     std::ofstream file(filename.c_str(), std::ios::out);
+    if (not file)
+      throw std::string("failed to open ") + filename + " for output";
+    
     file.precision(12);
-
 
     switch (data.get_kind()) {
     case mesh_data_kind::vertex: {

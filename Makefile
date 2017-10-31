@@ -12,14 +12,14 @@ all: $(LIB) $(BIN) $(HEADERS)
 
 -include $(DEPS)
 
-$(HEADERS): include/tfel/%: src/%
+$(HEADERS): include/$(PKG_NAME)/%: src/%
 	@echo "[INST]" $(<:src/%=%)
 	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@cp $< $(dir $@)
 
 $(OBJECTS): build/%.o: %.cpp
 	@echo "[CXX] " $@
-	@mkdir -p $(dir $@)
+	@$(MKDIR) $(MKDIRFLAGS) $(dir $@)
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(DEPS): build/%.deps: %.cpp
@@ -52,19 +52,24 @@ install-dev: install-header install-lib
 
 install-bin: $(BIN)
 	@echo "[INST]" $@
+ifneq ($(BIN),)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(BIN_DIR)/
 	@cp $(BIN) $(PREFIX)/$(BIN_DIR)/
+endif
 
 install-header: $(HEADERS)
 	@echo "[INST]" $@
+ifneq ($(HEADERS),)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(INCLUDE_DIR)/
 	@cp -r include/* $(PREFIX)/$(INCLUDE_DIR)/
+endif
 
 install-lib: $(LIB)
 	@echo "[INST]" $@
+ifneq ($(LIB),)
 	@$(MKDIR) $(MKDIRFLAGS) $(PREFIX)/$(LIB_DIR)/
 	@cp $(LIB) $(PREFIX)/$(LIB_DIR)/
-
+endif
 
 print-%:
 	@echo $*=$($*)

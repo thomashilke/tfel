@@ -1,5 +1,7 @@
 include site-config.mk
 
+export OMPI_CXX = clang++
+
 CXX = mpicxx
 DEPS_BIN = g++
 DEPSFLAGS = -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR) $(shell mpicxx --showme:compile)
@@ -15,6 +17,8 @@ PREFIX = ~/.local/
 BIN_DIR = bin/
 INCLUDE_DIR = include/
 LIB_DIR = lib/
+
+PKG_NAME = tfel
 
 
 SOURCES = \

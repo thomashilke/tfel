@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
   using v_quad_type  = quad::triangle::qf5pT;
   
   const std::size_t n(100);
-  mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
+  fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
   submesh<cell_type> dm(m.get_boundary_submesh());
 
   fes_type fes(m, dm);

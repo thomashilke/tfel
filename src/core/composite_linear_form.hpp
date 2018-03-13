@@ -4,6 +4,8 @@
 template<typename te_cfe_type>
 class linear_form<composite_finite_element_space<te_cfe_type> > {
 public:
+  using linear_form_type = linear_form<composite_finite_element_space<te_cfe_type> >;
+
   using test_cfes_type = composite_finite_element_space<te_cfe_type>;
   using test_cfe_type = typename test_cfes_type::cfe_type;
   using test_fe_list = typename test_cfe_type::fe_list;
@@ -42,7 +44,7 @@ public:
     using test_fe_type = get_element_at_t<m, typename test_cfe_type::fe_list>;
     using linear_form_type = linear_form<composite_finite_element_space<te_cfe_type> >;
 
-    
+
     static void call(linear_form_type& linear_form,
 		     const get_element_at_t<0, B_INFO>& integration_proxy,
 		     const std::size_t k,
@@ -52,7 +54,7 @@ public:
 		     const fe_value_manager<unique_fe_list>& fe_values,
 		     const fe_value_manager<unique_fe_list>& fe_zvalues) {
       const double* psi[n_test_component];
-      
+
       const std::size_t n_q(quadrature_type::n_point);
       const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
 
@@ -74,7 +76,7 @@ public:
     }
   };
 
-  
+
   template<typename T>
   void operator+=(const T& integration_proxy) {
     static_assert(T::form_type::rank == 1, "linear_form expects rank-2 expression.");
@@ -94,7 +96,7 @@ public:
     // storage for the quadrature points;
     array<double> xq_hat{n_q, fe_cell_type::n_dimension};
     array<double> xq{n_q, fe_cell_type::n_dimension};
-    
+
     // storage for the point-wise basis function evaluation
     fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
     fe_zvalues.clear();
@@ -103,7 +105,7 @@ public:
       xq_hat = integration_proxy.get_quadrature_points(0);
       fe_values.set_points(xq_hat);
     }
-    
+
     for (unsigned int k(0); k < m.get_cell_number(); ++k) {
 
       // prepare the quadrature points
@@ -116,7 +118,7 @@ public:
 	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
 						   m.get_cells(),
 						   k, xq_hat);
-      
+
       // prepare the basis function values
       if (form_type::differential_order > 0) {
 	const array<double> jmt(m.get_jmt(k));
@@ -146,17 +148,41 @@ public:
   void clear() {
     f.fill(0.0);
   }
-  
-  void show(std::ostream& stream) 
-  {
+
+  void show(std::ostream& stream) const {
     stream << "rhs = [" << f.at(0);
     for (std::size_t j(1); j < f.get_size(0); ++j)
       stream << "; " << f.at(j);
     stream << "];" << std::endl;
   }
 
+  template<typename IC>
+  struct handle_dirichlet_dof_values {
+    static const std::size_t m = IC::value;
+    static void call(const linear_form_type& linear_form, array<double>& f) {
+      for (const auto& i: linear_form.test_cfes.template get_dirichlet_dof<m>()) {
+	const auto x(linear_form.test_cfes.template get_dof_space_coordinate<m>(i));
+	f.at(linear_form.test_global_dof_offset[m] + i) = linear_form.test_cfes.template boundary_value<m>(&x.at(0, 0));
+      }
+    }
+  };
+
+
+  void export_data(std::ostream& stream) const {
+    auto p(stream.precision(16));
+
+    array<double> tmp(f);
+    call_for_each<handle_dirichlet_dof_values,
+                  make_integral_list_t<std::size_t, n_test_component> >::call(*this, tmp);
+
+    for (std::size_t j(0); j < tmp.get_size(0); ++j)
+      stream << tmp.at(j) << std::endl;
+
+    stream.precision(p);
+  }
+
   const array<double>& get_coefficients() const { return f; }
-    
+
 private:
   const test_cfes_type& test_cfes;
   std::vector<std::size_t> test_global_dof_offset;

@@ -63,6 +63,12 @@ public:
 	}
 	global_dof_offset += hat_m * n;
 	local_dof_offset += hat_m * hat_n;
+      } else {
+        /*
+         *  If the subdomain kind with index sd has no dof associated with it,
+         *  we push an empty set, as a placeholder.
+         */
+        subdomain_list.push_back(std::set<cell::subdomain_type>());
       }
     }
 

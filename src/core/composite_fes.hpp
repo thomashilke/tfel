@@ -1,6 +1,7 @@
 #ifndef _COMPOSITE_FES_H_
 #define _COMPOSITE_FES_H_
 
+#include "fes.hpp"
 #include "composite_fe.hpp"
 
 

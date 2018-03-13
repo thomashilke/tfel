@@ -322,6 +322,7 @@ namespace cell {
       struct lagrange_p0;
       struct lagrange_p1;
       struct lagrange_p1_bubble;
+      struct lagrange_p2;
     };
   };
 
@@ -603,6 +604,7 @@ namespace cell {
       struct lagrange_p0;
       struct lagrange_p1;
       struct lagrange_p1_bubble;
+      struct lagrange_p2;
     };
   };
 

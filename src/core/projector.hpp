@@ -14,7 +14,7 @@ namespace projector {
   typename finite_element_space<fe_type>::element
   l2(const expression<expr_t>& expr, const finite_element_space<fe_type>& fes) {
     static_assert(expr_t::rank == 0, "");
-    
+
     typedef finite_element_space<fe_type> fes_type;
     bilinear_form<fes_type, fes_type> a(fes, fes); {
       auto u(a.get_trial_function());
@@ -30,7 +30,7 @@ namespace projector {
 
     return a.solve(f);
   }
-  
+
   template<typename fe_type, typename quadrature_type>
   typename finite_element_space<fe_type>::element
   l2(const std::function<double(const double*)>& fun, const finite_element_space<fe_type>& fes) {
@@ -42,7 +42,7 @@ namespace projector {
   lagrange(const std::function<double(const double*)>& fun, const finite_element_space<fe_type>& fes) {
     static_assert(fe_type::is_lagrangian,
 		  "lagrange projector is only defined for lagrangian finite element space.");
-    
+
     array<double> coefficients{fes.get_dof_number()};
 
     for (std::size_t n(0); n < fes.get_dof_number(); ++n) {
@@ -57,13 +57,13 @@ namespace projector {
   typename finite_element_space<fe_type>::element
   lagrange(const expression<expr_t>& expr, const finite_element_space<fe_type>& fes) {
     using cell_type = typename fe_type::cell_type;
-    
+
     static_assert(expr_t::rank == 0, "");
     static_assert(fe_type::is_lagrangian,
 		  "lagrange projector is only defined for lagrangian finite element space.");
 
     const fe_mesh<cell_type>& m(fes.get_mesh());
-    
+
     array<double> coefficients{fes.get_dof_number()};
     for (std::size_t i(0); i < fes.get_dof_number(); ++i) {
       const std::size_t i_hat(fes.get_dof_local_id(i));
@@ -77,14 +77,14 @@ namespace projector {
 
       array<double> x(cell_type::map_points_to_space_coordinates(
         m.get_vertices(),
-	m.get_elements(),
+	m.get_cells(),
 	k,
 	x_hat));
 
       expr.prepare(k, &x.at(0,0), &x_hat.at(0,0));
       coefficients.at(i) = expr(k, &x.at(0,0), &x_hat.at(0,0));
     }
-    
+
     return typename finite_element_space<fe_type>::element(fes, coefficients);
   }
 

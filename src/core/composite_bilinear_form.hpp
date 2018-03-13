@@ -8,7 +8,7 @@ class bilinear_form<composite_finite_element_space<te_cfe_type>,
 public:
   using bilinear_form_type = bilinear_form<composite_finite_element_space<te_cfe_type>,
 					   composite_finite_element_space<tr_cfe_type> >;
-  
+
   using test_cfes_type = composite_finite_element_space<te_cfe_type>;
   using trial_cfes_type = composite_finite_element_space<tr_cfe_type>;
 
@@ -49,7 +49,7 @@ public:
     std::partial_sum(test_global_dof_number,
 		     test_global_dof_number + n_test_component - 1,
 		     test_global_dof_offset.begin() + 1);
-    
+
     trial_global_dof_offset = std::vector<std::size_t>(n_trial_component, 0ul);
     std::partial_sum(trial_global_dof_number,
 		     trial_global_dof_number + n_trial_component - 1,
@@ -95,7 +95,7 @@ public:
 	    select_function_valuation<trial_fe_list, n, unique_fe_list>(psi_phi + n_test_component, q, j,
 									fe_values, fe_zvalues);
 	    integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
-	    
+
 	    a_el += volume * omega.at(q)
 	      * (expression_call_wrapper<0, n_test_component + n_trial_component>
 		 ::call(integration_proxy.f, psi_phi,
@@ -112,7 +112,7 @@ public:
     }
   };
 
-  
+
   template<typename T>
   void operator+=(const T& integration_proxy) {
     static_assert(T::form_type::rank == 2, "bilinear_form expects rank-2 expression.");
@@ -132,7 +132,7 @@ public:
     // storage for the quadrature points;
     array<double> xq_hat{n_q, fe_cell_type::n_dimension};
     array<double> xq{n_q, fe_cell_type::n_dimension};
-    
+
     // storage for the point-wise basis function evaluation
     fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
     fe_zvalues.clear();
@@ -141,7 +141,7 @@ public:
       xq_hat = integration_proxy.get_quadrature_points(0);
       fe_values.set_points(xq_hat);
     }
-    
+
     for (unsigned int k(0); k < m.get_cell_number(); ++k) {
       // prepare the quadrature points
       if (T::point_set_number > 1) {
@@ -153,13 +153,13 @@ public:
 	cell_type::map_points_to_space_coordinates(xq, m.get_vertices(),
 						   m.get_cells(),
 						   k, xq_hat);
-      
+
       // prepare the basis function values
       if (form_type::differential_order > 0) {
 	const array<double> jmt(m.get_jmt(k));
 	fe_values.prepare(jmt);
       }
-      
+
 
       /*
        *  Compile time loop over all the blocks
@@ -187,7 +187,7 @@ public:
     return form<n + n_test_component, 2, 0>();
   }
 
-  
+
   template<typename IC>
   struct handle_dirichlet_dof_values {
     static const std::size_t m = IC::value;
@@ -195,21 +195,21 @@ public:
       for (const auto& i: bilinear_form.trial_cfes.template get_dirichlet_dof<m>()) {
 	const auto x(bilinear_form.trial_cfes.template get_dof_space_coordinate<m>(i));
 	f.at(bilinear_form.trial_global_dof_offset[m] + i) = bilinear_form.trial_cfes.template boundary_value<m>(&x.at(0, 0));
-      }      
+      }
     }
   };
 
-  
+
   typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) const {
     array<double> f(form.get_coefficients());
     call_for_each<handle_dirichlet_dof_values, make_integral_list_t<std::size_t, n_test_component> >::call(*this, f);
-    
+
     linear_solver s;
     auto petsc_gmres_ilu(s.get_solver(solver::petsc,
 				      method::gmres,
 				      preconditioner::ilu));
     petsc_gmres_ilu->set_size(test_cfes.get_total_dof_number());
-    
+
     if (true) {
       // Convert to CRS format
       std::vector<int>
@@ -217,7 +217,7 @@ public:
 	col(a.get_elements().size());
       std::vector<double>
 	val(a.get_elements().size());
-    
+
       std::size_t row_id(0), val_id(0);
       row[0] = row_id;
       for (const auto& v: a.get_elements()) {
@@ -236,7 +236,8 @@ public:
       for (std::size_t n(0); n < a.get_equation_number(); ++n) {
 	nnz[n] = row[n + 1] - row[n];
       }
-      
+
+
       petsc_gmres_ilu->preallocate(&nnz[0]);
 
       if(true) {
@@ -273,19 +274,25 @@ public:
 	a.accumulate(bilinear_form.test_global_dof_offset[m] + i,
 		     bilinear_form.test_global_dof_offset[m] + i,
 		     1.0);
-      }      
+      }
     }
   };
 
-  
+
   void clear() {
     a.clear();
     // we need to specify the equation for the dirichlet dof
     call_for_each<handle_dirichlet_dof_equations, make_integral_list_t<std::size_t, n_test_component> >::call(*this, a);
   }
 
-  void show(std::ostream& stream);
-  
+  void show(std::ostream& stream) {
+    a.show(stream);
+  }
+
+  void export_data(std::ostream& stream) const {
+    a.export_data(stream);
+  }
+
 private:
   const test_cfes_type& test_cfes;
   const trial_cfes_type& trial_cfes;

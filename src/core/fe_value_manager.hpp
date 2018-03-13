@@ -3,6 +3,8 @@
 
 #include <tuple>
 
+#include <spikes/array.hpp>
+
 #include "meta.hpp"
 
 

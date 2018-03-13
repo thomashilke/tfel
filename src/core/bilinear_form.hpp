@@ -102,10 +102,11 @@ public:
 	}
       }
       for (unsigned int i(0); i < n_test_dof; ++i)
-	for (unsigned int j(0); j < n_trial_dof; ++j)
+	for (unsigned int j(0); j < n_trial_dof; ++j) {
 	  accumulate(test_fes.get_dof(integration_proxy.get_global_cell_id(k), i),
 		     trial_fes.get_dof(integration_proxy.get_global_cell_id(k), j),
 		     a_el.at(i, j) * volume);
+        }
     }
 
     dirty = true;
@@ -214,8 +215,12 @@ public:
     constraint_number = 0;
   }
   
-  void show(std::ostream& stream) {
+  void show(std::ostream& stream) const {
     a.show(stream);
+  }
+
+  void export_data(std::ostream& stream) const {
+    a.export_data(stream);
   }
   
 private:

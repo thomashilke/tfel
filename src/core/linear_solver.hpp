@@ -73,40 +73,6 @@ namespace linear_solver_impl {
       ierr = MatSetType(A, MATSEQAIJ);CHKERRV(ierr);
       ierr = VecCreate(PETSC_COMM_WORLD, &b);CHKERRV(ierr);
       ierr = VecSetType(b, VECSEQ);
-
-      ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);CHKERRV(ierr);
-      ierr = KSPSetOperators(ksp, A, A);CHKERRV(ierr);
-      if (lu) {
-	ierr = KSPSetType(ksp,KSPPREONLY);CHKERRV(ierr);
-	
-	ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
-	ierr = PCSetType(pc,PCLU);CHKERRV(ierr);
-      } else if (ilu) {
-	ierr = KSPSetType(ksp,KSPGMRES);CHKERRV(ierr);
-	ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRV(ierr);
-	ierr = KSPSetTolerances(ksp, 1.e-8, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRV(ierr);
-	ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESClassicalGramSchmidtOrthogonalization);CHKERRV(ierr);
-
-	ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
-	ierr = PCSetType(pc,PCILU);CHKERRV(ierr);
-	ierr = PCFactorSetLevels(pc, 2);CHKERRV(ierr);
-	ierr = PCFactorSetAllowDiagonalFill(pc, PETSC_TRUE);CHKERRV(ierr);
-	ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRV(ierr);
-      }
-
-      ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);CHKERRV(ierr);
-      ierr = PetscViewerSetType(v, PETSCVIEWERASCII);CHKERRV(ierr);
-      ierr = PetscViewerPushFormat(v, PETSC_VIEWER_ASCII_MATLAB);CHKERRV(ierr);
-      ierr = PetscViewerAndFormatCreate(v, PETSC_VIEWER_DEFAULT, &vaf);CHKERRV(ierr);
-      if (verbose)
-	ierr = KSPMonitorSet(ksp,
-			     reinterpret_cast<PetscErrorCode (*)(KSP,
-								 PetscInt,
-								 PetscReal,
-								 void *)>(KSPMonitorTrueResidualNorm),
-			     vaf,
-			     nullptr);CHKERRV(ierr);
-      ierr = KSPSetFromOptions(ksp);CHKERRV(ierr);
     }
     
     virtual ~petsc_gmres_ilu() {
@@ -173,6 +139,57 @@ namespace linear_solver_impl {
 
       Vec x;
       ierr = VecDuplicate(b, &x);CHKERRCONTINUE(ierr);
+
+
+      ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);CHKERRCONTINUE(ierr);
+      ierr = KSPSetOperators(ksp, A, A);CHKERRCONTINUE(ierr);
+      if (lu) {
+	ierr = KSPSetType(ksp,KSPPREONLY);CHKERRCONTINUE(ierr);
+	
+	ierr = KSPGetPC(ksp, &pc);CHKERRCONTINUE(ierr);
+	ierr = PCSetType(pc,PCLU);CHKERRCONTINUE(ierr);
+      } else if (ilu) {
+	ierr = KSPSetType(ksp,KSPGMRES);CHKERRCONTINUE(ierr);
+        //ierr = KSPSetType(ksp,KSPIBCGS);CHKERRCONTINUE(ierr);
+	//ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRCONTINUE(ierr);
+	ierr = KSPSetTolerances(ksp, 1.e-8, 1e-50, 1e20, 1000);CHKERRCONTINUE(ierr);
+	ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESModifiedGramSchmidtOrthogonalization);CHKERRCONTINUE(ierr);
+        ierr = KSPGMRESSetRestart(ksp, 500);
+        
+	ierr = KSPGetPC(ksp, &pc);CHKERRCONTINUE(ierr);
+	ierr = PCSetType(pc,PCILU);CHKERRCONTINUE(ierr);
+	ierr = PCFactorSetLevels(pc, 2);CHKERRCONTINUE(ierr);
+	//ierr = PCFactorSetAllowDiagonalFill(pc, PETSC_TRUE);CHKERRCONTINUE(ierr);
+	//ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRCONTINUE(ierr);
+        //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGNATURAL);CHKERRCONTINUE(ierr);
+        //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGND);CHKERRCONTINUE(ierr);
+        //ierr = PCFactorSetMatOrderingType(pc, MATORDERING1WD);CHKERRCONTINUE(ierr);
+        //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGQMD);CHKERRCONTINUE(ierr);
+      } else {
+        ierr = KSPSetType(ksp,KSPGMRES);CHKERRCONTINUE(ierr);
+        //ierr = KSPSetType(ksp,KSPIBCGS);CHKERRCONTINUE(ierr);
+        ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRCONTINUE(ierr);
+	ierr = KSPSetTolerances(ksp, 1.e-8, PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRCONTINUE(ierr);
+	//ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESClassicalGramSchmidtOrthogonalization);CHKERRCONTINUE(ierr);
+
+        ierr = KSPGetPC(ksp, &pc);CHKERRCONTINUE(ierr);
+	ierr = PCSetType(pc,PCNONE);CHKERRCONTINUE(ierr);
+        ierr = PCFactorSetMatOrderingType(pc, MATORDERINGRCM);CHKERRCONTINUE(ierr);
+      }
+      ierr = PetscViewerCreate(PETSC_COMM_WORLD, &v);CHKERRCONTINUE(ierr);
+      ierr = PetscViewerSetType(v, PETSCVIEWERASCII);CHKERRCONTINUE(ierr);
+      ierr = PetscViewerPushFormat(v, PETSC_VIEWER_ASCII_MATLAB);CHKERRCONTINUE(ierr);
+      ierr = PetscViewerAndFormatCreate(v, PETSC_VIEWER_DEFAULT, &vaf);CHKERRCONTINUE(ierr);
+      if (verbose)
+	ierr = KSPMonitorSet(ksp,
+			     reinterpret_cast<PetscErrorCode (*)(KSP,
+								 PetscInt,
+								 PetscReal,
+								 void *)>(KSPMonitorTrueResidualNorm),
+			     vaf,
+			     nullptr);CHKERRCONTINUE(ierr);
+      ierr = KSPSetFromOptions(ksp);CHKERRCONTINUE(ierr);
+      
       ierr = KSPSolve(ksp, b, x);CHKERRCONTINUE(ierr);
 
       array<double> result{rhs.get_size(0)};
@@ -185,7 +202,7 @@ namespace linear_solver_impl {
     }
     
   private:
-    const bool verbose = false;
+    const bool verbose = true;
     const bool lu = false;
     const bool ilu = true;
     

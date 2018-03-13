@@ -11,7 +11,7 @@ public:
     : tp(n_thread),
       test_fes(te_fes),
       f{te_fes.get_dof_number()} {
-    
+
     f.fill(0.0);
   }
 
@@ -19,7 +19,7 @@ public:
   void operator+=(T integration_proxy) {
     typedef typename test_fes_type::fe_type test_fe_type;
     const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
-    
+
     std::size_t n_element(integration_proxy.m.get_cell_number());
     std::size_t n_thread(tp.size());
 
@@ -28,10 +28,10 @@ public:
       std::size_t
 	k_begin(n_element * n / n_thread ),
 	k_end(std::min(n_element * (n + 1) / n_thread, n_element));
-      
+
       rhs_els[n] = array<double>{k_end - k_begin, n_test_dof};
     }
-    
+
     std::vector<std::future<void> > futures;
     for (std::size_t n(0); n < n_thread; ++n) {
       std::size_t
@@ -45,7 +45,7 @@ public:
 	  }
         )
       );
-      
+
       //assemble_element_range<T>(rhs_els[n], k_begin, k_end, integration_proxy);
     }
 
@@ -67,9 +67,9 @@ public:
 			      std::size_t k_begin, std::size_t k_end,
 			      T integration_proxy) {
     rhs_el.fill(0.0);
-	  
+
     static_assert(T::form_type::rank == 1, "linear_form expects rank-1 expression.");
-    
+
     typedef typename test_fes_type::fe_type test_fe_type;
     using test_fe_type = typename test_fes_type::fe_type;
     typedef typename T::quadrature_type quadrature_type;
@@ -78,7 +78,7 @@ public:
 
     const auto& m(integration_proxy.m);
 
-    
+
     // prepare the quadrature weights
     const std::size_t n_q(quadrature_type::n_point);
     array<double> omega{n_q};
@@ -101,7 +101,7 @@ public:
     }
 
     const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
-    
+
     // loop over the elements
     for (std::size_t k(k_begin); k < k_end; ++k) {
 
@@ -123,12 +123,12 @@ public:
       }
 
       const array<double>& psi(fe_values.template get_values<test_fe_index>());
-      
+
       // evaluate the weak form
       const double volume(m.get_cell_volume(k));
       for (std::size_t q(0); q < n_q; ++q) {
 	integration_proxy.f.prepare(k, &xq.at(q, 0ul), &xq_hat.at(q, 0ul));
-	
+
 	for (std::size_t j(0); j < n_test_dof; ++j) {
 	  rhs_el.at(k - k_begin, j) += omega.at(q) * volume *
 	    integration_proxy.f(k, &xq.at(q, 0ul),
@@ -139,33 +139,43 @@ public:
 
     }
   }
-  
+
   void set_constraint_value(double v) { constraint_values.push_back(v); }
-  
+
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
 
   const array<double>& get_coefficients() const { return f; }
   const std::vector<double>& get_constraint_values() const { return constraint_values; }
-  
+
   void clear() {
     std::fill(f.get_data(),
 	      f.get_data() + f.get_size(0),
 	      0.0);
-    
+
     constraint_values.clear();
   }
-  
-  void show(std::ostream& stream) {
+
+  void show(std::ostream& stream) const {
     stream << "rhs = [" << f.at(0);
     for (std::size_t j(1); j < f.get_size(0); ++j)
       stream << "; " << f.at(j);
     stream << "];" << std::endl;
   }
+
+  void export_data(std::ostream& stream) const {
+    auto p(stream.precision(16));
+
+    for (std::size_t j(0); j < f.get_size(0); ++j)
+      stream << f.at(j) << std::endl;
+
+    stream.precision(p);
+  }
+
 private:
   thread_pool tp;
-  
+
   const test_fes_type& test_fes;
-  
+
   array<double> f;
   std::vector<double> constraint_values;
 };

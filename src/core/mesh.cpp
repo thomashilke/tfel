@@ -29,10 +29,19 @@ fe_mesh<cell::triangle> gen_square_mesh(double x_1, double x_2,
 
   for (unsigned int j(0); j < n_2; ++j)
     for (unsigned int i(0); i < n_1; ++i) {
+      // first diagonal (south-west north-east)
+      //elements[6 * (n_1 * j + i) + 0] = (j    ) * (n_1 + 1) + (i    );
+      //elements[6 * (n_1 * j + i) + 1] = (j    ) * (n_1 + 1) + (i + 1);
+      //elements[6 * (n_1 * j + i) + 2] = (j + 1) * (n_1 + 1) + (i    );
+      //elements[6 * (n_1 * j + i) + 3] = (j    ) * (n_1 + 1) + (i + 1);
+      //elements[6 * (n_1 * j + i) + 4] = (j + 1) * (n_1 + 1) + (i    );
+      //elements[6 * (n_1 * j + i) + 5] = (j + 1) * (n_1 + 1) + (i + 1);
+
+      // second diagonal (south-east north-west)
       elements[6 * (n_1 * j + i) + 0] = (j    ) * (n_1 + 1) + (i    );
       elements[6 * (n_1 * j + i) + 1] = (j    ) * (n_1 + 1) + (i + 1);
-      elements[6 * (n_1 * j + i) + 2] = (j + 1) * (n_1 + 1) + (i    );
-      elements[6 * (n_1 * j + i) + 3] = (j    ) * (n_1 + 1) + (i + 1);
+      elements[6 * (n_1 * j + i) + 2] = (j + 1) * (n_1 + 1) + (i + 1);
+      elements[6 * (n_1 * j + i) + 3] = (j    ) * (n_1 + 1) + (i    );
       elements[6 * (n_1 * j + i) + 4] = (j + 1) * (n_1 + 1) + (i    );
       elements[6 * (n_1 * j + i) + 5] = (j + 1) * (n_1 + 1) + (i + 1);
     }

@@ -1,95 +1,95 @@
-\section{Maillages et structures de donn\'ees}
+\section{Maillages et structures de données}
 
 Le template \texttt{finite\_element\_space} est responsable de la
-construction du mapping entre les indices des degr\'es de libert\'e
-locaux \`a chaque \'el\'ement, et les indices des degres de libert\'e
+construction du mapping entre les indices des degrés de liberté
+locaux à chaque élément, et les indices des degres de liberté
 globaux.
 
 Soit $M = (V, E)$ un mesh de triangles conformes. On note:
 \begin{itemize}
 \item $V = \{v_1, v_2, \dots, v_{N_v}\}$ l'ensemble des vertices du
   mesh $M$.
-  
-\item $\tau = \{K_1, K_2, \dots, K_{N_K}\}$, o\`u $K_i = \{K_{i,1},
-  K_{i,2}, K_{i,3}\}$, $K_{i,j}\in V$ l'ensemble des \'el\'ements du
-  mesh $M$. On suppose que $\forall i$ les \'el\'ements de $e_i$ sont tri\'es par
-  ordre croissants, c'est-\`a-dire que $K_{i,1} < K_{i,2} < K_{i,3}$.
-  
+
+\item $\tau = \{K_1, K_2, \dots, K_{N_K}\}$, où $K_i = \{K_{i,1},
+  K_{i,2}, K_{i,3}\}$, $K_{i,j}\in V$ l'ensemble des éléments du
+  mesh $M$. On suppose que $\forall i$ les éléments de $e_i$ sont triés par
+  ordre croissants, c'est-à-dire que $K_{i,1} < K_{i,2} < K_{i,3}$.
+
 \item $A = \left\{ \{v, w\}\ |\ v,w\in V \text{ et } \exists e\in E
   \text{ tel que } v,w \in e\right\}$. On note $a_i = \{a_{i,1},
-  a_{i,2}\}$, $i = 1, \dots, N_{a}$ les \'el\'ements de l'ensemble $A$,
-  avec $N_a = \#A$. De m\^eme, on suppose que $\forall i$ les \'el\'ements de
-  $a_i$ sont tri\'es par ordre croissants, c'est-\`a-dire
+  a_{i,2}\}$, $i = 1, \dots, N_{a}$ les éléments de l'ensemble $A$,
+  avec $N_a = \#A$. De même, on suppose que $\forall i$ les éléments de
+  $a_i$ sont triés par ordre croissants, c'est-à-dire
   que $a_{i,1} < a_{i,2}$.
 \end{itemize}
 
-D'un point de vue de l'impl\'ementation informatique, l'ensemble $V$
-est repr\'esent\'e simplement par l'entier $N_v$. Dans un cadre plus
-g\'en\'eral, $V$ peut \^etre repr\'esent\'e par une liste d'entiers
-unique ${n_1, \dots, n_{N_v}}$, par exemple si la num\'erotation des
-vertices ne commence pas \`a 1, ou que des intervalles manquent.
+D'un point de vue de l'implémentation informatique, l'ensemble $V$
+est représenté simplement par l'entier $N_v$. Dans un cadre plus
+général, $V$ peut être représenté par une liste d'entiers
+unique ${n_1, \dots, n_{N_v}}$, par exemple si la numérotation des
+vertices ne commence pas à 1, ou que des intervalles manquent.
 
-L'ensemble $E$ est repr\'esent\'e par un tableau \`a double entr\'ees
+L'ensemble $E$ est représenté par un tableau à double entrées
 de dimensions $N_e \times 3$:
 \begin{addmargin}[0.5in]{0em}
   \texttt{unsigned int elements[n\_e][3];}
 \end{addmargin}
-o\`u \texttt{elements[i][j]}$ = e_{i,j}$.
+où \texttt{elements[i][j]}$ = e_{i,j}$.
 
-L'ensemble $A$ est repr\'esent\'e par un tableau \`a double entr\'ees
+L'ensemble $A$ est représenté par un tableau à double entrées
 de dimensions $N_a \times 2$:
 \begin{addmargin}[0.5in]{0em}
   \texttt{unsigned int edges[n\_a][2];}
 \end{addmargin}
-o\`u \texttt{edges[i][j]}$ = a_{i,j}$.
+où \texttt{edges[i][j]}$ = a_{i,j}$.
 
 
-\section{\'El\'ements finis et degr\'es de libert\'e}
+\section{Éléments finis et degrés de liberté}
 Notons $\hat K$ le triangle de sommets $v_1 = (0,0)$, $v_2 = (1,0)$ et
 $v_3 = (0, 1)$. On note $\hat N_v = 3$ le nombre de sommets du
 triangle, $\hat N_K = 1$ le nombre de triangle et $\hat N_a = 3$ le
-nombre d'arr\^ete du triangle. Cette notation, qui parait superflue,
-devient n\'ecessaire lorsque l'on g\'eneralise le formalisme \`a des
+nombre d'arrête du triangle. Cette notation, qui parait superflue,
+devient nécessaire lorsque l'on géneralise le formalisme à des
 mesh de simplexes de dimensions $D \neq 2$.
 
-Dans ce cas, l'ensemble $A$ est donn\'e par 
+Dans ce cas, l'ensemble $A$ est donné par
 \begin{equation}
   \tau = \left\{ \{v_1, v_2\}, \{v_1, v_3\}, \{v_2, v_3\} \right\}.
 \end{equation}
 
-Un \'el\'ement fini d\'efinit un certain nombre de degr\'es de
-libert\'es sur chaque \'el\'ement. En particulier, on note $\hat M_v$ le
-nombre de degr\'e de libert\'e associ\'es \`a chaque vertex de $K$,
-$\hat M_a$ le nombre de dof associ\'es \`a chaque arr\^ete de $K$, et
-$\hat M_K$ le nombre de dof associ\'es \`a l'\'el\'ement $K$. Donc le
-nombre de dof $\hat M_\text{tot}$ associ\'es \`a $K$ au total est donn\'e par 
+Un élément fini définit un certain nombre de degrés de
+libertés sur chaque élément. En particulier, on note $\hat M_v$ le
+nombre de degré de liberté associés à chaque vertex de $K$,
+$\hat M_a$ le nombre de dof associés à chaque arrête de $K$, et
+$\hat M_K$ le nombre de dof associés à l'élément $K$. Donc le
+nombre de dof $\hat M_\text{tot}$ associés à $K$ au total est donné par
 \begin{equation}
   \hat M_\text{tot} = \hat M_v \hat N_v + \hat M_a \hat N_a + \hat M_K \hat N_K.
 \end{equation}
-Dans un mesh les degr\'es de libert\'es associ\'es aux vertices et aux
-arr\^etes d'un \'el\'ement sont identifi\'es aux degr\'es de libert\'e
-associ\'es a un autre \'el\'ement qui partage le m\^eme vertex ou la
-m\^eme arr\^ete. Ces dofs sont donc associ\'es aux vertices et aux
-arr\^etes du maillages, plut\^ot que propres \`a un \'el\'ement ou
+Dans un mesh les degrés de libertés associés aux vertices et aux
+arrêtes d'un élément sont identifiés aux degrés de liberté
+associés a un autre élément qui partage le même vertex ou la
+même arrête. Ces dofs sont donc associés aux vertices et aux
+arrêtes du maillages, plutôt que propres à un élément ou
 l'autre.
 
 Cependant, les deux points de vues sont utiles, puisque l'on assemble
-la matrice \'el\'ement fini \'el\'ement par \'el\'ement, et non fonction de
-base apr\`es fonction de base.
+la matrice élément fini élément par élément, et non fonction de
+base après fonction de base.
 
-La contribution d'un \'el\'ement $K$ au syst\`eme lin\'eaire est d'abord
-calcul\'ee en utilisant une num\'erotation des degr\'es de libert\'e
-locale \`a $K$, puis la contribution est assembl\'ee dans la matrice
-globale. Pour cette \'etape, il est n\'ecessaire d'identifier les
-degr\'es de libert\'es locaux aux degr\'es de libert\'es globaux. C'est
-le r\^ole de l'espace \'el\'ement fini, d\'ecrit plus en d\'etail dans
+La contribution d'un élément $K$ au système linéaire est d'abord
+calculée en utilisant une numérotation des degrés de liberté
+locale à $K$, puis la contribution est assemblée dans la matrice
+globale. Pour cette étape, il est nécessaire d'identifier les
+degrés de libertés locaux aux degrés de libertés globaux. C'est
+le rôle de l'espace élément fini, décrit plus en détail dans
 la section qui suit.
 
-\section{Espace \'el\'ements finis}
-On suppose donn\'e un mesh $M$ un \'el\'ement fini, c'est-\`a-dire que
-$\hat M_v$, $\hat M_a$ et $\hat M_K$ sont donn\'es. Commen\c cons par
-enum\'erer l'ensemble des degr\'es de libert\'es $M_\text{tot}$
-associ\'es au maillage: 
+\section{Espace éléments finis}
+On suppose donné un mesh $M$ un élément fini, c'est-à-dire que
+$\hat M_v$, $\hat M_a$ et $\hat M_K$ sont donnés. Commen\c cons par
+enumérer l'ensemble des degrés de libertés $M_\text{tot}$
+associés au maillage:
 \begin{align}
   & M_v = \hat M_v N_v\\
   & M_a = \hat M_a N_a\\
@@ -97,74 +97,74 @@ associ\'es au maillage:
   & M_\text{tot} = \hat M_v N_v + \hat M_a N_a + \hat M_K N_K.
 \end{align}
 
-On note les degr\'es de libert\'e $\{\varphi_i\}_{i=1}^{M_\text{tot}}$,
-et on associe les trois intervalle d'indices avec les degr\'es
-associ\'es respectivement aux vertices, aux arr\^etes et aux
-\'el\'ements: 
+On note les degrés de liberté $\{\varphi_i\}_{i=1}^{M_\text{tot}}$,
+et on associe les trois intervalle d'indices avec les degrés
+associés respectivement aux vertices, aux arrêtes et aux
+éléments:
 
 \begin{itemize}
-\item Indices des dofs associ\'es aux vertices: $\{1, \dots, \hat M_v
+\item Indices des dofs associés aux vertices: $\{1, \dots, \hat M_v
   N_v\}$,
-\item Indices des dofs associ\'es aux arr\^etes: $\{\hat M_v N_v + 1,
+\item Indices des dofs associés aux arrêtes: $\{\hat M_v N_v + 1,
   \hat M_v N_v + \hat M_a N_a\}$,
-\item Indices des dofs associ\'es aux \'el\'ements: $\{\hat M_v N_v + \hat
+\item Indices des dofs associés aux éléments: $\{\hat M_v N_v + \hat
   M_a N_a + 1, \dots, \hat M_v N_v + \hat M_a N_a + \hat M_K N_K\}$,
 \end{itemize}
 
-En particulier, le $\hat i$-\`eme dof associ\'e au vertex $j$ a l'indice global 
+En particulier, le $\hat i$-ème dof associé au vertex $j$ a l'indice global
 \begin{equation}
   i = j \hat M_v + \hat i,
 \end{equation}
-le $\hat i$-\`eme dof associ\'e \`a l'arr\^ete $j$ a l'indice global 
+le $\hat i$-ème dof associé à l'arrête $j$ a l'indice global
 \begin{equation}
   i = \hat M_v N_v + j \hat M_a + \hat i,
 \end{equation}
-and the $\hat i$-\`eme dof associ\'e au triangle j a l'indice global 
+and the $\hat i$-ème dof associé au triangle j a l'indice global
 \begin{equation}
   i = \hat M_v N_v + \hat M_a N_a + j \hat M_K + \hat i.
 \end{equation}
 
-\section{Cellule de r\'ef\'erence}
-On d\'efinit ici la cellule (triangle) de r\'ef\'erence, et en
+\section{Cellule de référence}
+On définit ici la cellule (triangle) de référence, et en
 particulier les enumeration des differents sous-domaines (vertices,
-arr\^etes et triangle). Soit les vertices $v_0 = (0,0)$, $v_1 =
+arrêtes et triangle). Soit les vertices $v_0 = (0,0)$, $v_1 =
 (1,0)$ and $v_2 = (0,1)$, et le triangle est definit par $K = \{v_0,
-v_1, v_2\}$. Donc on d\'efinit et enum\`ere les sous domaines de la
-mani\`ere suivante: 
+v_1, v_2\}$. Donc on définit et enumère les sous domaines de la
+manière suivante:
 \begin{align*}
   \text{vertices: } & v_0, v_1, v_2,\\
-  \text{arr\^etes: } & e_0 = \{v_0, v_1\},\ e_1 = \{v_0, v_2\},\ e_2 =
+  \text{arrêtes: } & e_0 = \{v_0, v_1\},\ e_1 = \{v_0, v_2\},\ e_2 =
   \{v_1, v_2\}, \\
   \text{triangle: } & K = \{v_0, v_1, v_2\}.
 \end{align*}
 
 Il y a quand meme un truc. Il faut que les dof definis sur les
-arr\^etes soient enum\'er\'es dans le m\^eme ordre sur chaque arr\^ete de
-la cellule de r\'ef\'erence. La question ne se pose pas pour les dofs
-d\'efinis sur les \'el\'ements, parce qu'ils ne sont par partag\'es par
-diff\'erents \'el\'ements. Pour les dofs d\'efinis sur les vertices, la
-question ne se pose pas, parce qu'il y a qu'une seule possibilit\'e
-d'enum\'erer un unique objet (le vertex). 
+arrêtes soient enumérés dans le même ordre sur chaque arrête de
+la cellule de référence. La question ne se pose pas pour les dofs
+définis sur les éléments, parce qu'ils ne sont par partagés par
+différents éléments. Pour les dofs définis sur les vertices, la
+question ne se pose pas, parce qu'il y a qu'une seule possibilité
+d'enumérer un unique objet (le vertex).
 
 \section{Assemblage}
-On consid\`ere le probl\`eme suivant. Soit $V_h$ l'espace \'el\'ement finit lagrange $\mathbb P_1\bigcap H^1_0(\Omega)$ sur une triangulation $\tau_h$ de $\Omega$. On cherche la fonction $u_h\in V_h$ telle que:
+On considère le problème suivant. Soit $V_h$ l'espace élément finit lagrange $\mathbb P_1\bigcap H^1_0(\Omega)$ sur une triangulation $\tau_h$ de $\Omega$. On cherche la fonction $u_h\in V_h$ telle que:
 \begin{align}
   \int_\Omega \nabla u_h\cdot \nabla v = \int_\Omega f v,\quad \forall v \in V_h.
 \end{align}
-Bien entendu, on prend $v = \phi_j$ les fonctions de base de $V_h$, et on d\'ecompose les int\'egrale sur chaque \'el\'ement de la triangulation:
+Bien entendu, on prend $v = \phi_j$ les fonctions de base de $V_h$, et on décompose les intégrale sur chaque élément de la triangulation:
 \begin{equation}
   \sum_{K\in\tau_h}\int_K \nabla u_h\cdot \nabla v = \sum_{K \in \tau_h}\int_\Omega f v, \quad \forall v \in V_h.
 \end{equation}
-L'inconnue $u_h$ s'\'ecrit comme une combinaison lin\'eaire des fonctions de base $\phi_i$:
+L'inconnue $u_h$ s'écrit comme une combinaison linéaire des fonctions de base $\phi_i$:
 \begin{equation}
   u_h(x) = \sum_{i = 1}^{M_\text{tot}} u_i \phi_i(x).
 \end{equation}
-Le syst\`eme devient alors:
+Le système devient alors:
 \begin{equation}
   \sum_{i = 1}^{M_\text{tot}}u_i\sum_{K\in\tau_h}\int_K \nabla \phi_i\cdot \nabla \phi_j = \sum_{K \in \tau_h}\int_\Omega f \phi_j, \quad \forall j \in \{1, \dots,M_\text{tot}\}.
 \end{equation}
 
-Puisque le support des $\phi_j$ sont limit\'es aux \'el\'ements qui partagent le degr\'e de libert\'e $j$, la plupart des int\'egrales sont nulles. Soit $a$ la forme bilin\'eaire d\'efinie par
+Puisque le support des $\phi_j$ sont limités aux éléments qui partagent le degré de liberté $j$, la plupart des intégrales sont nulles. Soit $a$ la forme bilinéaire définie par
 \begin{equation}
 a(u, v) = \sum_{K\in\tau_h}\int_K \nabla u\cdot \nabla v.
 \end{equation}
@@ -172,18 +172,37 @@ On veut calculer l'ensemble des nombres $a(\phi_i, \phi_j)$:
 \begin{equation}
 a(\phi_i, \phi_j) = \sum_{K\in\tau_h}\int_K \nabla \phi_i\cdot \nabla \phi_j = \sum_{K\in\tau_h}\int_{\hat K} \det(J(\hat x)) [J^{-\mathrm t}(\hat x)]_{kn} [J^{-\mathrm t}(\hat x)]_{km} \hat\partial_n \hat\phi_i(\hat x)\hat\partial_m \hat\phi_j(\hat x).
 \end{equation}
-En pratique, les int\'egrales sont remplac\'ees par des quadratures num\'eriques. Donc la forme bilin\'eaire $a$ devient:
+En pratique, les intégrales sont remplacées par des quadratures numériques. Donc la forme bilinéaire $a$ devient:
 \begin{equation}
 a(\phi_i, \phi_j) = \sum_{K\in\tau_h} Q \sum_{q = 1}^{n_q}\omega_q \det(J(\hat x_q)) [J^{-\mathrm t}(\hat x_q)]_{kn} [J^{-\mathrm t}(\hat x_q)]_{km} \hat\partial_n \hat\phi_i(\hat x_q)\hat\partial_m \hat\phi_j(\hat x_q),
 \end{equation}
-avec $Q$ un coefficient de normalisation de la formule de quadrature, $\omega_q$ les poids de la formule de quadrature, et $\hat x_q$ les points de quadrature dans l'\'el\'ement de r\'ef\'erence.
+avec $Q$ un coefficient de normalisation de la formule de quadrature, $\omega_q$ les poids de la formule de quadrature, et $\hat x_q$ les points de quadrature dans l'élément de référence.
 
 \section{Formules de quadrature}
 \begin{figure}
   \begin{center}
     \input{../figures/quadrature-convergence.tex}
-    \caption{Convergence de l'erreur de diff\'erentes formules de quadrature. La quantit\'e $I$ est d\'efinie par $\int_0^2 f(x)\,\mathrm dx$, avec $f(x) = \sin(x)$.}
+    \caption{Convergence de l'erreur de différentes formules de quadrature. La quantité $I$ est définie par $\int_0^2 f(x)\,\mathrm dx$, avec $f(x) = \sin(x)$.}
     \label{fig:quadrature-convergence-1d}
   \end{center}
 \end{figure}
 
+
+
+\section{Éléments finis}
+L'élément fini Lagrange continu et polynomial d'ordre 2 par morceau
+sur des triangles est définit dans le tableau qui suit.
+
+\begin{tabularx}{\textwidth}{@{}llllll@{}}
+  \toprule
+  DOF & Sousdomaine & Position & $\phi_i$ & $\partial_1\phi_i$
+& $\partial_2\phi_i$ \\
+  \midrule
+  1 & vertex $1$     & $(0, 0)$     & $2(x_0 + x_1 - 1)(x_0 + x_1 - 0.5)$  & $4(x_0 + x_1) - 3$  & $4(x_0 + x_1) - 3$ \\
+  2 & vertex $2$     & $(1, 0)$     & $2x_0(x_0 - 0.5) $                  & $4x_0 - 1$          & $0$ \\
+  3 & vertex $3$     & $(0, 1)$     & $2x_1(x_1 - 0.5) $                  & $0$                 & $4x_1 - 1$ \\
+  4 & arrête $(1,2)$ & $(0.5, 1)$   & $-4x_0(x_0 + x_1 - 1) $             & $-4(2x_0+x_1 - 1)$  & $-4x_0$ \\
+  5 & arrête $(1,3)$ & $(1, 0.5)$   & $-4x_1(x_0 + x_1 - 1) $             & $-4x_1$             & $-4(x_0 + 2x_1 - 1)$ \\
+  6 & arrête $(2,3)$ & $(0.5, 0.5)$ & $4x_0x_1 $                          & $4x_1$              & $4x_0$ \\
+  \bottomrule
+\end{tabularx}

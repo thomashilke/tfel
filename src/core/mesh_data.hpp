@@ -224,7 +224,7 @@ struct concat_arrays<value_type, array_type, array_types...> {
     assert(a.get_size(0) == dst.get_size(0));
     assert(dst.get_rank() == 2);
     assert(dst.get_size(1) >= sizeof...(array_types));
-    
+
     const std::size_t m(dst.get_size(1) - (sizeof...(array_types) + 1));
     for (std::size_t n(0); n < a.get_size(0); ++n)
       dst.at(n, m) = a.at(n, 0);
@@ -245,7 +245,7 @@ public:
   using cell_type = typename mesh_type::cell_type;
   using value_type = value_t;
 
-  
+
   mesh_data(const mesh_type& m, mesh_data_kind t, std::size_t n_component = 1ul)
     : m(m), type(t), values{value_number(t), n_component} {}
 
@@ -255,8 +255,8 @@ public:
   mesh_data(const mesh_type& m, mesh_data_kind t, array<double>&& values)
     : m(m), type(t), values(std::move(values)) {}
 
-  
-  
+
+
   template<typename ast_type>
   mesh_data(const mesh_type& m, mesh_data_kind t, const mesh_data_expression<ast_type>& expr)
     : m(m), type(t), values{value_number(t), expr.component_number()} {
@@ -271,11 +271,11 @@ public:
     : m(m), type(t), values{value_number(t), sizeof...(mesh_data_types)}{
     concat_arrays<double, array<typename mesh_data_types::value_type>...>::call(values, (datas.get_values())...);
   }
-  
+
   const value_type& value(std::size_t k, std::size_t n) const { return values.at(k, n); }
   value_type& value(std::size_t k, std::size_t n) { return values.at(k, n); }
 
-  
+
   mesh_data_expression<mesh_data_component_value<value_type, mesh_type > >
   operator[](std::size_t n) const {
     return mesh_data_expression<mesh_data_component_value<value_type, mesh_type > >(
@@ -295,6 +295,19 @@ public:
   }
 
   const array<value_type>& get_values() const { return values; }
+
+  value_type evaluate(std::size_t k,
+                      const double* x_hat,
+                      std::size_t component) const {
+    switch (type) {
+    case mesh_data_kind::cell:
+      return values.at(k, component);
+      break;
+    case mesh_data_kind::vertex:
+      throw std::string("mesh_data::evaluate: evaluation of vertex data is not implemented.");
+      break;
+    }
+  }
 
   std::size_t get_component_number() const { return values.get_size(1); }
 

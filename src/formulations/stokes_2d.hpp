@@ -135,9 +135,12 @@ private:
       using fe = cell::triangle::fe::lagrange_p0;
       finite_element_space<cell::triangle::fe::lagrange_p0> fes(m);
       const auto h(build_element_diameter_function(m, fes));
+      const auto h2(cell_diameter(m));
       const double stab_coefficient(- 1.0);
 
-      a += integrate<quad::triangle::qf5pT>(stab_coefficient * make_expr<fe>(h) * make_expr<fe>(h) *
+      a += integrate<quad::triangle::qf5pT>(stab_coefficient *
+                                            //make_expr<fe>(h) * make_expr<fe>(h) *
+                                            make_expr(h2, 0) * make_expr(h2, 0) * 
 					    (d<1>(p)*d<1>(q) + d<2>(p)*d<2>(q))
 					    , m);
     }

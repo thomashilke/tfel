@@ -141,6 +141,36 @@ private:
   const double value;
 };
 
+template<typename value_t, typename mesh_t>
+struct mesh_data_component {
+  mesh_data_component(const mesh_data<value_t, mesh_t>& data, std::size_t c):
+    data(data), c(c) {}
+
+  template<typename ... Ts>
+  double operator()(unsigned int k,
+                    const double* x,
+                    const double* x_hat,
+                    Ts ... ts) const {
+    return data.evaluate(k, x_hat, c);
+  }
+  
+  template<typename ... Ts>
+  double operator()(unsigned int k,
+		    const double* x, const double* x_hat) const {
+    return data.evaluate(k, x_hat, c);
+  }
+
+  void prepare(unsigned int k, const double* x, const double* x_hat) const {}
+
+  static constexpr std::size_t rank = 0;
+  static constexpr std::size_t differential_order = 0;
+  static constexpr bool require_space_coordinates = false;
+
+private:
+  const mesh_data<value_t, mesh_t>& data;
+  std::size_t c;
+};
+
 
 template<typename expr_t>
 struct expression {
@@ -229,6 +259,9 @@ typedef expression<free_function> free_function_t;
 typedef expression<constant> constant_t;
 typedef expression<std_function> std_function_t;
 
+template<typename value_t, typename mesh_t>
+using mesh_data_component_t = expression<mesh_data_component<value_t, mesh_t> >;
+
 template<typename fe>
 fe_function_t<fe> make_expr(const typename finite_element_space<fe>::element& u) {
   return fe_function_t<fe>(finite_element_function<fe>(u) );
@@ -242,6 +275,11 @@ constant_t make_expr(double c) {
 
 std_function_t make_expr(const std::function<double(const double*)>& f) {
   return std_function(f);
+}
+
+template<typename value_t, typename mesh_t>
+mesh_data_component_t<value_t, mesh_t> make_expr(const mesh_data<value_t, mesh_t>& data, std::size_t c) {
+  return mesh_data_component_t<value_t, mesh_t> (mesh_data_component<value_t, mesh_t>(data, c));
 }
 
 template<std::size_t d, typename expression>

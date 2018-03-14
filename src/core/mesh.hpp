@@ -281,8 +281,8 @@ public:
           unsigned int n_vertices, unsigned int n_components,
           const unsigned int* cells, unsigned int n_cells)
     : mesh<cell>(vertices, n_vertices, n_components, cells, n_cells),
-    cell_volume{n_cells},
-    h{n_cells} {
+      cell_volume{n_cells},
+      h{n_cells} {
       compute_cell_diameter();
       compute_cell_volume();
       compute_jmt();

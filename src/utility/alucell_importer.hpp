@@ -1,6 +1,13 @@
 #ifndef ALUCELL_IMPORTER_H
 #define ALUCELL_IMPORTER_H
 
+
+#include "../core/cell.hpp"
+#include "../core/mesh.hpp"
+#include "../core/mesh_data.hpp"
+
+#include <alucelldb/alucelldb.hpp>
+
 namespace importer {
   namespace alucell {
     template<typename cell_type>

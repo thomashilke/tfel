@@ -18,5 +18,14 @@ build_element_diameter_function(const fe_mesh<cell_type>& m,
 }
 
 
+template<typename mesh_type>
+mesh_data<double, mesh_type> cell_diameter(const mesh_type& m) {
+  array<double> h{m.get_cell_number(), 1};
+  for (std::size_t k(0); k < m.get_cell_number(); ++k)
+    h.at(k, 1) = m.get_cell_diameter(k);
+
+  return mesh_data<double, mesh_type>(m, mesh_data_kind::cell, std::move(h));
+}
+
 #endif /* _ELEMENT_DIAMETER_H_ */
 

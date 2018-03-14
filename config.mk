@@ -2,11 +2,34 @@ include site-config.mk
 
 export OMPI_CXX = clang++
 
+WITH_ALUCELL ?= off
+WITH_FREEFEM ?= off
+WITH_GMSH    ?= off
+
+ifeq ($(WITH_ALUCELL),on)
+  MODULES += -DENABLE_ALUCELL
+endif
+
+ifeq ($(WITH_FREEFEM),on)
+  MODULES += -DENABLE_FREEFEM
+endif
+
+ifeq ($(WITH_GMSH),on)
+  MODULES += -DENABLE_GMSH
+endif
+
 CXX = mpicxx
 DEPS_BIN = g++
-DEPSFLAGS = -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR) $(shell mpicxx --showme:compile)
-CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++11 -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR)
-LDFLAGS += -Wall -Wextra -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR) -L./lib/ -L$(SITE_LIB_DIR)
+DEPSFLAGS = -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR) \
+	    $(shell mpicxx --showme:compile)
+
+CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++11 \
+            -I$(SITE_INCLUDE_DIR) -I$(SITE_PETSC_INCLUDE_DIR) -I$(SITE_LAPACK_INCLUDE_DIR) \
+	    $(MODULES)
+
+LDFLAGS += -Wall -Wextra \
+	   -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR) -L./lib/ -L$(SITE_LIB_DIR)
+
 LDLIBS = -lpetsc -llapacke -ltfel -lalucelldb
 AR = ar
 ARFLAGS = rc
@@ -87,6 +110,7 @@ HEADERS = \
 	include/tfel/formulations/unsteady_advection_diffusion_2d.hpp \
 	include/tfel/formulations/unsteady_diffusion_2d.hpp \
 	include/tfel/utility/importer.hpp \
+	include/tfel/utility/alucell_importer.hpp \
 	include/tfel/core/vector_operation.hpp \
 	include/tfel/core/subdomain.hpp \
 	include/tfel/core/mesh_data.hpp \

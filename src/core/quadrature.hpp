@@ -5,6 +5,16 @@
 
 #include "cell.hpp"
 
+
+/*
+ *  More quadratures on the triangle, tetrahedron can be found in the
+ *  following references:
+ *   * Integration Points For Triangles And Tetrahedrons Obtained From
+ *     The Gaussian Quadrature Points For A Line, K. Sham Sunder and 
+ *     R. A. Cookson, Computers and Structures Vol. 21, No. 5, pp. 881-885,
+ *     1985.
+ */
+
 namespace quad {
   namespace point {
     struct eval {
@@ -123,6 +133,11 @@ namespace quad {
       static const double w[4];
     };
 
+    
+    /*
+     *  Quadrature formula used in some places in Alucell, by M. Flueck.
+     *  Unknown source.
+     */
     struct qf5pTet {
       typedef cell::tetrahedron cell_type;
       

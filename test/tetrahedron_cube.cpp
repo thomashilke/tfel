@@ -51,6 +51,10 @@ int main(int argc, char *argv[]) {
 	m);
     }
 
+    std::cout << "\\int_\\Omega x_1^2 dx = "
+              << integrate<quad::tetrahedron::qf5pTet>(make_expr(std::function<double(const double*)>([](const double* x){return x[1]; })), m) - 0.5
+              << std::endl;
+    
     exporter::ensight6("cube",
 		       to_mesh_vertex_data<fe_type>(a.solve(f)), "solution");
   }

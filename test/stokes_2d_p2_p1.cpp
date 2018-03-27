@@ -8,7 +8,7 @@
 /*
  *  Kim & Moin solution of the Stokes formulation on a unit square
  */
-
+/*
 double f0(const double* x) {
   return - 2.0 * std::cos((x[0] - 0.5) * M_PI) * std::sin((x[1] - 0.5) * M_PI) * M_PI * M_PI;
 }
@@ -28,7 +28,30 @@ double u1_bv(const double* x) {
 double p_v(const double* x) {
   return 0.0;
 }
+*/
 
+/*
+ *  Two sided driven cavity on a cube
+ */
+double f0(const double* x) {
+  return 0.0;
+}
+
+double f1(const double* x) {
+  return 0.0;
+}
+
+double u0_bv(const double* x) {
+  return x[1] < 0.0001 ? x[0] * (1.0 - x[0]) : 0.0;
+}
+
+double u1_bv(const double* x) {
+  return x[0] < 0.0001 ? x[1] * (1.0 - x[1]) : 0.0;
+}
+
+double p_v(const double* x) {
+  return 0.0;
+}
 
 int main(int argc, char* argv[]) {
   try {
@@ -40,7 +63,8 @@ int main(int argc, char* argv[]) {
     const std::size_t n(std::stoi(argv[1]));
     
     using cell_type = cell::triangle;
-    using u_fe_type = cell_type::fe::lagrange_p2;
+    //using u_fe_type = cell_type::fe::lagrange_p2;
+    using u_fe_type = cell_type::fe::lagrange_p1_bubble;
     using p_fe_type = cell_type::fe::lagrange_p1;
     using quad_type = quad::triangle::qf5pT;
 

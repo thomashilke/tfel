@@ -8,6 +8,7 @@
 #include <spikes/array.hpp>
 
 #include <lapacke.h>
+#include <petscksp.h>
 
 class dictionary {
 private:
@@ -178,6 +179,31 @@ namespace solver {
   }
   
   namespace petsc {
+    class initialize {
+    public:
+      static initialize& instance() {
+        if (not inst)
+          inst = new initialize();
+        return *inst;
+      }
+      
+      static void release() {
+        delete inst;
+        inst = nullptr;
+      }
+
+    private:
+      initialize() {
+        PetscInitialize(nullptr, nullptr, nullptr, nullptr);
+      }
+      
+      ~initialize() {
+        PetscFinalize();
+      }
+
+      static initialize* inst;
+    };
+    
     class gmres_ilu: public basic_solver {
     public:
       gmres_ilu(const dictionary& params) {
@@ -191,24 +217,58 @@ namespace solver {
           throw std::string("solver::petsc::gmres_ilu: missing key(s) "
                             "in parameter dictionary.");
   
-        params.get<unsigned int>("maxits");
-        params.get<unsigned int>("restart");
-        params.get<double>("rtol");
-        params.get<double>("abstol");
-        params.get<double>("dtol");
-        params.get<unsigned int>("ilufill");
-        params.get<bool>("test_bool");
-        params.get<std::string>("test_string");
+        PetscErrorCode ierr;
+        ierr = MatCreate(PETSC_COMM_WORLD, &a);CHKERRV(ierr);
+        ierr = MatSetType(a, MATSEQAIJ);CHKERRV(ierr);
+
+        ierr = VecCreate(PETSC_COMM_WORLD, &b);CHKERRV(ierr);
+        ierr = VecSetType(b, VECSEQ);CHKERRV(ierr);
+
+        ierr = KSPCreate(PETSC_COMM_WORLD, &ksp);CHKERRV(ierr);
+
+        
+        ierr = KSPSetType(ksp, KSPGMRES);CHKERRV(ierr);
+        ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRV(ierr);
+        ierr = KSPSetTolerances(ksp,
+                                params.get<double>("rtol"),
+                                params.get<double>("atol"),
+                                params.get<double>("dtol"),
+                                params.get<unsigned int>("maxits"));CHKERRV(ierr);
+        ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESModifiedGramSchmidtOrthogonalization);CHKERRV(ierr);
+        ierr = KSPGMRESSetRestart(ksp, params.get<unsigned int>("restart"));CHKERRV(ierr);
+
+
+        PC pc;
+        ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
+        ierr = PCSetType(pc, PCILU);CHKERRV(ierr);
+        ierr = PCFactorSetLevels(pc, params.get<unsigned int>("ilufill"));CHKERRV(ierr);
       }
 
+      ~gmres_ilu() {
+        PetscErrorCode ierr;
+        
+        ierr = MatDestroy(&a);CHKERRV(ierr);
+        ierr = VecDestroy(&b);CHKERRV(ierr);
+        ierr = KSPDestroy(&ksp);CHKERRV(ierr);
+        //ierr = PetscViewerAndFormatDestroy(&vaf);CHKERRV(ierr);
+        //ierr = PetscViewerDestroy(&v);CHKERRV(ierr);
+      }
+      
       void set_operator(const matrix& m);
       
       bool solve(const array<double>& rhs,
                  array<double>& x,
                  dictionary& report);
+      
+    private:
+      Mat a;
+      Vec b;
+      KSP ksp;
     };
   }
 }
+
+solver::petsc::initialize* solver::petsc::initialize::inst(nullptr);
 
 class matrix {
 public:
@@ -219,6 +279,8 @@ public:
   
   virtual std::size_t get_row_number() const = 0;
   virtual std::size_t get_column_number() const = 0;
+
+  virtual std::size_t get_nz_element_number() const = 0;
 
   virtual void fill(double v) = 0;
   
@@ -242,6 +304,10 @@ public:
   virtual std::size_t get_row_number() const { return n_row; }
   virtual std::size_t get_column_number() const { return n_column; }
 
+  virtual std::size_t get_nz_element_number() const {
+    return values.size();
+  }
+  
   virtual void fill(double v) {
     values.clear();
   }
@@ -277,6 +343,10 @@ public:
   virtual std::size_t get_row_number() const { return values.get_size(0); }
   virtual std::size_t get_column_number() const { return values.get_size(1); }
 
+  virtual std::size_t get_nz_element_number() const {
+    return values.get_size(0) * values.get_size(1);
+  }
+  
   virtual void fill(double v) { values.fill(v); }
   
   virtual void set(std::size_t i, std::size_t j, double v) {
@@ -300,10 +370,46 @@ private:
 
 bool solver::petsc::gmres_ilu::solve(const array<double>& rhs,
                                      array<double>& x,
-                                     dictionary& report) { return false; }
+                                     dictionary& report) {
+  PetscErrorCode ierr;
+  
+  ierr = VecZeroEntries(b);
+  for (std::size_t i(0); i < rhs.get_size(0); ++i) {
+    ierr = VecSetValue(b, i, rhs.at(i), INSERT_VALUES);CHKERRCONTINUE(ierr);
+  }
+  ierr = VecAssemblyBegin(b);CHKERRCONTINUE(ierr);
+  ierr = VecAssemblyEnd(b);CHKERRCONTINUE(ierr);
+
+  Vec y;
+  ierr = VecDuplicate(b, &y);CHKERRCONTINUE(ierr);
+  ierr = KSPSolve(ksp, b, y);CHKERRCONTINUE(ierr);
+
+  std::vector<PetscInt> iy(rhs.get_size(0));
+  std::iota(iy.begin(), iy.end(), 0);
+
+  ierr = VecGetValues(y, iy.size(), &iy[0], &x.at(0));CHKERRCONTINUE(ierr);
+  ierr = VecDestroy(&y);CHKERRCONTINUE(ierr);
+  return true;
+}
 
 void solver::petsc::gmres_ilu::set_operator(const matrix& m) {
+  PetscErrorCode ierr;
+  
+  ierr = MatZeroEntries(a);CHKERRV(ierr);
+  
+  ierr = MatSetSizes(a,
+                     m.get_row_number(), m.get_column_number(),
+                     m.get_row_number(), m.get_column_number());CHKERRV(ierr);
+  ierr = VecSetSizes(b,
+                     m.get_row_number(), m.get_column_number());CHKERRV(ierr);
+  ierr = MatSeqAIJSetPreallocation(a, m.get_nz_element_number(), nullptr);CHKERRV(ierr);
+  ierr = VecSetUp(b);CHKERRV(ierr);
+  
   m.populate_solver(this);
+
+  ierr = MatAssemblyBegin(a, MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+  ierr = MatAssemblyEnd(a, MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
+  ierr = KSPSetOperators(ksp, a, a);CHKERRV(ierr);
 }
 
 void solver::lapack::lu::set_operator(const matrix& m) {

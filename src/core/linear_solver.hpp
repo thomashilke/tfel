@@ -151,7 +151,7 @@ namespace linear_solver_impl {
       } else if (ilu) {
 	ierr = KSPSetType(ksp,KSPGMRES);CHKERRCONTINUE(ierr);
         //ierr = KSPSetType(ksp,KSPIBCGS);CHKERRCONTINUE(ierr);
-	//ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRCONTINUE(ierr);
+	ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);CHKERRCONTINUE(ierr);
 	ierr = KSPSetTolerances(ksp, 1.e-8, 1e-50, 1e20, 1000);CHKERRCONTINUE(ierr);
 	ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESModifiedGramSchmidtOrthogonalization);CHKERRCONTINUE(ierr);
         ierr = KSPGMRESSetRestart(ksp, 500);
@@ -165,6 +165,16 @@ namespace linear_solver_impl {
         //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGND);CHKERRCONTINUE(ierr);
         //ierr = PCFactorSetMatOrderingType(pc, MATORDERING1WD);CHKERRCONTINUE(ierr);
         //ierr = PCFactorSetMatOrderingType(pc, MATORDERINGQMD);CHKERRCONTINUE(ierr);
+      } else if (amg) {
+        ierr = KSPSetType(ksp,KSPGMRES);CHKERRCONTINUE(ierr);
+	ierr = KSPSetTolerances(ksp, 1.e-8, 1e-50, 1e20, 1000);CHKERRCONTINUE(ierr);
+	ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESModifiedGramSchmidtOrthogonalization);CHKERRCONTINUE(ierr);
+        ierr = KSPGMRESSetRestart(ksp, 500);
+        
+	ierr = KSPGetPC(ksp, &pc);CHKERRCONTINUE(ierr);
+	ierr = PCSetType(pc,PCGAMG);CHKERRCONTINUE(ierr);
+        ierr = PCGAMGSetType(pc, PCGAMGCLASSICAL);CHKERRCONTINUE(ierr);
+        ierr = PCGAMGSetNSmooths(pc, 0);CHKERRCONTINUE(ierr);
       } else {
         ierr = KSPSetType(ksp,KSPGMRES);CHKERRCONTINUE(ierr);
         //ierr = KSPSetType(ksp,KSPIBCGS);CHKERRCONTINUE(ierr);
@@ -205,6 +215,7 @@ namespace linear_solver_impl {
     const bool verbose = true;
     const bool lu = false;
     const bool ilu = true;
+    const bool amg = false;
     
     Mat A;
     Vec b;

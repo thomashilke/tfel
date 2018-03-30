@@ -75,7 +75,8 @@ SOURCES = \
 	src/core/cell.cpp \
 	src/core/mesh.cpp \
 	src/core/fe.cpp \
-	test/stokes_2d_p2_p1.cpp
+	test/stokes_2d_p2_p1.cpp \
+	test/navier_stokes_2d_p2_p1.cpp
 
 HEADERS = \
 	include/tfel/tfel.hpp \
@@ -143,7 +144,8 @@ BIN = \
 	bin/prot_steady_advection_diffusion_1d_stabilisation \
 	bin/test_alucell_import \
 	bin/main \
-	bin/test_stokes_2d_p2_p1
+	bin/test_stokes_2d_p2_p1 \
+	bin/test_navier_stokes_2d_p2_p1
 
 bin/test_finite_element_space: build/test/finite_element_space.o 
 bin/main: build/src/main.o 
@@ -171,6 +173,7 @@ bin/test_tetrahedron_cube: build/test/tetrahedron_cube.o
 bin/test_linear_constraint: build/test/linear_constraint.o
 bin/test_mesh_data: build/test/mesh_data.o
 bin/test_stokes_2d_p2_p1: build/test/stokes_2d_p2_p1.o
+bin/test_navier_stokes_2d_p2_p1: build/test/navier_stokes_2d_p2_p1.o
 
 LIB = lib/libtfel.a
 

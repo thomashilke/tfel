@@ -6,33 +6,9 @@
 #include "../src/core/export.hpp"
 
 /*
- *  Kim & Moin solution of the Stokes formulation on a unit square
+ *  Regularized driven south and east boundary condition for u
  */
-/*
-double f0(const double* x) {
-  return - 2.0 * std::cos((x[0] - 0.5) * M_PI) * std::sin((x[1] - 0.5) * M_PI) * M_PI * M_PI;
-}
 
-double f1(const double* x) {
-  return   2.0 * std::sin((x[0] - 0.5) * M_PI) * std::cos((x[1] - 0.5) * M_PI) * M_PI * M_PI;
-}
-
-double u0_bv(const double* x) {
-  return - std::cos((x[0] - 0.5) * M_PI) * std::sin((x[1] - 0.5) * M_PI);
-}
-
-double u1_bv(const double* x) {
-  return std::sin((x[0] - 0.5) * M_PI) * std::cos((x[1] - 0.5) * M_PI);
-}
-
-double p_v(const double* x) {
-  return 0.0;
-}
-*/
-
-/*
- *  Two sided driven cavity on a cube
- */
 double f0(const double* x) {
   return 0.0;
 }
@@ -42,16 +18,17 @@ double f1(const double* x) {
 }
 
 double u0_bv(const double* x) {
-  return x[1] < 0.0001 ? x[0] * (1.0 - x[0]) : 0.0;
+  return x[1] < 0.00001 ? 4.0 * x[0] * (1.0 - x[0]) : 0.0;
 }
 
 double u1_bv(const double* x) {
-  return x[0] < 0.0001 ? x[1] * (1.0 - x[1]) : 0.0;
+  return x[0] < 0.00001 ? 4.0 * x[1] * (1.0 - x[1]) : 0.0;
 }
 
 double p_v(const double* x) {
   return 0.0;
 }
+
 
 int main(int argc, char* argv[]) {
   try {
@@ -64,7 +41,6 @@ int main(int argc, char* argv[]) {
     
     using cell_type = cell::triangle;
     using u_fe_type = cell_type::fe::lagrange_p2;
-    //using u_fe_type = cell_type::fe::lagrange_p1_bubble;
     using p_fe_type = cell_type::fe::lagrange_p1;
     using quad_type = quad::triangle::qf5pT;
 
@@ -79,7 +55,24 @@ int main(int argc, char* argv[]) {
     fes.set_dirichlet_boundary_condition<0>(dm, u0_bv);
     fes.set_dirichlet_boundary_condition<1>(dm, u1_bv);
     fes.set_dirichlet_boundary_condition<2>(pinned_pressure_point, p_v);
+
+    //array<double> tmp{fes.get_dof_number()};
+    //tmp.fill(0.0);
+    /*
+     *  velocity at successive timesteps (u_n and u_{n+1})
+     */
+    array<double> u_comp{fes.get_dof_number<0>()};
+    array<double> p_comp{fes.get_dof_number<2>()};
+    u_comp.fill(0.0);
+    p_comp.fill(0.0);
+    finite_element_space<u_fe_type>::element u0(fes.get_finite_element_space<0>(), u_comp),
+      u1(fes.get_finite_element_space<1>(), u_comp);
+    finite_element_space<p_fe_type>::element p(fes.get_finite_element_space<2>(), p_comp);
     
+    fes_type::element u(fes, u0, u1, p);
+    fes_type::element up(u);
+
+
     bilinear_form<fes_type, fes_type> a(fes, fes); {
       auto v0(a.get_test_function<0>());
       auto v1(a.get_test_function<1>());
@@ -107,7 +100,7 @@ int main(int argc, char* argv[]) {
 
     const fes_type::element x(a.solve(f));
 
-    
+    {
     const auto u0(x.get_component<0>());
     const auto u1(x.get_component<1>());
     const auto p (x.get_component<2>());
@@ -130,6 +123,7 @@ int main(int argc, char* argv[]) {
                        to_mesh_vertex_data<u_fe_type>(u0), "u0",
                        to_mesh_vertex_data<u_fe_type>(u1), "u1",
                        to_mesh_vertex_data<p_fe_type>(p),  "p");
+    }
   }
   catch (const std::string& e) {
     std::cout << e << std::endl;

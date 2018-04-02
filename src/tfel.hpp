@@ -26,7 +26,6 @@
 #include "core/projector.hpp"
 #include "core/quadrature.hpp"
 #include "core/sparse_linear_system.hpp"
-#include "core/timer.hpp"
 #include "core/mesh_data.hpp"
 #include "core/operator.hpp"
 

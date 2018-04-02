@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include <spikes/array.hpp>
+#include <spikes/timer.hpp>
 
 #include "core/cell.hpp"
 #include "core/fe.hpp"
@@ -13,7 +14,6 @@
 #include "core/fes.hpp"
 #include "core/quadrature.hpp"
 #include "core/expression.hpp"
-#include "core/timer.hpp"
 #include "core/sparse_linear_system.hpp"
 #include "core/form.hpp"
 #include "core/linear_solver.hpp"

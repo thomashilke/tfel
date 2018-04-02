@@ -16,7 +16,6 @@
 
 #include "projector.hpp"
 #include "export.hpp"
-#include "timer.hpp"
 #include "element_diameter.hpp"
 
 

@@ -8,6 +8,7 @@
 #include "meta.hpp"
 #include "fes.hpp"
 #include "operator.hpp"
+#include "fe_value_manager.hpp"
 
 
 template<std::size_t arg, std::size_t rnk, std::size_t derivative>
@@ -85,10 +86,18 @@ private:
   mutable double cached_value = 0.0;
 };
 
-template<typename fe>
+template<typename fe, std::size_t d = 0>
 struct finite_element_function {
+  template<typename fe_p, std::size_t d_p>
+  friend struct finite_element_function;
+  
 public:
-  finite_element_function(const typename finite_element_space<fe>::element& v): v(v) {}
+  finite_element_function(const typename finite_element_space<fe>::element& v)
+    : v(v), fe_values(1), xq_hat{1, fe::cell_type::n_dimension} {}
+
+  template<std::size_t dd>
+  finite_element_function(const finite_element_function<fe, dd>& f)
+    : v(f.v), fe_values(1), xq_hat{1, fe::cell_type::n_dimension} {}
 
   template<typename ... Ts>
   double operator()(unsigned int k,
@@ -103,15 +112,25 @@ public:
   }
 
   void prepare(unsigned int k, const double* x, const double* x_hat) const {
-    cached_value = v.evaluate(k, x_hat);
+    std::copy(x_hat, x_hat + xq_hat.get_size(1), xq_hat.get_data());
+    fe_values.set_points(xq_hat);
+    fe_values.prepare(v.get_finite_element_space().get_mesh().get_jmt(k));
+    const std::size_t n_dof(fe::n_dof_per_element);
+    
+    cached_value = 0.0;
+    const array<double>& phi(fe_values.template get_values<0>());
+    for (unsigned int i(0); i < n_dof; ++i)
+      cached_value += v.get_coefficients().at(v.get_finite_element_space().get_dof(k, i)) * phi.at(0, i, d);
   }
 
   static constexpr std::size_t rank = 0;
-  static constexpr std::size_t differential_order = 0;
+  static constexpr std::size_t differential_order = d;
   static constexpr bool require_space_coordinates = false;
 			     
 private:
   const typename finite_element_space<fe>::element& v;
+  mutable fe_value_manager<type_list<fe> > fe_values;
+  mutable array<double> xq_hat;
   mutable double cached_value = 0.0;
 };
 
@@ -263,22 +282,29 @@ template<typename value_t, typename mesh_t>
 using mesh_data_component_t = expression<mesh_data_component<value_t, mesh_t> >;
 
 template<typename fe>
-fe_function_t<fe> make_expr(const typename finite_element_space<fe>::element& u) {
+fe_function_t<fe>
+make_expr(const typename finite_element_space<fe>::element& u) {
   return fe_function_t<fe>(finite_element_function<fe>(u) );
 }
-free_function_t make_expr(double(*f)(const double*)) {
+
+free_function_t
+make_expr(double(*f)(const double*)) {
   return free_function_t(free_function(f));
 }
-constant_t make_expr(double c) {
+
+constant_t
+make_expr(double c) {
   return constant_t(constant(c));
 }
 
-std_function_t make_expr(const std::function<double(const double*)>& f) {
+std_function_t
+make_expr(const std::function<double(const double*)>& f) {
   return std_function(f);
 }
 
 template<typename value_t, typename mesh_t>
-mesh_data_component_t<value_t, mesh_t> make_expr(const mesh_data<value_t, mesh_t>& data, std::size_t c) {
+mesh_data_component_t<value_t, mesh_t>
+make_expr(const mesh_data<value_t, mesh_t>& data, std::size_t c) {
   return mesh_data_component_t<value_t, mesh_t> (mesh_data_component<value_t, mesh_t>(data, c));
 }
 
@@ -291,6 +317,16 @@ struct differentiate<d, form<arg, rnk, 0> > {
   
   static
   type initialize(const expression<form<arg, rnk, 0> >&) { return type(); }
+};
+
+template<std::size_t d, typename fe>
+struct differentiate<d, finite_element_function<fe, 0> > {
+  typedef finite_element_function<fe, d> type;
+
+  static
+  type initialize(const finite_element_function<fe, 0> & e) {
+    return type(e);
+  }
 };
 
 template<std::size_t d, typename left, typename right>
@@ -376,12 +412,13 @@ operator-(const expression<left>& l, const expression<right>& r) {
 template<std::size_t n, std::size_t n_max>
 struct expression_call_wrapper {
   template<typename form_t, typename ... As>
-  static double call(form_t form, const double** arg_array, As ... as) {
-    return expression_call_wrapper<n + 1, n_max>::template call<form_t,
+  static double call(const form_t& form, const double** arg_array, As&& ... as) {
+    // leave the type deduction of the call method to the compiler...
+    return expression_call_wrapper<n + 1, n_max>::template call</*form_t,
 								As...,
-								const double*>(form,
+								const double**/>(form,
 									       arg_array + 1,
-									       as...,
+									       std::forward<As>(as)...,
 									       *arg_array);
   }
 };
@@ -389,8 +426,8 @@ struct expression_call_wrapper {
 template<std::size_t n_max>
 struct expression_call_wrapper<n_max, n_max> {
   template<typename form_t, typename ... As>
-  static double call(form_t form, const double** arg_array, As ... as) {
-    return form(as...);
+  static double call(const form_t& form, const double** arg_array, As&& ... as) {
+    return form(std::forward<As>(as)...);
   }
 };
 

@@ -6,13 +6,13 @@
 #include <chrono>
 
 #include <spikes/array.hpp>
+#include <spikes/timer.hpp>
 
 #include "../src/core/cell.hpp"
 #include "../src/core/fe.hpp"
 #include "../src/core/mesh.hpp"
 #include "../src/core/fes.hpp"
 #include "../src/core/quadrature.hpp"
-#include "../src/core/timer.hpp"
 #include "../src/core/sparse_linear_system.hpp"
 
 

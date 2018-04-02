@@ -30,7 +30,7 @@ namespace cell {
     static constexpr double x[1][1] = {{0.5}};
 
     static double basis_function(unsigned int i,
-				 unsigned int* derivatives,
+				 const unsigned int* derivatives,
 				 const double* x) {
       if (derivatives[0] == 0) {
 	return 1.0;
@@ -65,7 +65,7 @@ namespace cell {
     static constexpr double x[2][1] = {{0.0}, {1.0}};
 
     static double basis_function(unsigned int i,
-				 unsigned int* derivatives,
+				 const unsigned int* derivatives,
 				 const double* x) {
       typedef double (*bf_type)(const double*);
       static const bf_type bf[2][2] = {{bf_0_1, bf_0_2},
@@ -115,7 +115,7 @@ namespace cell {
     static constexpr double x[3][1] = {{0.0}, {1.0}, {0.5}};
 
     static double basis_function(unsigned int i,
-				 unsigned int* derivatives,
+				 const unsigned int* derivatives,
 				 const double* x) {
       typedef double (*bf_type)(const double*);
       static const bf_type bf[2][3] = {{bf_0_1, bf_0_2, bf_0_3},
@@ -183,7 +183,7 @@ namespace cell {
     static constexpr double x[3][1] = {{0.0}, {1.0}, {0.5}};
 
     static double basis_function(unsigned int i,
-				 unsigned int* derivatives,
+				 const unsigned int* derivatives,
 				 const double* x) {
       typedef double (*bf_type)(const double*);
       static const bf_type bf[2][3] = {{bf_0_1, bf_0_2, bf_0_3},
@@ -235,7 +235,7 @@ namespace cell {
     static constexpr double x[1][2] = {{1.0 / 3.0, 1.0 / 3.0}};
 
     static double basis_function(unsigned int i,
-				 unsigned int* derivatives,
+				 const unsigned int* derivatives,
 				 const double* x) {
       if (derivatives[0] == 0 and derivatives[1] == 0) {
 	return 1.0;

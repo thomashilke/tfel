@@ -233,6 +233,20 @@ public:
     return value;
   }
 
+  double evaluate(std::size_t k,
+                  const double* x_hat,
+                  const unsigned int* derivatives) const {
+    typedef fe fe_type;
+    /*
+     * This is plain wrong, the transposed jacobian factor is missing
+     */
+    double value(0.0);
+    for (std::size_t n(0); n < fe_type::n_dof_per_element; ++n) {
+      value += coefficients.at(fes.get_dof(k, n)) * fe_type::basis_function(n, derivatives, x_hat);
+    }
+    return value;
+  }
+
   double evaluate(const double* x) const {
     std::size_t k(get_mesh().get_cell_at(x));
     

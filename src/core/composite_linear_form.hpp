@@ -60,18 +60,19 @@ public:
 
       // evaluate the weak form
       const double volume(integration_proxy.m.get_cell_volume(k));
-      for (unsigned int i(0); i < n_test_dof; ++i) {
-	double rhs_el(0.0);
-	for (unsigned int q(0); q < n_q; ++q) {
+      for (unsigned int q(0); q < n_q; ++q) {
+        integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+        for (unsigned int i(0); i < n_test_dof; ++i) {
+          double rhs_el(0.0);
 	  select_function_valuation<test_fe_list, m, unique_fe_list>(psi, q, i,
 								     fe_values, fe_zvalues);
-	  integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+
 	  rhs_el += volume * omega.at(q)
 	    * expression_call_wrapper<0, n_test_component>::call(integration_proxy.f, psi,
 								 k, &xq.at(q, 0), &xq_hat.at(q, 0));
-	}
-	linear_form.f.at(linear_form.test_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i)
-			 + linear_form.test_global_dof_offset[m]) += rhs_el;
+          linear_form.f.at(linear_form.test_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i)
+                           + linear_form.test_global_dof_offset[m]) += rhs_el;
+        }
       }
     }
   };

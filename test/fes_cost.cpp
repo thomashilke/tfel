@@ -1,9 +1,10 @@
 
+#include <spikes/timer.hpp>
+
 #include "../src/core/fes.hpp"
 #include "../src/core/fe.hpp"
 #include "../src/core/mesh.hpp"
 #include "../src/core/cell.hpp"
-#include "../src/core/timer.hpp"
 
 void build_fes(std::size_t n) {
   const fe_mesh<cell::triangle> m(gen_square_mesh(1.0, 1.0, n, n));

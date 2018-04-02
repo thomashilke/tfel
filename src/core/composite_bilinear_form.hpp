@@ -1,6 +1,8 @@
 #ifndef _COMPOSITE_BILINEAR_FORM_H_
 #define _COMPOSITE_BILINEAR_FORM_H_
 
+#include <spikes/timer.hpp>
+#include <iostream>
 
 template<typename te_cfe_type, typename tr_cfe_type>
 class bilinear_form<composite_finite_element_space<te_cfe_type>,
@@ -86,27 +88,28 @@ public:
 
       // evaluate the weak form
       const double volume(integration_proxy.m.get_cell_volume(k));
+      for (unsigned int q(0); q < n_q; ++q) {
+        integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+            
       for (unsigned int i(0); i < n_test_dof; ++i) {
 	for (unsigned int j(0); j < n_trial_dof; ++j) {
 	  double a_el(0.0);
-	  for (unsigned int q(0); q < n_q; ++q) {
 	    select_function_valuation<test_fe_list, m, unique_fe_list>(psi_phi, q, i,
 								       fe_values, fe_zvalues);
 	    select_function_valuation<trial_fe_list, n, unique_fe_list>(psi_phi + n_test_component, q, j,
 									fe_values, fe_zvalues);
-	    integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
 
 	    a_el += volume * omega.at(q)
 	      * (expression_call_wrapper<0, n_test_component + n_trial_component>
 		 ::call(integration_proxy.f, psi_phi,
-			k, &xq.at(q, 0), &xq_hat.at(q, 0)));
-	  }
+                        k, &xq.at(q, 0), &xq_hat.at(q, 0)));
 	  bilinear_form.accumulate_in_block<m, n>(bilinear_form.test_cfes.
 						  template get_dof<m>(integration_proxy.
 								      get_global_cell_id(k), i),
 						  bilinear_form.trial_cfes.
 						  template get_dof<n>(integration_proxy.
 								      get_global_cell_id(k), j), a_el);
+        }
 	}
       }
     }
@@ -141,7 +144,7 @@ public:
       xq_hat = integration_proxy.get_quadrature_points(0);
       fe_values.set_points(xq_hat);
     }
-
+    
     for (unsigned int k(0); k < m.get_cell_number(); ++k) {
       // prepare the quadrature points
       if (T::point_set_number > 1) {
@@ -159,7 +162,6 @@ public:
 	const array<double> jmt(m.get_jmt(k));
 	fe_values.prepare(jmt);
       }
-
 
       /*
        *  Compile time loop over all the blocks

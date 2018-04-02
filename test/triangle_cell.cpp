@@ -1,11 +1,12 @@
 
+#include <spikes/timer.hpp>
+
 #include "../src/core/mesh.hpp"
 #include "../src/core/fe.hpp"
 #include "../src/core/fes.hpp"
 #include "../src/core/quadrature.hpp"
 #include "../src/core/projector.hpp"
 #include "../src/core/export.hpp"
-#include "../src/core/timer.hpp"
 
 double func(const double* x) {
   //return x[0] + x[1];

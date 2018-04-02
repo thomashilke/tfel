@@ -85,11 +85,6 @@ struct fe_value_manager<type_list<fe_pack...> > {
     return std::get<n>(values);
   }
 
-  fe_value_manager(const fe_value_manager& ) = delete;
-  fe_value_manager& operator=(const fe_value_manager&) = delete;
-  fe_value_manager(fe_value_manager&& ) = delete;
-  fe_value_manager& operator=(fe_value_manager&&) = delete;
-  
 private:
   template<typename A, typename B> struct return_2nd: is_type<B> {};
   template<typename A, typename B> using return_2nd_t = typename return_2nd<A, B>::type;

@@ -9,6 +9,9 @@
 
 #include <lapacke.h>
 #include <petscksp.h>
+#include <petsc/private/kspimpl.h>
+#include <petscdmshell.h>
+
 
 class dictionary {
 private:
@@ -125,6 +128,9 @@ namespace solver {
     virtual ~basic_solver() {}
 
     virtual void set_operator(const matrix& m) = 0;
+    virtual void set_operator(const sparse_matrix& m) = 0;
+    virtual void set_operator(const dense_matrix& m) = 0;
+    
     virtual bool solve(const array<double>& rhs,
                        array<double>& x,
                        dictionary& report) = 0;
@@ -135,7 +141,19 @@ namespace solver {
     public:
       lu(): data{1}, pivots{1}, valid_decomposition(false) {}
 
-      void set_operator(const matrix& m);
+      virtual ~lu() {}
+      
+      void set_operator(const matrix& m) {
+        
+      }
+      
+      void set_operator(const sparse_matrix& m) {
+
+      }
+      
+      void set_operator(const dense_matrix& m) {
+
+      }
 
       void set_operator_size(std::size_t n) {
         data = array<double>{n, n};
@@ -204,6 +222,7 @@ namespace solver {
       static initialize* inst;
     };
     
+    
     class gmres_ilu: public basic_solver {
     public:
       gmres_ilu(const dictionary& params) {
@@ -237,11 +256,12 @@ namespace solver {
         ierr = KSPGMRESSetOrthogonalization(ksp, KSPGMRESModifiedGramSchmidtOrthogonalization);CHKERRV(ierr);
         ierr = KSPGMRESSetRestart(ksp, params.get<unsigned int>("restart"));CHKERRV(ierr);
 
+        ierr = KSPMonitorSet(ksp, monitor, nullptr, nullptr);CHKERRV(ierr);
 
         PC pc;
         ierr = KSPGetPC(ksp, &pc);CHKERRV(ierr);
         ierr = PCSetType(pc, PCILU);CHKERRV(ierr);
-        ierr = PCFactorSetLevels(pc, params.get<unsigned int>("ilufill"));CHKERRV(ierr);
+        ierr = PCFactorSetLevels(pc, params.get<unsigned int>("ilufill"));CHKERRV(ierr); 
       }
 
       ~gmres_ilu() {
@@ -250,11 +270,17 @@ namespace solver {
         ierr = MatDestroy(&a);CHKERRV(ierr);
         ierr = VecDestroy(&b);CHKERRV(ierr);
         ierr = KSPDestroy(&ksp);CHKERRV(ierr);
-        //ierr = PetscViewerAndFormatDestroy(&vaf);CHKERRV(ierr);
-        //ierr = PetscViewerDestroy(&v);CHKERRV(ierr);
       }
       
       void set_operator(const matrix& m);
+
+      void set_operator(const sparse_matrix& m) {
+
+      }
+      
+      void set_operator(const dense_matrix& m) {
+
+      }
       
       bool solve(const array<double>& rhs,
                  array<double>& x,
@@ -264,6 +290,31 @@ namespace solver {
       Mat a;
       Vec b;
       KSP ksp;
+
+      static PetscErrorCode monitor(KSP ksp, PetscInt it, PetscReal rnorm, void*) {
+        Vec            resid;
+        PetscReal      truenorm,bnorm;
+        char           normtype[256];
+        
+        if (it == 0 && ((PetscObject)ksp)->prefix)
+          std::cout << "Residual norms for " << ((PetscObject)ksp)->prefix << " solve." << std::endl;
+
+        KSPBuildResidual(ksp,NULL,NULL,&resid);
+        VecNorm(resid,NORM_2,&truenorm);
+        VecDestroy(&resid);
+        VecNorm(ksp->vec_rhs,NORM_2,&bnorm);
+        
+        PetscStrncpy(normtype,KSPNormTypes[ksp->normtype],sizeof(normtype));
+        PetscStrtolower(normtype);
+        
+        std::cout << it << " KSP " << normtype
+                  << " resid norm " << rnorm
+                  << " true resid norm " << truenorm
+                  << "||r(i)||/||b||" << truenorm/bnorm
+                  << std::endl;
+        
+        return 0;
+      }
     };
   }
 }
@@ -274,8 +325,7 @@ class matrix {
 public:
   virtual ~matrix() {}
 
-  virtual void populate_solver(solver::petsc::gmres_ilu* s) const = 0;
-  virtual void populate_solver(solver::lapack::lu* s) const = 0;
+  virtual void populate_solver(solver::basic_solver* s) const = 0;
   
   virtual std::size_t get_row_number() const = 0;
   virtual std::size_t get_column_number() const = 0;
@@ -294,11 +344,8 @@ public:
   sparse_matrix(std::size_t n_row, std::size_t n_column)
     : n_row(n_row), n_column(n_column) {}
 
-  virtual void populate_solver(solver::petsc::gmres_ilu* s) const {}
-  virtual void populate_solver(solver::lapack::lu* s) const {
-    s->set_operator_size(n_row);
-    for (const auto& item: values)
-      s->set(item.first.first, item.first.second, item.second);
+  virtual void populate_solver(solver::basic_solver* s) const {
+    s->set_operator(*this);
   }
   
   virtual std::size_t get_row_number() const { return n_row; }
@@ -337,8 +384,9 @@ class dense_matrix: public matrix {
 public:
   dense_matrix(std::size_t n_row, std::size_t n_column): values{n_row, n_column} {}
 
-  virtual void populate_solver(solver::petsc::gmres_ilu* s) const {}
-  virtual void populate_solver(solver::lapack::lu* s) const {}
+  virtual void populate_solver(solver::basic_solver* s) const {
+    s->set_operator(*this);
+  }
   
   virtual std::size_t get_row_number() const { return values.get_size(0); }
   virtual std::size_t get_column_number() const { return values.get_size(1); }
@@ -365,8 +413,6 @@ private:
   array<double> values;
 };
 
-//class crs_matrix: public matrix {};
-//class skyline_matrix: public matrix {};
 
 bool solver::petsc::gmres_ilu::solve(const array<double>& rhs,
                                      array<double>& x,
@@ -392,6 +438,7 @@ bool solver::petsc::gmres_ilu::solve(const array<double>& rhs,
   return true;
 }
 
+/*
 void solver::petsc::gmres_ilu::set_operator(const matrix& m) {
   PetscErrorCode ierr;
   
@@ -431,7 +478,7 @@ void solver::lapack::lu::set_operator(const matrix& m) {
 
   valid_decomposition = true;
 }
-
+*/
 
 void fd_heat(sparse_matrix& m, array<double>& rhs, std::size_t n) {
   for (std::size_t i(0); i < n; ++i) {

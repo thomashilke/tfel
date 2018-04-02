@@ -76,7 +76,8 @@ SOURCES = \
 	src/core/mesh.cpp \
 	src/core/fe.cpp \
 	test/stokes_2d_p2_p1.cpp \
-	test/navier_stokes_2d_p2_p1.cpp
+	test/navier_stokes_2d_p2_p1.cpp \
+	test/fe_derivative_form.cpp
 
 HEADERS = \
 	include/tfel/tfel.hpp \
@@ -104,7 +105,6 @@ HEADERS = \
 	include/tfel/core/projector.hpp \
 	include/tfel/core/quadrature.hpp \
 	include/tfel/core/sparse_linear_system.hpp \
-	include/tfel/core/timer.hpp \
 	include/tfel/formulations/steady_advection_diffusion_2d.hpp \
 	include/tfel/formulations/steady_advection_diffusion_1d.hpp \
 	include/tfel/formulations/stokes_2d.hpp \
@@ -145,7 +145,8 @@ BIN = \
 	bin/test_alucell_import \
 	bin/main \
 	bin/test_stokes_2d_p2_p1 \
-	bin/test_navier_stokes_2d_p2_p1
+	bin/test_navier_stokes_2d_p2_p1 \
+	bin/test_fe_derivative_form
 
 bin/test_finite_element_space: build/test/finite_element_space.o 
 bin/main: build/src/main.o 
@@ -174,6 +175,7 @@ bin/test_linear_constraint: build/test/linear_constraint.o
 bin/test_mesh_data: build/test/mesh_data.o
 bin/test_stokes_2d_p2_p1: build/test/stokes_2d_p2_p1.o
 bin/test_navier_stokes_2d_p2_p1: build/test/navier_stokes_2d_p2_p1.o
+bin/test_fe_derivative_form: build/test/fe_derivative_form.o
 
 LIB = lib/libtfel.a
 

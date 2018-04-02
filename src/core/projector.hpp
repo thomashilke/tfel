@@ -6,7 +6,6 @@
 #include "fe.hpp"
 #include "quadrature.hpp"
 #include "form.hpp"
-#include "timer.hpp"
 
 namespace projector {
 

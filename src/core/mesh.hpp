@@ -144,7 +144,8 @@ public:
        const unsigned int* cells, unsigned int n_cells)
     : vertices{n_vertices, n_components},
       cells{n_cells, cell_type::n_vertex_per_cell},
-      references{n_cells} {
+      references{n_cells},
+      cell_neighbours{n_cells, cell_type::n_vertex_per_cell} {
         (this->vertices).set_data(vertices);
         (this->cells).set_data(cells);
         references.fill(0);
@@ -153,6 +154,7 @@ public:
         // cells list.
         if(not check_cells_admissibility())
           sort_cells();
+        compute_cell_neighbours();
       }
 
   mesh(const double* vertices,
@@ -168,7 +170,8 @@ public:
     : vertices{0},
       cells{m.get_cell_number(),
           cell_type::n_vertex_per_cell},
-      references{m.get_cell_number()} {
+      references{m.get_cell_number()},
+      cell_neighbours{m.get_cell_number(), cell_type::n_vertex_per_cell} {
         references.fill(0);
 
         std::set<unsigned int> selected_nodes;
@@ -201,11 +204,16 @@ public:
             }
           }
         }
+        compute_cell_neighbours();
       }
 
   std::size_t get_embedding_space_dimension() const { return vertices.get_size(1); }
   std::size_t get_cell_number() const { return cells.get_size(0); }
   std::size_t get_vertex_number() const { return vertices.get_size(0); }
+
+  std::size_t get_cell_neighbour(std::size_t k, std::size_t face_id) const {
+    return cell_neighbours.at(k, face_id);
+  }
   
   const array<double>& get_vertices() const { return vertices; }
   const array<unsigned int>& get_cells() const { return cells; }
@@ -223,6 +231,11 @@ public:
       stream << "cell " << k << ": ";
       for (std::size_t i(0); i < cells.get_size(1); ++i) {
 	stream << cells.at(k, i) << " ";
+      }
+      stream << ", with ref " << references.at(k)
+             << ", and neighbour cells ";
+      for (std::size_t i(0); i < cell_neighbours.get_size(1); ++i) {
+	stream << cell_neighbours.at(k, i) << " ";
       }
       stream << std::endl;
     }
@@ -244,11 +257,12 @@ public:
   }
 
 protected:
-  mesh(): vertices{}, cells{}, references{} {}
+  mesh(): vertices{}, cells{}, references{}, cell_neighbours{} {}
   
   array<double> vertices;
   array<unsigned int> cells;
   array<unsigned int> references;
+  array<int> cell_neighbours;
 
 private:
   bool check_cells_admissibility() {
@@ -264,6 +278,39 @@ private:
     for (unsigned int k(0); k < cells.get_size(0); ++k)
       std::sort(&cells.at(k, 0),
 		&cells.at(k, cell_type::n_vertex_per_cell - 1));
+  }
+
+  void compute_cell_neighbours() {
+    cell_neighbours.fill(-1);
+
+    
+    const std::size_t subdomain_id(cell_type::n_subdomain_type - 2);
+
+    const std::set<typename ::cell::subdomain_type>
+      subdomain_set(cell_type::get_subdomain_list(cells, subdomain_id));
+
+    const std::vector<typename ::cell::subdomain_type>
+      subdomain_list(subdomain_set.begin(), subdomain_set.end());
+
+    std::vector<std::pair<int, int> >
+      tmp(subdomain_set.size(), std::pair<int, int>(-1, -1));
+
+    
+    for (std::size_t k(0); k < get_cell_number(); ++k) {
+      const std::size_t n(cell_type::n_subdomain(subdomain_id));
+      for (unsigned int j(0); j < n; ++j) {
+        typename ::cell::subdomain_type subdomain(cell_type::get_subdomain(cells, k, subdomain_id, j));
+        const std::size_t face_id(std::distance(subdomain_list.begin(),
+                                                std::lower_bound(subdomain_list.begin(),
+                                                                 subdomain_list.end(), subdomain)));
+        if (tmp[face_id].first == -1) {
+          tmp[face_id] = std::make_pair<int, int>(k, j);
+        } else {
+          cell_neighbours.at(k, j) = tmp[face_id].first;
+          cell_neighbours.at(tmp[face_id].first, tmp[face_id].second) = k;
+        }
+      }
+    }
   }
 };
 
@@ -296,7 +343,7 @@ public:
       cell_volume{n_cells}, h{n_cells}, h_max(0.0) {
     compute_cell_diameter();
     compute_cell_volume();
-    compute_jmt();    
+    compute_jmt();
   }
 
   template<typename parent_cell_type>
@@ -445,7 +492,7 @@ public:
     return submesh<cell_type>(*this, el, el_id, sd_id);
   }
 
-  void show(std::ostream& stream) const {
+  /*void show(std::ostream& stream) const {
     for (std::size_t k(0); k < this->get_cell_number(); ++k) {
       stream << "cell " << k << ": ";
       for (std::size_t i(0); i < mesh<cell>::cells.get_size(1); ++i) {
@@ -453,7 +500,7 @@ public:
       }
           stream << std::endl;
     }
-  }
+    }*/
 
 #warning "FIXME: implement a better than O(N) algorithm."
     std::size_t get_cell_at(const double* x) const {

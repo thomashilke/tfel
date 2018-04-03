@@ -80,7 +80,7 @@ public:
 
       if (form_type::differential_order == 1ul) {
 	// prepare the basis function values
-	const array<double> jmt(m.get_jmt(k));
+	const array<double>& jmt(m.get_jmt(k));
 	fe_values.prepare(jmt); 
       }
       

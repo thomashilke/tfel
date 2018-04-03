@@ -159,7 +159,7 @@ public:
 
       // prepare the basis function values
       if (form_type::differential_order > 0) {
-	const array<double> jmt(m.get_jmt(k));
+	const array<double>& jmt(m.get_jmt(k));
 	fe_values.prepare(jmt);
       }
 

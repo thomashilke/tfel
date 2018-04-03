@@ -46,7 +46,7 @@ public:
   double get_cell_volume(std::size_t k) const { return cell_type::get_cell_volume(m.get_vertices(), cells, k); }
   std::size_t get_cell_number() const { return cells.get_size(0); }
   std::size_t get_vertex_number() const { return m.get_vertices().get_size(0); }
-  array<double> get_jmt(std::size_t k) const { return m.get_jmt(parent_cell_id.at(k)); }
+  const array<double>& get_jmt(std::size_t k) const { return m.get_jmt(parent_cell_id.at(k)); }
   std::size_t get_subdomain_id(std::size_t k) const { return parent_subdomain_id.at(k); }
   std::size_t get_parent_cell_id(std::size_t k) const { return parent_cell_id.at(k); }
   const fe_mesh<parent_cell_type>& get_mesh() const {return m;}

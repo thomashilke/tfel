@@ -114,13 +114,17 @@ public:
   void prepare(unsigned int k, const double* x, const double* x_hat) const {
     std::copy(x_hat, x_hat + xq_hat.get_size(1), xq_hat.get_data());
     fe_values.set_points(xq_hat);
-    fe_values.prepare(v.get_finite_element_space().get_mesh().get_jmt(k));
+    if (d > 0)
+      fe_values.prepare(v.get_finite_element_space().get_mesh().get_jmt(k));
+
     const std::size_t n_dof(fe::n_dof_per_element);
-    
-    cached_value = 0.0;
     const array<double>& phi(fe_values.template get_values<0>());
+    const finite_element_space<fe>& fes(v.get_finite_element_space());
+    const array<double>& coefficients(v.get_coefficients());
+
+    cached_value = 0.0;
     for (unsigned int i(0); i < n_dof; ++i)
-      cached_value += v.get_coefficients().at(v.get_finite_element_space().get_dof(k, i)) * phi.at(0, i, d);
+      cached_value += coefficients.at(fes.get_dof(k, i)) * phi.at(0, i, d);
   }
 
   static constexpr std::size_t rank = 0;

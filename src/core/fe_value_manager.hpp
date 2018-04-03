@@ -62,7 +62,7 @@ struct fe_value_manager<type_list<fe_pack...> > {
   }
 
   void set_points(const array<double>& xq_hat) {
-    this->xq_hat = xq_hat;
+    std::copy(xq_hat.get_data(), xq_hat.get_data() + xq_hat.get_element_number(), this->xq_hat.get_data());
 
     using index_sequence = make_integral_list_t<std::size_t, sizeof...(fe_pack)>;
     call_for_each<prepare_hat_impl, index_sequence>::call(values, values_hat, xq_hat);

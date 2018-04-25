@@ -34,6 +34,15 @@ double p_v(const double* x) {
 
 void benchmark(std::size_t n) {
   timer t;
+
+  double
+    mesh_timestamp(0.0),
+    fes_timestamp(0.0),
+    ic_timestamp(0.0),
+    lin_timestamp(0.0),
+    bilin_timestamp(0.0);
+
+  
   std::cout << std::setw(10) << std::right << t.tic()
             << "  benchmark start" << std::endl;
   
@@ -45,7 +54,9 @@ void benchmark(std::size_t n) {
   fe_mesh<cell_type> m(gen_square_mesh(1.0, 1.0, n, n));
   submesh<cell_type> dm(m.get_boundary_submesh());
   submesh<cell_type, cell::point> pinned_pressure_point(m.get_point_submesh(n * n / 2 + n/2));
-  std::cout << std::setw(10) << std::right << t.tic()
+
+  mesh_timestamp = t.tic();
+  std::cout << std::setw(10) << std::right << mesh_timestamp
             << "  mesh, boundary submesh and pressure pin point" << std::endl;
 
   using fe_type = composite_finite_element<u_fe_type, u_fe_type, p_fe_type>;
@@ -55,7 +66,9 @@ void benchmark(std::size_t n) {
   fes.set_dirichlet_boundary_condition<0>(dm, u0_bv);
   fes.set_dirichlet_boundary_condition<1>(dm, u1_bv);
   fes.set_dirichlet_boundary_condition<2>(pinned_pressure_point, p_v);
-  std::cout << std::setw(10) << std::right << t.tic()
+
+  fes_timestamp = t.tic();
+  std::cout << std::setw(10) << std::right << fes_timestamp
             << "  finite element space setup" << std::endl;
 
   /*
@@ -73,7 +86,9 @@ void benchmark(std::size_t n) {
     
   fes_type::element x(fes, u0, u1, p);
   fes_type::element xp(x);
-  std::cout << std::setw(10) << std::right << t.tic()
+
+  ic_timestamp = t.tic();
+  std::cout << std::setw(10) << std::right << ic_timestamp
             << "  initial conditions" << std::endl;
 
   /*
@@ -150,8 +165,11 @@ void benchmark(std::size_t n) {
     , m);
     */
   }
-  std::cout << std::setw(10) << std::right << t.tic()
-            << "  bilinear form" << std::endl;
+  bilin_timestamp = t.tic();
+  std::cout << std::setw(10) << std::right << bilin_timestamp
+            << "  bilinear form ("
+            << (bilin_timestamp - ic_timestamp) / m.get_cell_number()
+            << " millisec/cell)" << std::endl;
 
   linear_form<fes_type> f(fes); {
     auto w0(f.get_test_function<0>());
@@ -188,8 +206,11 @@ void benchmark(std::size_t n) {
       , m);
     */
   }
-  std::cout << std::setw(10) << std::right << t.tic()
-            << "  linear form" << std::endl;
+  lin_timestamp = t.tic();
+  std::cout << std::setw(10) << std::right << lin_timestamp
+            << "  linear form ("
+            << (lin_timestamp - bilin_timestamp) / m.get_cell_number()
+            << " millisec/cell)" << std::endl;
 }
 
 void navier_stokes(std::size_t n);

@@ -948,6 +948,7 @@ namespace cell {
     struct fe {
       struct lagrange_p0;
       struct lagrange_p1;
+      struct lagrange_p1_bubble;
     };
   };
 

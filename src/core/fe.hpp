@@ -607,14 +607,14 @@ namespace cell {
                                        {bf_010_1, bf_010_2, bf_010_3, bf_010_4, bf_010_5},
                                        {bf_001_1, bf_001_2, bf_001_3, bf_001_4, bf_001_5}};
 
-      if (derivative[0] == 0 and derivative[1] == 0) {
-        return bf[0][i](x);
-      } else if (derivative[0] == 1 and derivative[1] == 0 and derivative[2] == 0) {
-        return bf[1][i](x);
-      } else if (derivative[0] == 0 and derivative[1] == 1 and derivative[2] == 0) {
-        return bf[2][i](x);
-      } else if (derivative[0] == 0 and derivative[1] == 0 and derivative[2] == 1) {
-        return bf[4][i](x);
+      if        (derivative[0] == 0 and  derivative[1] == 0 and derivative[2] == 0) {
+	return bf[0][i](x);
+      } else if (derivative[0] == 1 and  derivative[1] == 0 and derivative[2] == 0) {
+	return bf[1][i](x);
+      } else if (derivative[0] == 0 and  derivative[1] == 1 and derivative[2] == 0) {
+	return bf[2][i](x);
+      } else if (derivative[0] == 0 and  derivative[1] == 0 and derivative[2] == 1) {
+	return bf[3][i](x);
       } else {
 	throw std::string("tetrahedron::fe::lagrange_p1_bubble: unsupported derivative order.");
       }

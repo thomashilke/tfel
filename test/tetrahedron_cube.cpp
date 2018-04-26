@@ -16,8 +16,9 @@ double f(const double* x) {
 int main(int argc, char *argv[]) {
   try {
     using cell_type = cell::tetrahedron;
-    using fe_type = cell::tetrahedron::fe::lagrange_p1;
+    using fe_type = cell::tetrahedron::fe::lagrange_p1_bubble;
     using fes_type = finite_element_space<fe_type>;
+    using quad_type = quad::tetrahedron::qf5pTet;
     
     fe_mesh<cell_type> m(gen_cube_mesh(1.0, 1.0, 1.0, 10, 10, 10));
     //m.show(std::cout);
@@ -34,7 +35,7 @@ int main(int argc, char *argv[]) {
       const auto u(a.get_trial_function());
       const auto v(a.get_test_function());
 
-      a += integrate<quad::tetrahedron::qf1pTet>(
+      a += integrate<quad_type>(
 	d<1>(u) * d<1>(v) +
 	d<2>(u) * d<2>(v) +
 	d<3>(u) * d<3>(v)
@@ -46,7 +47,7 @@ int main(int argc, char *argv[]) {
     linear_form<fes_type> f(fes); {
       const auto v(f.get_test_function());
 
-      f += integrate<quad::tetrahedron::qf1pTet>(
+      f += integrate<quad_type>(
 	::f * v,
 	m);
     }

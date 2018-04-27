@@ -115,6 +115,76 @@ namespace quad {
   }
 
   namespace tetrahedron {
+    /* These symetric quadrature formula come from:
+       @article{SHUNN20124348,
+         title = "Symmetric quadrature rules for tetrahedra based on a cubic close-packed lattice arrangement",
+         journal = "Journal of Computational and Applied Mathematics",
+         volume = "236",
+         number = "17",
+         pages = "4348 - 4364",
+         year = "2012",
+         issn = "0377-0427",
+         doi = "https://doi.org/10.1016/j.cam.2012.03.032",
+         url = "http://www.sciencedirect.com/science/article/pii/S0377042712001604",
+         author = "Lee Shunn and Frank Ham",
+         keywords = "Numerical integration, Cubatures for tetrahedra, Cubic close-packed"
+       }
+    */
+    
+    struct qfSym1pTet {
+      typedef cell::tetrahedron cell_type;
+
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 1;
+      static const double x[n_point][3];
+      static const double w[n_point];
+    };
+
+    struct qfSym4pTet {
+      typedef cell::tetrahedron cell_type;
+
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 4;
+      static const double x[n_point][3];
+      static const double w[n_point];
+    };
+    
+    struct qfSym10pTet {
+      typedef cell::tetrahedron cell_type;
+
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 10;
+      static const double x[n_point][3];
+      static const double w[n_point];
+    };
+
+    struct qfSym20pTet {
+      typedef cell::tetrahedron cell_type;
+
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 20;
+      static const double x[n_point][3];
+      static const double w[n_point];
+    };
+
+    struct qfSym35pTet {
+      typedef cell::tetrahedron cell_type;
+
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 35;
+      static const double x[n_point][3];
+      static const double w[n_point];
+    };
+
+    struct qfSym56pTet {
+      typedef cell::tetrahedron cell_type;
+
+      static const std::size_t n_point_space_dimension = 3;
+      static const std::size_t n_point = 56;
+      static const double x[n_point][3];
+      static const double w[n_point];
+    };
+    
     struct qf1pTet {
       typedef cell::tetrahedron cell_type;
       

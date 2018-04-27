@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     using cell_type = cell::tetrahedron;
     using fe_type = cell::tetrahedron::fe::lagrange_p1_bubble;
     using fes_type = finite_element_space<fe_type>;
-    using quad_type = quad::tetrahedron::qf5pTet;
+    using quad_type = quad::tetrahedron::qfSym35pTet;
     
     fe_mesh<cell_type> m(gen_cube_mesh(1.0, 1.0, 1.0, 10, 10, 10));
     //m.show(std::cout);
@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     bilinear_form<fes_type, fes_type> a(fes, fes); {
       const auto u(a.get_trial_function());
       const auto v(a.get_test_function());
+
 
       a += integrate<quad_type>(
 	d<1>(u) * d<1>(v) +
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "\\int_\\Omega x_1^2 dx = "
-              << integrate<quad::tetrahedron::qf5pTet>(make_expr(std::function<double(const double*)>([](const double* x){return x[1]; })), m) - 0.5
+              << integrate<quad::tetrahedron::qfSym35pTet>(make_expr(std::function<double(const double*)>([](const double* x){return x[1]; })), m) - 0.5
               << std::endl;
     
     exporter::ensight6("cube",

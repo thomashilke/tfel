@@ -24,6 +24,9 @@ constexpr double cell::triangle::fe::lagrange_p2::x[6][2];
 
 constexpr std::size_t cell::tetrahedron::fe::lagrange_p0::n_dof[4];
 constexpr std::size_t cell::tetrahedron::fe::lagrange_p1::n_dof[4];
+constexpr std::size_t cell::tetrahedron::fe::lagrange_p1_bubble::n_dof[4];
+
 
 constexpr double cell::tetrahedron::fe::lagrange_p0::x[1][3];
 constexpr double cell::tetrahedron::fe::lagrange_p1::x[4][3];
+constexpr double cell::tetrahedron::fe::lagrange_p1_bubble::x[5][3];

@@ -560,6 +560,98 @@ namespace cell {
     static double bf_001_3(const double* x) { return  0.0; }
     static double bf_001_4(const double* x) { return  1.0; }
   };
+
+  struct tetrahedron::fe::lagrange_p1_bubble: public tetrahedron::fe::lagrange_p1 {
+    using tetrahedron::fe::lagrange_p1::bf_000_1;
+    using tetrahedron::fe::lagrange_p1::bf_000_2;
+    using tetrahedron::fe::lagrange_p1::bf_000_3;
+    using tetrahedron::fe::lagrange_p1::bf_000_4;
+
+    using tetrahedron::fe::lagrange_p1::bf_100_1;
+    using tetrahedron::fe::lagrange_p1::bf_100_2;
+    using tetrahedron::fe::lagrange_p1::bf_100_3;
+    using tetrahedron::fe::lagrange_p1::bf_100_4;
+
+    using tetrahedron::fe::lagrange_p1::bf_010_1;
+    using tetrahedron::fe::lagrange_p1::bf_010_2;
+    using tetrahedron::fe::lagrange_p1::bf_010_3;
+    using tetrahedron::fe::lagrange_p1::bf_010_4;
+
+    using tetrahedron::fe::lagrange_p1::bf_001_1;
+    using tetrahedron::fe::lagrange_p1::bf_001_2;
+    using tetrahedron::fe::lagrange_p1::bf_001_3;
+    using tetrahedron::fe::lagrange_p1::bf_001_4;
+
+    using tetrahedron::fe::lagrange_p1::cell_type;
+
+    static const std::size_t n_dof_per_element = 5;
+    static constexpr std::size_t n_dof[] = {1, 0, 0, 1};
+    static constexpr std::size_t n_dof_per_subdomain(unsigned int i) {
+      return n_dof[i];
+    }
+    static const bool is_continuous = true;
+    static const bool is_lagrangian = false;
+
+    static constexpr double x[5][3] = {{0.0, 0.0, 0.0},
+                                       {1.0, 0.0, 0.0},
+                                       {0.0, 1.0, 0.0},
+                                       {0.0, 0.0, 1.0},
+                                       {1.0/4.0, 1.0/4.0, 1.0/4.0}};
+
+    static double basis_function(unsigned int i,
+                                 const unsigned int* derivative,
+                                 const double* x) {
+      typedef double(*bf_type)(const double* x);
+      static const bf_type bf[4][5] = {{bf_000_1, bf_000_2, bf_000_3, bf_000_4, bf_000_5},
+                                       {bf_100_1, bf_100_2, bf_100_3, bf_100_4, bf_100_5},
+                                       {bf_010_1, bf_010_2, bf_010_3, bf_010_4, bf_010_5},
+                                       {bf_001_1, bf_001_2, bf_001_3, bf_001_4, bf_001_5}};
+
+      if        (derivative[0] == 0 and  derivative[1] == 0 and derivative[2] == 0) {
+	return bf[0][i](x);
+      } else if (derivative[0] == 1 and  derivative[1] == 0 and derivative[2] == 0) {
+	return bf[1][i](x);
+      } else if (derivative[0] == 0 and  derivative[1] == 1 and derivative[2] == 0) {
+	return bf[2][i](x);
+      } else if (derivative[0] == 0 and  derivative[1] == 0 and derivative[2] == 1) {
+	return bf[3][i](x);
+      } else {
+	throw std::string("tetrahedron::fe::lagrange_p1_bubble: unsupported derivative order.");
+      }
+    }
+
+    static double phi(unsigned int i, const double* x) {
+      unsigned int d[3] = {0, 0, 0};
+      return basis_function(i, d, x);
+    }
+
+    static double dphi(unsigned int k, unsigned int i, const double* x) {
+      if (k >= 3)
+	throw std::string("finite_element::triangle_lagrange_p1::dphi: space dimension is 2,"
+			  " therefore k must be in {0, 1, 2}.");
+      unsigned int d[3] = {0, 0, 0};
+      d[k] = 1;
+      return basis_function(i, d, x);
+    }
+
+  protected:
+    static double bf_000_5(const double* x) { return 256.0 * bf_000_1(x) * bf_000_2(x) * bf_000_3(x) * bf_000_4(x); }
+    static double bf_100_5(const double* x) { return 256.0 * (  bf_100_1(x) * bf_000_2(x) * bf_000_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_100_2(x) * bf_000_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_000_2(x) * bf_100_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_000_2(x) * bf_000_3(x) * bf_100_4(x)); }
+    
+    static double bf_010_5(const double* x) { return 256.0 * (  bf_010_1(x) * bf_000_2(x) * bf_000_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_010_2(x) * bf_000_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_000_2(x) * bf_010_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_000_2(x) * bf_000_3(x) * bf_010_4(x)); }
+    
+    
+    static double bf_001_5(const double* x) { return 256.0 * (  bf_001_1(x) * bf_000_2(x) * bf_000_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_001_2(x) * bf_000_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_000_2(x) * bf_001_3(x) * bf_000_4(x)
+                                                              + bf_000_1(x) * bf_000_2(x) * bf_000_3(x) * bf_001_4(x)); }
+  };
 }
 
 #endif /* _FE_H_ */

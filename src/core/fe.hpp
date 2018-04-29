@@ -627,7 +627,7 @@ namespace cell {
 
     static double dphi(unsigned int k, unsigned int i, const double* x) {
       if (k >= 3)
-	throw std::string("finite_element::triangle_lagrange_p1::dphi: space dimension is 2,"
+	throw std::string("tetrahedron::fe::lagrange_p1_bubble::dphi: space dimension is 3,"
 			  " therefore k must be in {0, 1, 2}.");
       unsigned int d[3] = {0, 0, 0};
       d[k] = 1;

@@ -256,6 +256,24 @@ public:
     throw std::string("point out of bounds");
   }
 
+  void translate(const array<double>& x) {
+    if (x.get_rank() != 1 and x.get_size(0) != vertices.get_size(1))
+      throw std::string("mesh::translate(): wrong argument dimensions.");
+    
+    for (std::size_t i(0); i < vertices.get_size(0); ++i)
+      for (std::size_t j(0); j < x.get_size(0); ++j)
+        vertices.at(i, j) += x.at(j);
+  }
+
+  void scale(const array<double>& s) {
+    if (s.get_rank() != 1 and s.get_size(0) != vertices.get_size(1))
+      throw std::string("mesh::scale(): wrong argument dimensions.");
+    
+    for (std::size_t i(0); i < vertices.get_size(0); ++i)
+      for (std::size_t j(0); j < s.get_size(0); ++j)
+        vertices.at(i, j) *= s.at(j);
+  }
+  
 protected:
   mesh(): vertices{}, cells{}, references{}, cell_neighbours{} {}
   

@@ -342,6 +342,16 @@ class fe_mesh: public mesh<cell> {
 public:
   typedef cell cell_type;
 
+  fe_mesh(const mesh<cell>& m)
+    : mesh<cell>(m),
+      cell_volume{m.get_cell_number()},
+      h{m.get_cell_number()} {
+      compute_cell_diameter();
+      compute_cell_volume();
+      compute_jmt();
+    }
+    
+  
   fe_mesh(const double* vertices,
           unsigned int n_vertices, unsigned int n_components,
           const unsigned int* cells, unsigned int n_cells)

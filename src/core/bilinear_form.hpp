@@ -116,7 +116,7 @@ public:
   expression<form<1,2,0> > get_trial_function() const { return form<1,2,0>(); }
 
   constraint_handle new_constraint();
-  void assemble_constraint(const constraint_handle& l_1, const constraint_handle l_2, double value);
+  void assemble_constraint(const constraint_handle& l_1, const constraint_handle& l_2, double value);
   
   void prepare_solver() {
     petsc->set_size(test_fes.get_dof_number() + constraint_number);
@@ -388,7 +388,7 @@ bilinear_form<test_fes_type, trial_fes_type>::new_constraint() {
 
 
 template<typename test_fes_type, typename trial_fes_type>
-void bilinear_form<test_fes_type, trial_fes_type>::assemble_constraint(const constraint_handle& l_1, const constraint_handle l_2, double value) {
+void bilinear_form<test_fes_type, trial_fes_type>::assemble_constraint(const constraint_handle& l_1, const constraint_handle& l_2, double value) {
   accumulate(test_fes.get_dof_number() + l_1.get_id(),
 	     trial_fes.get_dof_number() + l_2.get_id(), value);
 }

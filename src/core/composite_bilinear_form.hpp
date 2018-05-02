@@ -33,7 +33,8 @@ public:
 		const trial_cfes_type& tr_cfes)
     : test_cfes(te_cfes), trial_cfes(tr_cfes),
       a(te_cfes.get_total_dof_number(),
-	tr_cfes.get_total_dof_number()) {
+	tr_cfes.get_total_dof_number()),
+      constraint_number(0) {
     std::size_t test_global_dof_number[n_test_component];
     fill_array_with_return_values<std::size_t,
 				  get_dof_number_impl<test_cfes_type>,
@@ -295,6 +296,11 @@ public:
     a.export_data(stream);
   }
 
+  class constraint_handle;
+
+  constraint_handle new_constraint();
+  void assemble_constraint(const constraint_handle& l_1, const constraint_handle& l_2, double value);
+  
 private:
   const test_cfes_type& test_cfes;
   const trial_cfes_type& trial_cfes;
@@ -304,6 +310,8 @@ private:
 
   sparse_linear_system a;
 
+  std::size_t constraint_number;
+
   template<std::size_t m, std::size_t n>
   void accumulate_in_block(std::size_t i, std::size_t j, double value) {
     if (trial_cfes.template get_dirichlet_dof<m>().count(i) == 0)
@@ -311,6 +319,237 @@ private:
 		   j + trial_global_dof_offset[n],
 		   value);
   }
+
+  void accumulate(std::size_t i, std::size_t j, double value) {
+    a.accumulate(i, j, value);
+  }
 };
+
+
+template<typename test_cfe_type, typename trial_cfe_type>
+class bilinear_form<composite_finite_element_space<test_cfe_type>,
+                    composite_finite_element_space<trial_cfe_type>>::constraint_handle {
+  using bilinear_form_type = bilinear_form<composite_finite_element_space<test_cfe_type>,
+                                           composite_finite_element_space<trial_cfe_type> >;
+  bilinear_form_type& b_form;
+  std::size_t constraint_id;
+  
+public:
+  constraint_handle(bilinear_form_type& f, std::size_t constraint_id)
+    : b_form(f), constraint_id(constraint_id) {}
+
+  std::size_t get_id() const { return constraint_id; }
+
+
+  /*
+   *  B_INFO is a type list of two elements:
+   *  B_INFO = type_list<T, integral_constant<std::size_t, i> >,
+   *  where T is the integration_proxy, and i is the block id being assembled.
+   */
+  template<typename B_INFO>
+  struct evaluate_trial_block {
+    using T = get_element_at_t<0, B_INFO>;
+    typedef typename T::quadrature_type quadrature_type;
+
+    static const std::size_t m = get_element_at_t<1, B_INFO>::value;
+
+    using trial_fe_type = get_element_at_t<m, typename trial_cfe_type::fe_list>;
+    using bilinear_form_type = bilinear_form<composite_finite_element_space<trial_cfe_type>,
+                                             composite_finite_element_space<test_cfe_type> >;
+
+    static void call(bilinear_form_type& bilinear_form,
+                     const get_element_at_t<0, B_INFO>& integration_proxy,
+                     const std::size_t constraint_id,
+                     const std::size_t k,
+                     const array<double>& omega,
+                     const array<double>& xq,
+                     const array<double>& xq_hat,
+                     const fe_value_manager<unique_fe_list>& fe_values,
+                     const fe_value_manager<unique_fe_list>& fe_zvalues) {
+      const double* psi[n_test_component];
+
+      const std::size_t n_q(quadrature_type::n_point);
+      const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
+
+      const double volume(integration_proxy.m.get_cell_volume(k));
+      for (unsigned int q(0); q < n_q; ++q) {
+        integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+        for (unsigned int i(0); i < n_trial_dof; ++i) {
+          double rhs_el(0.0);
+          select_function_valuation<trial_fe_list, m, unique_fe_list>(psi, q, i, fe_values, fe_zvalues);
+
+          rhs_el += volume * omega.at(q)
+            * expression_call_wrapper<0, n_trial_component>::call(integration_proxy.f, psi,
+                                                                  k, &xq.at(q, 0), &xq_hat.at(q, 0));
+          bilinear_form.accumulate(bilinear_form.test_fel.get_total_dof_number() + constraint_id,
+                                   bilinear_form.trial_global_dof_offset[m]
+                                   + bilinear_form.trial_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i),
+                                   rhs_el);
+        }
+      }
+
+    }
+  };
+
+  
+  template<typename T>
+  void operator-=(const T& integration_proxy) {
+    using quadrature_type = typename T::quadrature_type;
+    using cell_type = typename T::cell_type;
+    using form_type = typename T::form_type;
+
+    const auto& m(integration_proxy.m);
+
+    const std::size_t n_q(quadrature_type::n_point);
+    array<double> omega{n_q};
+    omega.set_data(&quadrature_type::w[0]);
+
+    array<double> xq_hat{n_q, fe_cell_type::n_dimension};
+    array<double> xq{n_q, fe_cell_type::n_dimension};
+
+    fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
+    fe_zvalues.clear();
+
+    if(T::point_set_number == 1) {
+      xq_hat = integration_proxy.get_quadrature_points(0);
+      fe_values.set_points(xq_hat);
+    }
+
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
+      if (T::point_set_number > 1) {
+        xq_hat = integration_proxy.get_quadrature_points(k);
+        fe_values.set_points(xq_hat);
+      }
+
+      if (form_type::require_space_coordinates)
+        cell_type::map_points_to_space_coordinates(xq, m.get_vertices(), m.get_cells(), k, xq_hat);
+
+      if (form_type::differential_order > 0) {
+        const array<double>& jmt(m.get_jmt(k));
+        fe_values.prepare(jmt);
+      }
+
+      using trial_blocks_il = wrap_t<type_list, make_integral_list_t<std::size_t, n_trial_component> >;
+      using block_info = append_to_each_element_t<T, trial_blocks_il>;
+
+      call_for_each<evaluate_trial_block, block_info>::call(*this, integration_proxy, constraint_id,
+                                                            k, omega, xq, xq_hat, fe_values, fe_zvalues);
+    }
+      
+  }
+
+  template<typename B_INFO>
+  struct evaluate_test_block {
+    using T = get_element_at_t<0, B_INFO>;
+    typedef typename T::quadrature_type quadrature_type;
+
+    static const std::size_t m = get_element_at_t<1, B_INFO>::value;
+
+    using test_fe_type = get_element_at_t<m, typename test_cfe_type::fe_list>;
+    using bilinear_form_type = bilinear_form<composite_finite_element_space<trial_cfe_type>,
+                                             composite_finite_element_space<test_cfe_type> >;
+
+    static void call(bilinear_form_type& bilinear_form,
+                     const get_element_at_t<0, B_INFO>& integration_proxy,
+                     const std::size_t constraint_id,
+                     const std::size_t k,
+                     const array<double>& omega,
+                     const array<double>& xq,
+                     const array<double>& xq_hat,
+                     const fe_value_manager<unique_fe_list>& fe_values,
+                     const fe_value_manager<unique_fe_list>& fe_zvalues) {
+      const double* psi[n_test_component];
+
+      const std::size_t n_q(quadrature_type::n_point);
+      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
+
+      const double volume(integration_proxy.m.get_cell_volume(k));
+      for (unsigned int q(0); q < n_q; ++q) {
+        integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+        for (unsigned int i(0); i < n_test_dof; ++i) {
+          double rhs_el(0.0);
+          select_function_valuation<test_fe_list, m, unique_fe_list>(psi, q, i, fe_values, fe_zvalues);
+
+          rhs_el += volume * omega.at(q)
+            * expression_call_wrapper<0, n_test_component>::call(integration_proxy.f, psi,
+                                                                  k, &xq.at(q, 0), &xq_hat.at(q, 0));
+          bilinear_form.accumulate(bilinear_form.test_global_dof_offset[m]
+                                   + bilinear_form.test_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i),
+                                   bilinear_form.trial_fes.get_total_dof_number() + constraint_id,
+                                   rhs_el);
+        }
+      }
+
+    }
+  };
+
+  
+  template<typename T>
+  void operator|=(const T& integration_proxy) {
+    using quadrature_type = typename T::quadrature_type;
+    using cell_type = typename T::cell_type;
+    using form_type = typename T::form_type;
+
+    const auto& m(integration_proxy.m);
+
+    const std::size_t n_q(quadrature_type::n_point);
+    array<double> omega{n_q};
+    omega.set_data(&quadrature_type::w[0]);
+
+    array<double> xq_hat{n_q, fe_cell_type::n_dimension};
+    array<double> xq{n_q, fe_cell_type::n_dimension};
+
+    fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
+    fe_zvalues.clear();
+
+    if(T::point_set_number == 1) {
+      xq_hat = integration_proxy.get_quadrature_points(0);
+      fe_values.set_points(xq_hat);
+    }
+
+    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
+      if (T::point_set_number > 1) {
+        xq_hat = integration_proxy.get_quadrature_points(k);
+        fe_values.set_points(xq_hat);
+      }
+
+      if (form_type::require_space_coordinates)
+        cell_type::map_points_to_space_coordinates(xq, m.get_vertices(), m.get_cells(), k, xq_hat);
+
+      if (form_type::differential_order > 0) {
+        const array<double>& jmt(m.get_jmt(k));
+        fe_values.prepare(jmt);
+      }
+
+      using test_blocks_il = wrap_t<type_list, make_integral_list_t<std::size_t, n_test_component> >;
+      using block_info = append_to_each_element_t<T, test_blocks_il>;
+
+      call_for_each<evaluate_test_block, block_info>::call(*this, integration_proxy, constraint_id,
+                                                           k, omega, xq, xq_hat, fe_values, fe_zvalues);
+    }
+  }
+};
+
+template<typename test_cfe_type, typename trial_cfe_type>
+typename bilinear_form<composite_finite_element_space<test_cfe_type>,
+                       composite_finite_element_space<trial_cfe_type> >::constraint_handle
+bilinear_form<composite_finite_element_space<test_cfe_type>,
+              composite_finite_element_space<trial_cfe_type> >::new_constraint() {
+  constraint_number += 1;
+  a.set_sizes(test_cfes.get_total_dof_number() + constraint_number,
+	      trial_cfes.get_total_dof_number() + constraint_number);
+  return constraint_handle(*this, constraint_number - 1);
+}
+
+
+template<typename test_cfe_type, typename trial_cfe_type>
+void bilinear_form<composite_finite_element_space<test_cfe_type>,
+                   composite_finite_element_space<trial_cfe_type> >::assemble_constraint
+(const constraint_handle& l_1,
+ const constraint_handle& l_2,
+ double value) {
+  accumulate(test_cfes.get_total_dof_number() + l_1.get_id(),
+	     trial_cfes.get_total_dof_number() + l_2.get_id(), value);
+}
 
 #endif /* _COMPOSITE_BILINEAR_FORM_H_ */

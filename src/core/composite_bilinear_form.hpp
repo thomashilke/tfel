@@ -204,14 +204,22 @@ public:
 
 
   typename trial_cfes_type::element solve(const linear_form<test_cfes_type>& form) const {
-    array<double> f(form.get_coefficients());
+    array<double> f{form.get_coefficients().get_size(0) + constraint_number};
+    std::copy(&form.get_coefficients().at(0),
+	      &form.get_coefficients().at(0) + test_cfes.get_total_dof_number(),
+	      &f.at(0));
+    
     call_for_each<handle_dirichlet_dof_values, make_integral_list_t<std::size_t, n_test_component> >::call(*this, f);
 
+    std::copy(form.get_constraint_values().begin(),
+	      form.get_constraint_values().end(),
+	      &f.at(0) + test_cfes.get_total_dof_number());
+    
     linear_solver s;
     auto petsc_gmres_ilu(s.get_solver(solver::petsc,
 				      method::gmres,
 				      preconditioner::ilu));
-    petsc_gmres_ilu->set_size(test_cfes.get_total_dof_number());
+    petsc_gmres_ilu->set_size(test_cfes.get_total_dof_number() + constraint_number);
 
     if (true) {
       // Convert to CRS format
@@ -262,9 +270,20 @@ public:
     petsc_gmres_ilu->assemble();
     //petsc_gmres_ilu->show();
 
-    typename trial_cfes_type::element result(trial_cfes, (petsc_gmres_ilu->solve(f)));
-    delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
-    return result;
+    if (constraint_number == 0) {
+      typename trial_cfes_type::element result(trial_cfes, (petsc_gmres_ilu->solve(f)));
+      delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
+      return result;
+    } else {
+      array<double> solution(petsc_gmres_ilu->solve(f));
+      array<double> coefficients{trial_cfes.get_total_dof_number()};
+      std::copy(&solution.at(0),
+                &solution.at(0) + trial_cfes.get_total_dof_number(),
+                &coefficients.at(0));
+
+      delete petsc_gmres_ilu; petsc_gmres_ilu = nullptr;
+      return typename trial_cfes_type::element(trial_cfes, coefficients);
+    }
   }
 
 
@@ -366,7 +385,7 @@ public:
                      const array<double>& xq_hat,
                      const fe_value_manager<unique_fe_list>& fe_values,
                      const fe_value_manager<unique_fe_list>& fe_zvalues) {
-      const double* psi[n_test_component];
+      const double* psi_phi[n_test_component + n_trial_component];
 
       const std::size_t n_q(quadrature_type::n_point);
       const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
@@ -376,12 +395,15 @@ public:
         integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
         for (unsigned int i(0); i < n_trial_dof; ++i) {
           double rhs_el(0.0);
-          select_function_valuation<trial_fe_list, m, unique_fe_list>(psi, q, i, fe_values, fe_zvalues);
+          select_function_valuation<test_fe_list, m, unique_fe_list>(psi_phi, q, 0,
+                                                                     fe_values, fe_zvalues);
+          select_function_valuation<trial_fe_list, m, unique_fe_list>(psi_phi + n_test_component, q, i,
+                                                                      fe_values, fe_zvalues);
 
           rhs_el += volume * omega.at(q)
-            * expression_call_wrapper<0, n_trial_component>::call(integration_proxy.f, psi,
+            * expression_call_wrapper<0, n_trial_component + n_test_component>::call(integration_proxy.f, psi_phi,
                                                                   k, &xq.at(q, 0), &xq_hat.at(q, 0));
-          bilinear_form.accumulate(bilinear_form.test_fel.get_total_dof_number() + constraint_id,
+          bilinear_form.accumulate(bilinear_form.test_cfes.get_total_dof_number() + constraint_id,
                                    bilinear_form.trial_global_dof_offset[m]
                                    + bilinear_form.trial_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i),
                                    rhs_el);
@@ -432,7 +454,7 @@ public:
       using trial_blocks_il = wrap_t<type_list, make_integral_list_t<std::size_t, n_trial_component> >;
       using block_info = append_to_each_element_t<T, trial_blocks_il>;
 
-      call_for_each<evaluate_trial_block, block_info>::call(*this, integration_proxy, constraint_id,
+      call_for_each<evaluate_trial_block, block_info>::call(this->b_form, integration_proxy, constraint_id,
                                                             k, omega, xq, xq_hat, fe_values, fe_zvalues);
     }
       
@@ -458,7 +480,7 @@ public:
                      const array<double>& xq_hat,
                      const fe_value_manager<unique_fe_list>& fe_values,
                      const fe_value_manager<unique_fe_list>& fe_zvalues) {
-      const double* psi[n_test_component];
+      const double* psi_phi[n_test_component + n_trial_component];
 
       const std::size_t n_q(quadrature_type::n_point);
       const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
@@ -468,14 +490,18 @@ public:
         integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
         for (unsigned int i(0); i < n_test_dof; ++i) {
           double rhs_el(0.0);
-          select_function_valuation<test_fe_list, m, unique_fe_list>(psi, q, i, fe_values, fe_zvalues);
+          //select_function_valuation<test_fe_list, m, unique_fe_list>(psi, q, i, fe_values, fe_zvalues);
+          select_function_valuation<test_fe_list, m, unique_fe_list>(psi_phi, q, i,
+                                                                     fe_values, fe_zvalues);
+          select_function_valuation<trial_fe_list, m, unique_fe_list>(psi_phi + n_test_component, q, 0,
+                                                                      fe_values, fe_zvalues);
 
           rhs_el += volume * omega.at(q)
-            * expression_call_wrapper<0, n_test_component>::call(integration_proxy.f, psi,
+            * expression_call_wrapper<0, n_test_component + n_trial_component>::call(integration_proxy.f, psi_phi,
                                                                   k, &xq.at(q, 0), &xq_hat.at(q, 0));
           bilinear_form.accumulate(bilinear_form.test_global_dof_offset[m]
                                    + bilinear_form.test_cfes.template get_dof<m>(integration_proxy.get_global_cell_id(k), i),
-                                   bilinear_form.trial_fes.get_total_dof_number() + constraint_id,
+                                   bilinear_form.trial_cfes.get_total_dof_number() + constraint_id,
                                    rhs_el);
         }
       }
@@ -524,7 +550,7 @@ public:
       using test_blocks_il = wrap_t<type_list, make_integral_list_t<std::size_t, n_test_component> >;
       using block_info = append_to_each_element_t<T, test_blocks_il>;
 
-      call_for_each<evaluate_test_block, block_info>::call(*this, integration_proxy, constraint_id,
+      call_for_each<evaluate_test_block, block_info>::call(this->b_form, integration_proxy, constraint_id,
                                                            k, omega, xq, xq_hat, fe_values, fe_zvalues);
     }
   }

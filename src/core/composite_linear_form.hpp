@@ -141,13 +141,18 @@ public:
     }
   }
 
+  void set_constraint_value(double v) { constraint_values.push_back(v); }
+  
   template<std::size_t n>
   expression<form<n, 1, 0> > get_test_function() const {
     return form<n, 1, 0>();
   }
 
+  const std::vector<double>& get_constraint_values() const { return constraint_values; }
+ 
   void clear() {
     f.fill(0.0);
+    constraint_values.clear();
   }
 
   void show(std::ostream& stream) const {
@@ -189,6 +194,7 @@ private:
   std::vector<std::size_t> test_global_dof_offset;
 
   array<double> f;
+  std::vector<double> constraint_values;
 };
 
 #endif /* _COMPOSITE_LINEAR_FORM_H_ */

@@ -173,11 +173,11 @@ public:
     // Add the value of the dirichlet dof in the right hand side
     array<double> f{trial_fes.get_dof_number() + constraint_number};
     std::copy(&form.get_coefficients().at(0),
-	      &form.get_coefficients().at(0) + trial_fes.get_dof_number(),
+	      &form.get_coefficients().at(0) + test_fes.get_dof_number(),
 	      &f.at(0));
     std::copy(form.get_constraint_values().begin(),
 	      form.get_constraint_values().end(),
-	      &f.at(0) + trial_fes.get_dof_number());
+	      &f.at(0) + test_fes.get_dof_number());
     
     for (const auto& i: test_fes.get_dirichlet_dof()) {
       const auto x(trial_fes.get_dof_space_coordinate(i));

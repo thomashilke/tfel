@@ -26,7 +26,7 @@ public:
       b_0(null_function), b_1(null_function), src(null_function) {}
 
   void set_boundary_value(const std::function<double(const double*)>& u_bc) {
-    fes.set_dirichlet_condition(u_bc);
+    fes.add_dirichlet_boundary(dm, u_bc);
   }
   
   void set_advection_velocity(const std::function<double(const double*)>& b_0,

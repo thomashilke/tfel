@@ -19,8 +19,7 @@ public:
     : m(m),
       dof_map{m.get_cell_number(),
       fe_type::n_dof_per_element},
-      global_dof_to_local_dof{0},
-      f_bc(default_f_bc) {
+      global_dof_to_local_dof{0} {
     const array<unsigned int>& elements(m.get_cells());
     
     using cell::subdomain_type;
@@ -83,24 +82,26 @@ public:
   }
 
   template<typename c_cell_type>
-  finite_element_space(const fe_mesh<cell_type>& m, const submesh<cell_type, c_cell_type>& dm)
-    : finite_element_space(m) {
-    f_bc = default_f_bc;
-    set_dirichlet_boundary(dm);
-  }
-
   finite_element_space(const fe_mesh<cell_type>& m,
-		       const submesh<cell_type>& dm,
-		       double (*f_bc)(const double*)): finite_element_space(m, dm) {
-    this->f_bc = std::function<double(const double*)>(f_bc);
+                       const submesh<cell_type, c_cell_type>& dm,
+                       double value = 0.0)
+    : finite_element_space(m) {
+    add_dirichlet_boundary(dm, value);
   }
 
   template<typename c_cell_type>
-  void set_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm) {
+  finite_element_space(const fe_mesh<cell_type>& m,
+		       const submesh<cell_type, c_cell_type>& dm,
+		       std::function<double(const double*)> f)
+    : finite_element_space(m) {
+    add_dirichlet_boundary(dm, f);
+  }
+
+  template<typename c_cell_type>
+  void add_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm,
+                              double value = 0.0) {
     using cell::subdomain_type;
 
-    dirichlet_dof.clear();
-    
     std::size_t global_dof_offset(0);
     for (std::size_t sd(0); sd < submesh<cell_type>::cell_type::n_subdomain_type; ++sd) {
       const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
@@ -110,33 +111,58 @@ public:
 	for (const auto& subdomain: subdomains) {
 	  const std::size_t j(std::distance(subdomain_list[sd].begin(),
 					    subdomain_list[sd].find(subdomain)));
-	  for (unsigned int hat_i(0); hat_i < hat_m; ++hat_i)
-	    dirichlet_dof.insert((j * hat_m + hat_i) + global_dof_offset);
+	  for (unsigned int hat_i(0); hat_i < hat_m; ++hat_i) {
+            const std::size_t dof_id((j * hat_m + hat_i) + global_dof_offset);
+	    dirichlet_dof_values.insert(std::make_pair(dof_id, value));
+          }
 	}
 	global_dof_offset += hat_m * subdomain_list[sd].size();
       }
-    }    
-  }
-
-  void set_dirichlet_condition(const std::function<double(const double*)>& f_bc) {
-    this->f_bc = f_bc;
-  }
-
-  template<typename c_cell_type>
-  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
-					const std::function<double(const double*)>& f_bc) {
-    this->set_dirichlet_condition(f_bc);
-    this->set_dirichlet_boundary(dm);
+    }
   }
   
-  std::size_t get_dof_number() const { return dof_number; }
+  template<typename c_cell_type>
+  void add_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm,
+                              const std::function<double(const double*)>& f_bc) {
+    using cell::subdomain_type;
+
+    std::size_t global_dof_offset(0);
+    for (std::size_t sd(0); sd < submesh<cell_type>::cell_type::n_subdomain_type; ++sd) {
+      const std::size_t hat_m(fe_type::n_dof_per_subdomain(sd));
+      if (fe_type::n_dof_per_subdomain(sd)) {
+	const array<unsigned int>& elements(dm.get_cells());
+	std::set<subdomain_type> subdomains(submesh<cell_type>::cell_type::get_subdomain_list(elements, sd));
+	for (const auto& subdomain: subdomains) {
+	  const std::size_t j(std::distance(subdomain_list[sd].begin(),
+					    subdomain_list[sd].find(subdomain)));
+	  for (unsigned int hat_i(0); hat_i < hat_m; ++hat_i) {
+            const std::size_t dof_id((j * hat_m + hat_i) + global_dof_offset);
+            const array<double> x(get_dof_space_coordinate(dof_id));
+            const double dof_value(f_bc(&x.at(0, 0)));
+            
+	    dirichlet_dof_values.insert(std::make_pair(dof_id, dof_value));
+          }
+	}
+	global_dof_offset += hat_m * subdomain_list[sd].size();
+      }
+    }
+  }
+  
+  std::size_t get_dof_number() const {
+    return dof_number;
+  }
 
   unsigned int get_dof(std::size_t k, std::size_t i) const {
     return dof_map.at(k, i);
   }
 
-  const std::unordered_set<unsigned int>& get_dirichlet_dof() const { return dirichlet_dof; }
-  const std::vector<std::set<cell::subdomain_type> > get_subdomain_list() const { return subdomain_list; }
+  const std::map<unsigned int, double>& get_dirichlet_dof_values() const {
+    return dirichlet_dof_values;
+  }
+
+  const std::vector<std::set<cell::subdomain_type> > get_subdomain_list() const {
+    return subdomain_list;
+  }
   
   void show(std::ostream& stream) {
     for (unsigned int k(0); k < dof_map.get_size(0); ++k) {
@@ -148,8 +174,8 @@ public:
     }
 
     stream << "dirichlet dofs: ";
-    for (const auto& dof: dirichlet_dof)
-      stream << dof << " ";
+    for (const auto& dof: dirichlet_dof_values)
+      stream << dof.first << " ";
     stream << std::endl;
 
     stream << "dof map:" << std::endl;
@@ -160,8 +186,6 @@ public:
   }
 
   const fe_mesh<cell_type>& get_mesh() const { return m; }
-
-  double boundary_value(const double* x) const { return f_bc(x); }
 
   array<double> get_dof_space_coordinate(unsigned int i) const {
     const std::size_t local_node_id(global_dof_to_local_dof.at(i, 1));
@@ -186,12 +210,9 @@ private:
   array<unsigned int> global_dof_to_local_dof;
   std::size_t dof_number;
   
-    
-  std::unordered_set<unsigned int> dirichlet_dof;
-  std::vector<std::set<cell::subdomain_type> > subdomain_list;
+  std::map<unsigned int, double> dirichlet_dof_values;
 
-  static double default_f_bc(const double* x) { return 0.0; }
-  std::function<double(const double*)> f_bc;
+  std::vector<std::set<cell::subdomain_type> > subdomain_list;
 };
 
 

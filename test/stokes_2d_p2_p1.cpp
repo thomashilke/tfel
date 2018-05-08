@@ -76,9 +76,9 @@ int main(int argc, char* argv[]) {
     using fes_type = composite_finite_element_space<fe_type>;
     fes_type fes(m);
 
-    fes.set_dirichlet_boundary_condition<0>(dm, u0_bv);
-    fes.set_dirichlet_boundary_condition<1>(dm, u1_bv);
-    fes.set_dirichlet_boundary_condition<2>(pinned_pressure_point, p_v);
+    fes.add_dirichlet_boundary<0>(dm, u0_bv);
+    fes.add_dirichlet_boundary<1>(dm, u1_bv);
+    fes.add_dirichlet_boundary<2>(pinned_pressure_point, p_v);
     
     bilinear_form<fes_type, fes_type> a(fes, fes); {
       auto v0(a.get_test_function<0>());

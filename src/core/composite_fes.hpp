@@ -63,26 +63,16 @@ public:
   #pragma clang diagnostic pop
 
   template<std::size_t n, typename c_cell_type>
-  void set_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm) {
-    std::get<n>(fe_instances).set_dirichlet_boundary(dm);
-  }
-
-  template<std::size_t n>
-  void set_dirichlet_condition(const std::function<double(const double*)>& f_bc) {
-    std::get<n>(fe_instances).set_dirichlet_condition(f_bc);
+  void add_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm,
+                              double value = 0.0) {
+    std::get<n>(fe_instances).add_dirichlet_boundary(dm, value);
   }
 
   template<std::size_t n, typename c_cell_type>
-  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
-					const std::function<double(const double*)>& f_bc) {
-    std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm, f_bc);
+  void add_dirichlet_boundary(const submesh<cell_type, c_cell_type>& dm,
+                              const std::function<double(const double*)>& f_bc) {
+    std::get<n>(fe_instances).add_dirichlet_boundary(dm, f_bc);
   }
-  
-  /*template<std::size_t n, typename c_cell_type>
-  void set_dirichlet_boundary_condition(const submesh<cell_type, c_cell_type>& dm,
-					double (*f_bc)(const double*)) {
-    std::get<n>(fe_instances).set_dirichlet_boundary_condition(dm, std::function<double(const double*)>(f_bc));
-    }*/
   
   std::size_t get_total_dof_number() const {
     return dof_number_sum_impl<cfe_type, 0, cfe_type::n_component>::call(*this);
@@ -99,8 +89,8 @@ public:
   }
 
   template<std::size_t n>
-  const std::unordered_set<unsigned int>& get_dirichlet_dof() const {
-    return std::get<n>(fe_instances).get_dirichlet_dof();
+  const std::map<unsigned int, double>& get_dirichlet_dof_values() const {
+    return std::get<n>(fe_instances).get_dirichlet_dof_values();
   }
 	
   template<std::size_t n>
@@ -115,11 +105,6 @@ public:
     
   const fe_mesh<cell_type>& get_mesh() const {
     return std::get<0>(fe_instances).get_mesh();
-  }
-
-  template<std::size_t n>
-  double boundary_value(const double* x) const {
-    return std::get<n>(fe_instances).boundary_value(x);
   }
 
   template<std::size_t n>

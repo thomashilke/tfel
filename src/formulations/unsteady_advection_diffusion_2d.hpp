@@ -32,7 +32,7 @@ public:
     : unsteady_advection_diffusion(m, submesh<cell_type>(m), delta_t, diffusivity) {}
 
   void set_boundary_value(const std::function<double(const double*)>& u_bc) {
-    fes.set_dirichlet_condition(u_bc);
+    fes.add_dirichlet_boundary(dm, u_bc);
   }
 
   void set_initial_condition(const std::function<double(const double*)>& ic) {

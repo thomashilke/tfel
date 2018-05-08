@@ -63,9 +63,9 @@ void benchmark(std::size_t n) {
   using fes_type = composite_finite_element_space<fe_type>;
   fes_type fes(m);
 
-  fes.set_dirichlet_boundary_condition<0>(dm, u0_bv);
-  fes.set_dirichlet_boundary_condition<1>(dm, u1_bv);
-  fes.set_dirichlet_boundary_condition<2>(pinned_pressure_point, p_v);
+  fes.add_dirichlet_boundary<0>(dm, u0_bv);
+  fes.add_dirichlet_boundary<1>(dm, u1_bv);
+  fes.add_dirichlet_boundary<2>(pinned_pressure_point, p_v);
 
   fes_timestamp = t.tic();
   std::cout << std::setw(10) << std::right << fes_timestamp
@@ -247,9 +247,9 @@ void navier_stokes(std::size_t n) {
   using fes_type = composite_finite_element_space<fe_type>;
   fes_type fes(m);
 
-  fes.set_dirichlet_boundary_condition<0>(dm, u0_bv);
-  fes.set_dirichlet_boundary_condition<1>(dm, u1_bv);
-  fes.set_dirichlet_boundary_condition<2>(pinned_pressure_point, p_v);
+  fes.add_dirichlet_boundary<0>(dm, u0_bv);
+  fes.add_dirichlet_boundary<1>(dm, u1_bv);
+  fes.add_dirichlet_boundary<2>(pinned_pressure_point, p_v);
 
   /*
    *  velocity at successive timesteps (u_n and u_{n+1})

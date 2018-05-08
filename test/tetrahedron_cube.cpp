@@ -26,10 +26,10 @@ int main(int argc, char *argv[]) {
     submesh<cell_type> dm(m.get_boundary_submesh());
     //dm.show(std::cout);
 
-    fes_type fes(m, dm);
+    fes_type fes(m);
     //fes.show(std::cout);
     
-    fes.set_dirichlet_condition(u_bc);
+    fes.add_dirichlet_boundary(dm, u_bc);
 
     bilinear_form<fes_type, fes_type> a(fes, fes); {
       const auto u(a.get_trial_function());

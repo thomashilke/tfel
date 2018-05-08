@@ -179,15 +179,10 @@ public:
 	      form.get_constraint_values().end(),
 	      &f.at(0) + test_fes.get_dof_number());
     
-    for (const auto& i: test_fes.get_dirichlet_dof()) {
-      const auto x(trial_fes.get_dof_space_coordinate(i));
-      f.at(i) = trial_fes.boundary_value(&x.at(0, 0));
+    for (const auto& i: test_fes.get_dirichlet_dof_values()) {
+      const auto x(trial_fes.get_dof_space_coordinate(i.first));
+      f.at(i.first) = i.second;
     }
-    /*std::cout << "f = [";
-    for (std::size_t k(0); k < f.get_size(0); ++k) {
-      std::cout << f.at(k) << std::endl;
-    }
-    std::cout << "];\n";*/
     
     if (dirty)
       prepare_solver();
@@ -209,8 +204,8 @@ public:
     a.clear();
 
     // Add the identity equations for each dirichlet dof
-    for (const auto& i: test_fes.get_dirichlet_dof())
-      a.accumulate(i, i, 1.0);
+    for (const auto& i: test_fes.get_dirichlet_dof_values())
+      a.accumulate(i.first, i.first, 1.0);
 
     constraint_number = 0;
   }
@@ -233,7 +228,7 @@ private:
   std::size_t constraint_number;
 
   void accumulate(std::size_t i, std::size_t j, double value) {
-    if (test_fes.get_dirichlet_dof().count(i) == 0)
+    if (test_fes.get_dirichlet_dof_values().count(i) == 0)
       a.accumulate(i, j, value);
   }
 };

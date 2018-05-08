@@ -49,16 +49,10 @@ public:
       m(m), dm(m.get_boundary_submesh()),
       pressure_point_m(m.get_point_submesh(0)),
       fes(m),
-      v_fes(fes.template get_finite_element_space<0>()),
-      p_fes(fes.template get_finite_element_space<2>()),
       a(fes, fes), f(fes),
-      solution(fes),
-      f_0(null_function), f_1(null_function),
-      u_0_bc(null_function), u_1_bc(null_function) {
+      solution(fes) {
     
-    fes.template set_dirichlet_boundary<0>(dm);
-    fes.template set_dirichlet_boundary<1>(dm);
-    fes.template set_dirichlet_boundary<2>(pressure_point_m);
+    fes.template add_dirichlet_boundary<2>(pressure_point_m, 0.0);
     a.clear();
     
     // The dirichlet dof must be known when assembling the system.
@@ -66,31 +60,31 @@ public:
     assemble_bilinear_form();
   }
 
-  void solve() {
-    assemble_linear_form();
-
-    fes.template set_dirichlet_condition<0>(u_0_bc);
-    fes.template set_dirichlet_condition<1>(u_1_bc);
-    fes.template set_dirichlet_condition<2>(null_function);
-    
+  const element_type& solve() {
     solution = a.solve(f);
+    return solution;
   }
   
   const element_type& get_solution() const { return solution; }
 
   void set_velocity_condition(const std::function<double(const double*)>& u_0_bc,
 			      const std::function<double(const double*)>& u_1_bc) {
-    this->u_0_bc = u_0_bc;
-    this->u_1_bc = u_1_bc;
+    fes.template add_dirichlet_boundary<0>(dm, u_0_bc);
+    fes.template add_dirichlet_boundary<1>(dm, u_1_bc);
   }
 
   void set_force(const std::function<double(const double*)>& f_0,
 		 const std::function<double(const double*)>& f_1) {
-    this->f_0 = f_0;
-    this->f_1 = f_1;
+    f.clear();
+    
+    const auto v_0(f.template get_test_function<0>());
+    const auto v_1(f.template get_test_function<1>());
+
+    f += integrate<quad::triangle::qf5pT>(make_expr(f_0) * v_0 +
+					  make_expr(f_1) * v_1
+					  , m);
   }
 
-    
 private:
   double viscosity;
 
@@ -99,19 +93,13 @@ private:
   const submesh<cell_type, cell::point> pressure_point_m;
   
   fes_type fes;
-  const velocity_fes_type& v_fes;
-  const pressure_fes_type& p_fes;
-  
+
   bilinear_form<fes_type, fes_type> a;
   linear_form<fes_type> f;
 
   typename fes_type::element solution;
 
-  std::function<double(const double*)> f_0, f_1, u_0_bc, u_1_bc;
-
 private:
-  static double null_function(const double* x) { return 0.0; }
-  
   void assemble_bilinear_form() {
     a.clear();
     
@@ -132,29 +120,14 @@ private:
 
     // Stabilisation for the P_1 - P_1 finite element choice
     if (not std::is_same<velocity_fe_type, cell::triangle::fe::lagrange_p1_bubble>::value) {
-      using fe = cell::triangle::fe::lagrange_p0;
-      finite_element_space<cell::triangle::fe::lagrange_p0> fes(m);
-      const auto h(build_element_diameter_function(m, fes));
-      const auto h2(cell_diameter(m));
+      const auto h(cell_diameter(m));
       const double stab_coefficient(- 1.0);
 
       a += integrate<quad::triangle::qf5pT>(stab_coefficient *
-                                            //make_expr<fe>(h) * make_expr<fe>(h) *
-                                            make_expr(h2, 0) * make_expr(h2, 0) * 
+                                            make_expr(h, 0) * make_expr(h, 0) * 
 					    (d<1>(p)*d<1>(q) + d<2>(p)*d<2>(q))
 					    , m);
     }
-  }
-
-  void assemble_linear_form() {
-    f.clear();
-    
-    const auto v_0(f.template get_test_function<0>());
-    const auto v_1(f.template get_test_function<1>());
-
-    f += integrate<quad::triangle::qf5pT>(make_expr(f_0) * v_0 +
-					  make_expr(f_1) * v_1
-					  , m);
   }
 };
 

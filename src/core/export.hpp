@@ -331,6 +331,10 @@ namespace exporter {
       times.push_back(time);
       kind = data.get_kind();
       n_component = data.get_component_number();
+
+      std::string case_filename(filename + ".case");
+      std::ofstream case_file(case_filename.c_str(), std::ios::out);
+      write_transient_case_file(case_file);
     }
 
   private:

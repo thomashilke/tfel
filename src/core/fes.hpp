@@ -164,7 +164,7 @@ public:
     return subdomain_list;
   }
   
-  void show(std::ostream& stream) {
+  void show(std::ostream& stream) const {
     for (unsigned int k(0); k < dof_map.get_size(0); ++k) {
       stream << "element " << k << ": ";
       for (unsigned int i(0); i < dof_map.get_size(1); ++i) {
@@ -473,7 +473,7 @@ to_mesh_cell_data(const typename finite_element_space<fe_type>::element& v) {
   array<double> values{m.get_cell_number(), 1};
 
   const array<double> bc_hat(cell_type::barycenter());
-  for (std::size_t k(0); k < fes.get_dof_number(); ++k) {
+  for (std::size_t k(0); k < m.get_cell_number(); ++k) {
     values.at(k, 0) = v.evaluate(k, &bc_hat.at(0));
   }
   

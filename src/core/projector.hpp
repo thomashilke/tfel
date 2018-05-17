@@ -26,8 +26,17 @@ namespace projector {
       auto v(f.get_test_function());
       f += integrate<quadrature_type>(expr * v, fes.get_mesh());
     }
+    
+    dictionary p(dictionary()
+                 .set("maxits",  2000u)
+                 .set("restart", 1000u)
+                 .set("rtol",    1.e-8)
+                 .set("abstol",  1.e-50)
+                 .set("dtol",    1.e20)
+                 .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(p);
 
-    return a.solve(f);
+    return a.solve(f, s);
   }
 
   template<typename fe_type, typename quadrature_type>

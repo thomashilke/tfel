@@ -56,9 +56,18 @@ int main(int argc, char *argv[]) {
     std::cout << "\\int_\\Omega x_1^2 dx = "
               << integrate<quad::tetrahedron::qfSym35pTet>(make_expr(std::function<double(const double*)>([](const double* x){return x[1]; })), m) - 0.5
               << std::endl;
+
+    dictionary p(dictionary()
+                 .set("maxits",  2000u)
+                 .set("restart", 1000u)
+                 .set("rtol",    1.e-8)
+                 .set("abstol",  1.e-50)
+                 .set("dtol",    1.e20)
+                 .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(p);
     
     exporter::ensight6("cube",
-		       to_mesh_vertex_data<fe_type>(a.solve(f)), "solution");
+		       to_mesh_vertex_data<fe_type>(a.solve(f, s)), "solution");
   }
   catch (const std::string& e) {
     std::cout << e << std::endl;

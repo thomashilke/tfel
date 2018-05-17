@@ -20,7 +20,7 @@
 #include "core/form.hpp"
 #include "core/linear_algebra.hpp"
 #include "core/linear_form.hpp"
-#include "core/linear_solver.hpp"
+#include "core/solver.hpp"
 #include "core/mesh.hpp"
 #include "core/meta.hpp"
 #include "core/projector.hpp"

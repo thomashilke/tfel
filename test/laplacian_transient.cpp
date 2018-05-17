@@ -90,7 +90,17 @@ int main(int argc, char *argv[]) {
 			     - initial_condition * v
 			     + (1.0 - (k + 1) * delta_t) * 2 * M_PI * M_PI * (initial_condition * v), m);
     }
-    c = a.solve(f);
+    
+    dictionary p(dictionary()
+                 .set("maxits",  2000u)
+                 .set("restart", 1000u)
+                 .set("rtol",    1.e-8)
+                 .set("abstol",  1.e-50)
+                 .set("dtol",    1.e20)
+                 .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(p);
+    
+    c = a.solve(f, s);
     ens.export_time_step((k + 1) * delta_t, to_mesh_vertex_data<fe_type>(c));
   }
   

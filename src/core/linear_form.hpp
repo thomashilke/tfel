@@ -7,11 +7,12 @@ template<typename test_fes_type>
 class linear_form {
 public:
   linear_form(const test_fes_type& te_fes,
+              std::size_t algebraic_dof_number = 0,
 	      std::size_t n_thread = std::thread::hardware_concurrency())
     : tp(n_thread),
       test_fes(te_fes),
-      f{te_fes.get_dof_number()} {
-
+      f{te_fes.get_dof_number()},
+      constraint_values(algebraic_dof_number, 0.0) {
     f.fill(0.0);
   }
 
@@ -140,7 +141,7 @@ public:
     }
   }
 
-  void set_constraint_value(double v) { constraint_values.push_back(v); }
+  double& algebraic_equation_value(std::size_t a_dof) { return constraint_values[a_dof]; }
 
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
 

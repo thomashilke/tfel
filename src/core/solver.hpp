@@ -1,3 +1,5 @@
+#ifndef SOLVER_H
+#define SOLVER_H
 
 #include <map>
 #include <string>
@@ -228,14 +230,16 @@ namespace solver {
       gmres_ilu(const dictionary& params) {
         std::vector<std::string> expected_keys {
           "maxits", "restart",
-          "rtol",   "abstol",
-          "dtol",   "ilufill"
+          "rtol",   "atol",
+          "dtol",   "ilufill",
         };
   
         if (not params.keys_exist(expected_keys.begin(), expected_keys.end()))
           throw std::string("solver::petsc::gmres_ilu: missing key(s) "
                             "in parameter dictionary.");
-  
+        
+        const auto& petsc_init(petsc::initialize::instance());
+        
         PetscErrorCode ierr;
         ierr = MatCreate(PETSC_COMM_WORLD, &a);CHKERRV(ierr);
         ierr = MatSetType(a, MATSEQAIJ);CHKERRV(ierr);
@@ -332,11 +336,12 @@ public:
 
   virtual std::size_t get_nz_element_number() const = 0;
 
-  virtual void fill(double v) = 0;
+  virtual void clear() = 0;
   
   virtual void set(std::size_t i, std::size_t j, double v) = 0;
   virtual void add(std::size_t i, std::size_t j, double v) = 0;
   virtual double get(std::size_t i, std::size_t j) const = 0;
+  virtual double& get(std::size_t i, std::size_t j) = 0;
 };
 
 class sparse_matrix: public matrix {
@@ -355,7 +360,7 @@ public:
     return values.size();
   }
   
-  virtual void fill(double v) {
+  virtual void clear() {
     values.clear();
   }
   
@@ -373,6 +378,11 @@ public:
       return 0.0;
     else
       return item->second;
+  }
+
+  virtual double& get(std::size_t i, std::size_t j) {
+    auto result(values.insert(std::make_pair(std::make_pair(i, j), 0.0)));
+    return result.first->second;
   }
   
 private:
@@ -395,7 +405,7 @@ public:
     return values.get_size(0) * values.get_size(1);
   }
   
-  virtual void fill(double v) { values.fill(v); }
+  virtual void clear() { values.fill(0.0); }
   
   virtual void set(std::size_t i, std::size_t j, double v) {
     values.at(i, j) = v;
@@ -408,12 +418,16 @@ public:
   virtual double get(std::size_t i, std::size_t j) const {
     return values.at(i, j);
   }
+
+  virtual double& get(std::size_t i, std::size_t j) {
+    return values.at(i, j);
+  }
   
 private:
   array<double> values;
 };
 
-
+inline
 bool solver::petsc::gmres_ilu::solve(const array<double>& rhs,
                                      array<double>& x,
                                      dictionary& report) {
@@ -438,7 +452,7 @@ bool solver::petsc::gmres_ilu::solve(const array<double>& rhs,
   return true;
 }
 
-/*
+inline
 void solver::petsc::gmres_ilu::set_operator(const matrix& m) {
   PetscErrorCode ierr;
   
@@ -459,6 +473,7 @@ void solver::petsc::gmres_ilu::set_operator(const matrix& m) {
   ierr = KSPSetOperators(ksp, a, a);CHKERRV(ierr);
 }
 
+/*inline
 void solver::lapack::lu::set_operator(const matrix& m) {
   report.clear();
   
@@ -477,10 +492,10 @@ void solver::lapack::lu::set_operator(const matrix& m) {
   }
 
   valid_decomposition = true;
-}
-*/
+  }*/
 
-void fd_heat(sparse_matrix& m, array<double>& rhs, std::size_t n) {
+
+/*void fd_heat(sparse_matrix& m, array<double>& rhs, std::size_t n) {
   for (std::size_t i(0); i < n; ++i) {
     m.set(i, i, 1.0);
     rhs.at(i) = 1.0;
@@ -526,4 +541,6 @@ int main() {
   }
   
   return 0;
-}
+  }*/
+
+#endif /* SOLVER_H */

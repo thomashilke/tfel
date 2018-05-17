@@ -16,7 +16,7 @@
 #include "core/expression.hpp"
 #include "core/sparse_linear_system.hpp"
 #include "core/form.hpp"
-#include "core/linear_solver.hpp"
+#include "core/solver.hpp"
 #include "core/export.hpp"
 
 double sqr(double x) { return std::pow(x, 2); }
@@ -92,8 +92,17 @@ int main(int, char**) {
 		<< std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
     }
 
+    dictionary param(dictionary()
+                     .set("maxits",  2000u)
+                     .set("restart", 1000u)
+                     .set("rtol",    1.e-8)
+                     .set("atol",    1.e-50)
+                     .set("dtol",    1.e20)
+                     .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(param);
+    
     typedef finite_element_space<fe>::element element_type;
-    const element_type u(a.solve(f));
+    const element_type u(a.solve(f, s));
     std::cout << std::setw(40) << "solve linear system: "
 		<< std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
 

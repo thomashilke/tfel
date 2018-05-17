@@ -41,7 +41,7 @@ int main() {
     //cfes.set_dirichlet_boundary_condition<1>(dm, bc);
     //cfes.set_dirichlet_boundary_condition<2>(dm, bc);
 
-    bilinear_form<cfes_type, cfes_type> a(cfes, cfes); {
+    bilinear_form<cfes_type, cfes_type> a(cfes, cfes, 3, 3); {
       auto u0(a.get_trial_function<0>());
       auto u1(a.get_trial_function<1>());
       auto u2(a.get_trial_function<2>());
@@ -56,20 +56,17 @@ int main() {
                                 d<1>(u2) * d<1>(v2) + d<2>(u2) * d<2>(v2),
                                 m);
 
-      auto u0_mean(a.new_constraint());
-      u0_mean -= integrate<quad_type>(u0, m);
-      u0_mean |= integrate<quad_type>(v0, m);
-      a.assemble_constraint(u0_mean, u0_mean, 0.0);
+      a.algebraic_trial_block(0) += integrate<quad_type>(u0, m);
+      a.algebraic_trial_block(0) += integrate<quad_type>(v0, m);
+      a.algebraic_block(0, 0) = 0.0;
 
-      auto u1_mean(a.new_constraint());
-      u1_mean -= integrate<quad_type>(u1, m);
-      u1_mean |= integrate<quad_type>(v1, m);
-      a.assemble_constraint(u1_mean, u1_mean, 0.0);
+      a.algebraic_trial_block(1) += integrate<quad_type>(u1, m);
+      a.algebraic_trial_block(1) += integrate<quad_type>(v1, m);
+      a.algebraic_block(1, 1) = 0.0;
 
-      auto u2_mean(a.new_constraint());
-      u2_mean -= integrate<quad_type>(u2, m);
-      u2_mean |= integrate<quad_type>(v2, m);
-      a.assemble_constraint(u2_mean, u2_mean, 0.0);
+      a.algebraic_trial_block(2) += integrate<quad_type>(u2, m);
+      a.algebraic_trial_block(2) += integrate<quad_type>(v2, m);
+      a.algebraic_block(2, 2) = 0.0;
     }
 
     linear_form<cfes_type> f(cfes); {
@@ -82,12 +79,21 @@ int main() {
                                 f2 * v2,
                                 m);
 
-      f.set_constraint_value(0.0);
-      f.set_constraint_value(0.0);
-      f.set_constraint_value(0.0);
+      f.algebraic_equation_value(0) = 0.0;
+      f.algebraic_equation_value(1) = 0.0;
+      f.algebraic_equation_value(2) = 0.0;
     }
 
-    auto x(a.solve(f));
+    dictionary p(dictionary()
+                 .set("maxits",  2000u)
+                 .set("restart", 1000u)
+                 .set("rtol",    1.e-8)
+                 .set("abstol",  1.e-50)
+                 .set("dtol",    1.e20)
+                 .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(p);
+    
+    auto x(a.solve(f, s));
 
     auto u0(x.get_component<0>());
     auto u1(x.get_component<1>());

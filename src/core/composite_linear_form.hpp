@@ -15,9 +15,10 @@ public:
 
   static const std::size_t n_test_component = test_cfe_type::n_component;
 
-  linear_form(const test_cfes_type& te_cfes)
+  linear_form(const test_cfes_type& te_cfes, std::size_t algebraic_dof_number = 0)
     : test_cfes(te_cfes),
-      f{te_cfes.get_total_dof_number()} {
+      f{te_cfes.get_total_dof_number()},
+      constraint_values(algebraic_dof_number, 0.0) {
     f.fill(0.0);
 
     std::size_t test_global_dof_number[n_test_component];
@@ -141,7 +142,7 @@ public:
     }
   }
 
-  void set_constraint_value(double v) { constraint_values.push_back(v); }
+  double& algebraic_equation_value(std::size_t a_dof) { return constraint_values[a_dof]; }
   
   template<std::size_t n>
   expression<form<n, 1, 0> > get_test_function() const {

@@ -39,6 +39,12 @@ using false_type = bool_constant<false>;
 /*
  *  TMP utilities
  */
+
+// The following template function is useful to suppress unused
+// variables warnings for scope guard variables, for example.
+template<typename T>
+void ignore_unused(const T&) {}
+
 using std::integral_constant;
 using std::true_type;
 using std::false_type;

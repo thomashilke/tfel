@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   }
 
   delete petsc_gmres_ilu;
-  linear_solver_impl::petsc::global_initialize::release();
+  solver::petsc::initialize::release();
   
   return 0;
 }

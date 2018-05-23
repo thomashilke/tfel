@@ -14,7 +14,6 @@
 #include "core/fes.hpp"
 #include "core/quadrature.hpp"
 #include "core/expression.hpp"
-#include "core/sparse_linear_system.hpp"
 #include "core/form.hpp"
 #include "core/solver.hpp"
 #include "core/export.hpp"

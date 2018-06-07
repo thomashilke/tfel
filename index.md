@@ -4,3 +4,15 @@
 
 layout: home
 ---
+
+# Introduction
+
+
+# Development
+
+TODO list:
+
+  * Move FES element definition out of the FES namespace.
+  * Wrap all large array allocations in C++11 smart pointers.
+  * Avoid evaluation of null block in finite element system matrices.
+

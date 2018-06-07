@@ -23,76 +23,90 @@ plane. The Poisson equation can be thought as a model for the elastic
 deformation a thin membrane under a surfacic load. The problem is stated as
 follow. Let \\( \Omega \\) be the area occupied by the membrane. For
 simplicity we well consider a square membrane:
+
 $$
   \Omega = (0, 1)^2 \subset \mathbb R^2, 
 $$
 
-Let \\( f:\Omega\to\mathrm R \\) a function in \\( L^2(\Omega)
-\\). The values of the function \\( f \\) models the force per unit
+Let \\( f:\Omega\to\mathbb R \\) a function in \\( \mathrm L^2(\Omega)
+\\). The values of the function \\( f \\) model the force per unit
 surface applied on the membrane. Then, the vertical displacment of the
-membrane \\( u:\Omega\to\mathbb R \\) is solution of the Poisson
+membrane \\( u:\Omega\to\mathbb R \\) is a solution of the Poisson
 equation
+
 $$
   -\Delta\, u(x) = f(x) \quad \forall x\in \Omega.
 $$
+
 For the problem to be well-posed, it is well known that we need
 additional boundary conditions. Here we consider the homogeneous Dirichlet
 boundary conditions 
+
 $$
   u(x) = 0 \quad \forall x \in \partial\Omega,
 $$
+
 where \\( \partial\Omega \\) is the boundary of the open set \\(
 \Omega \\).
 
 We now give the weak formulation of the Poisson problem. We are
 looking for the vertical displacement \\( u \in H\_0^1(\Omega) \\) such
 that 
+
 $$
-  \int\_\Omega \nabla u \cdot \nabla v \,\mathrm dx = \int\_\Omega f v
+  \int_\Omega \nabla u \cdot \nabla v \,\mathrm dx = \int_\Omega f v
   \,\mathrm dx \tag{1}\label{eq:weak-form}
 $$
-for all test function \\( v \in H\_0^1(\Omega) \\). The functional
-space \\( H\_0^1(\Omega) \\) is the subspace of the Sobolev space \\(
-W^{1, 2} \\) whose elements vanishes on the boundary of \\( \Omega \\):
+
+for all test function \\( v \in H_0^1(\Omega) \\). The functional
+space \\( H_0^1(\Omega) \\) is the subspace of the Sobolev space \\(
+W^{1, 2} \\) whose elements vanish on the boundary of \\( \Omega \\):
+
 $$
-  H^1\_0(\Omega) =  \left\\{ v \in W^{1,2}\ \mid\ v = 0 \text{ on } \partial \Omega  \right\\}.
+  H^1_0(\Omega) = \left\{ v \in W^{1,2}\ \mid\ v = 0 \text{ on } \partial \Omega  \right\}.
 $$
+
 Expanding the intregand, the expression \\(\ref{eq:weak-form}\\) is
 equivalent to
+
 $$
-  \int\_\Omega \frac{\partial u}{\partial x\_1}\frac{\partial v}{\partial x\_1} + \frac{\partial u}{\partial x\_2}\frac{\partial v}{\partial x\_2} \,\mathrm dx = \int\_\Omega f v
-  \,\mathrm dx \tag{2}\label{eq:weak-form-exp}
+  \int_\Omega \displaystyle\frac{\partial u}{\partial x_1}\displaystyle\frac{\partial v}{\partial x_1} + \displaystyle\frac{\partial u}{\partial x_2}\displaystyle\frac{\partial v}{\partial x_2} \,\mathrm dx = \int_\Omega f v \,\mathrm dx \tag{2}\label{eq:weak-form-exp}
 $$
 
 We now proceed to the discretization of the weak formulation of the
-Poisson problem \\(\ref{eq:weak-form}\\). Let \\( \mathcal M\_h \\) be a conformal triangular mesh of the domain
+Poisson problem \\(\ref{eq:weak-form}\\). Let \\( \mathcal M_h \\) be a conformal triangular mesh of the domain
 \\( \Omega \\), where \\( h \\) is the largest element diameter:
+
 $$
-  h = \max\_{\mathcal K \in\ M\_h} \mathrm{diam}(\mathcal K),
+  h = \max_{\mathcal K \in\ M_h} \mathrm{diam}(\mathcal K),
 $$
+
 and let \\( V_h \\) be the function space
+
 $$
-  V\_h = \\{ v \in H\_0^1(\Omega) \mid v|\_\mathcal K \in \mathbb
-  P\_1(\mathcal K)\ \forall \mathcal K \in \mathcal M\_h\\}.
+  V_h = \left\{ v \in H_0^1(\Omega) \mid v|_\mathcal K \in \mathbb P_1(\mathcal K)\ \forall \mathcal K \in \mathcal M_h\right\}.
 $$
 
 We obtain a discrete version of the weak problem with the following
 Galerkin approximation. The discrete problem is a follow. We look for
-a function \\( u\_h \in V\_h \\) such that
+a function \\( u_h \in V_h \\) such that
+
 $$
-  \int\_\Omega \nabla u\_h \cdot \nabla v\_h \,\mathrm dx =
-  \int\_\Omega f v\_h \,\mathrm dx
+  \int_\Omega \nabla u_h \cdot \nabla v_h \,\mathrm dx =
+  \int_\Omega f v_h \,\mathrm dx
 $$
-for all test function \\( v_h \in V\_h \\). It is well known that this
-last problem is well-posed and that the function \\( u\_h \\) is an
+
+for all test function \\( v_h \in V_h \\). It is well known that this
+last problem is well-posed and that the function \\( u_h \\) is an
 approximation of \\( u \\) in the sense that
+
 $$
-    \left\lVert u - u\_h \right\rVert = O(h^2).
+    \left\lVert u - u_h \right\rVert = O(h^2).
 $$
 
 We know proceed to the implementation of discrete weak formulation
-with the help of the TFEL. All the following code should go in a file
-called `poisson.cpp`.
+with the help of the TFEL. All the following code should go in a single file,
+called `poisson.cpp` for example.
 
 We start by including the library header. For clarity, the function
 `f` is only declared here, and will be defined later in the

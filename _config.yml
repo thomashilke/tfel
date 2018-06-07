@@ -28,7 +28,8 @@ url: http://thomashilke.github.com # the base hostname & protocol for your site,
 github_username:  thomashilke
 
 # Build settings
-markdown: redcarpet
+markdown: kramdown
+highlighter: rouge
 theme: minima
 plugins:
   - jekyll-feed

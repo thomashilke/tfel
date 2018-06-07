@@ -1,0 +1,7 @@
+.highlight > pre {padding: 0}
+pre > code {padding: 0; margin: 0; line-height: 1.1; display: block;}
+pre > code > table { padding: 0; margin: 0; border:0; }
+pre > code > table > tbody {padding: 0; margin: 0; border: 0;}
+pre > code > table > tbody > tr > td { padding: 0; margin: 0; border: 0;}
+pre > code > table > tbody > tr > td > pre { padding: 0; margin: 0; border: 0;}
+

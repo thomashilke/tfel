@@ -2,6 +2,7 @@
 layout: page
 title: Docs
 permalink: /docs/
+toc: true
 ---
 
 ## Philosophy

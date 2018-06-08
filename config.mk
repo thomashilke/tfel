@@ -114,7 +114,9 @@ HEADERS = \
 	include/tfel/core/vector_operation.hpp \
 	include/tfel/core/subdomain.hpp \
 	include/tfel/core/mesh_data.hpp \
-	include/tfel/core/operator.hpp
+	include/tfel/core/operator.hpp \
+	include/tfel/core/dictionary.hpp \
+	include/tfel/core/solver.hpp
 
 
 BIN = \

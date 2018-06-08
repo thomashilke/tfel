@@ -23,7 +23,7 @@ description: >- # this means to ignore newlines until "baseurl:"
   to assemble algorithms and help avoid common mistakes while experimenting with numerical
   algorithms.
 baseurl: "/tfel" # the subpath of your site, e.g. /blog
-url: http://thomashilke.github.com # the base hostname & protocol for your site, e.g. http://example.com
+url: https://thomashilke.github.com # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: ""
 github_username:  thomashilke
 

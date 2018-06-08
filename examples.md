@@ -324,7 +324,11 @@ $ clang++ -std=c++14 poisson.cpp -I$HOME/.local/include -I/usr//local/Cellar/lap
 ```bash
 $ ./poisson
 ```
-The result is stored in an Ensight6 case file, which can be visualized with Paraview. Below is a screeshot of the solution where the color/x3-coordinate is the value of \\(u\\), the displacment of the membrane under the load \\(f = 1\\) on \\(\Omega\\).
+
+The result is stored in an Ensight6 case file, which can be visualized
+with Paraview. Below is a screenshot of the solution where the
+color/x3-coordinate is the value of \\(u\\), the displacment of the
+membrane under the load \\(f = 1\\) on \\(\Omega\\).
 ![Solution to the Poisson problem]({{ "/assets/poisson.png" | absolute_url }})
 
 

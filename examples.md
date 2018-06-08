@@ -221,12 +221,12 @@ with an ILU preconditioner implemented with PETSc.
                      .set("maxits",  2000u)
                      .set("restart", 1000u)
                      .set("rtol",    1.e-8)
-                     .set("abstol",  1.e-50)
+                     .set("atol",    1.e-50)
                      .set("dtol",    1.e20)
                      .set("ilufill", 2u));
   solver::petsc::gmres_ilu s(param);
     
-  const fes_type::element u(a.solve(f, s));
+  const fes_type::element u(a.solve(b, s));
 {% endhighlight %}
 Here we first declare a `dictionary` which keys are the parameter of
 the solver declare on line 7. Then we call the `solve` method of the
@@ -298,12 +298,12 @@ int main() {
                      .set("maxits",  2000u)
                      .set("restart", 1000u)
                      .set("rtol",    1.e-8)
-                     .set("abstol",  1.e-50)
+                     .set("atol",    1.e-50)
                      .set("dtol",    1.e20)
                      .set("ilufill", 2u));
   solver::petsc::gmres_ilu s(param);
     
-  const fes_type::element u(a.solve(f, s));
+  const fes_type::element u(a.solve(b, s));
 
   exporter::ensight6("poisson",
                      to_mesh_vertex_data<fe_type>(u), "u");
@@ -315,6 +315,17 @@ double f(const double* x) {
   return 1.0;
 }
 {% endhighlight %}
+
+The file `poisson.cpp` can be compiled with the command
+```bash
+$ clang++ -std=c++14 poisson.cpp -I$HOME/.local/include -I/usr//local/Cellar/lapack/3.7.1/include/ -I$PETSC_DIR/include -L$HOME/.local/lib -L$PETSC_DIR/lib -L/usr/local/Cellar/lapack/3.7.1/lib -llapacke -ltfel  -lpetsc -lmpi -o poisson
+```
+(can vary depending on your setup) and run:
+```bash
+$ ./poisson
+```
+The result is stored in an Ensight6 case file, which can be visualized with Paraview. Below is a screeshot of the solution where the color/x3-coordinate is the value of \\(u\\), the displacment of the membrane under the load \\(f = 1\\) on \\(\Omega\\).
+![Solution to the Poisson problem]({{ "/assets/poisson.png" | absolute_url }})
 
 
 # Transport equation with an SUPG numerical stabilisation method

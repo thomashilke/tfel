@@ -18,7 +18,7 @@ and the following packages must be compiled and installed:
 Location of the PETSc installation and `liblapacke-dev` header files
 can be configured in the file `site-config.mk`. Run `make` in the root
 directory of the project to build the static library and a set of
-binaries, which are stored in the subdirectory bin/. Each binary tests
+binaries, which are stored in the subdirectory bin/. Each binary
 uses and tests some feature of the library. Run `make install` to
 install the binaries, static library and header files in the
 directories ~/.local/{bin/,lib/,include/tfel/}.
@@ -56,9 +56,8 @@ The following concepts and features, among others, are already available:
 
 ## Hello World: The Poisson Equation in 2D
 One of the simplest elliptical partial differential equation is the
-Poisson equation [Poisson's
-equation](https://en.wikipedia.org/wiki/Poisson%27s_equation). The
-following example solve the Poisson's Equation with homogeneous
+ [Poisson's equation](https://en.wikipedia.org/wiki/Poisson%27s_equation). The
+following example solve the Poisson's equation with homogeneous
 boundary conditions and a constant right hand side on a square domain
 in 2 space dimensions.
 
@@ -125,4 +124,12 @@ Assuming the code is saved in a file poisson.cpp, it can be compiled with the co
 clang++ -std=c++14 poisson.cpp -I$HOME/.local/include -I/usr//local/Cellar/lapack/3.7.1/include/ -I$PETSC_DIR/include -L$HOME/.local/lib -L$PETSC_DIR/lib -L/usr/local/Cellar/lapack/3.7.1/lib -llapacke -ltfel  -lpetsc -lmpi -o poisson
 ```
 
-(Your setup may vary. Here LAPACK is installed through brew on macos, and PETSc is compiled from source)
+(Your setup may vary. Here LAPACK is installed through homebrew on macos, and PETSc is compiled from source)
+
+Run the computation with
+
+```shell
+./poisson
+```
+
+and the results are stored in the output file poisson.case.

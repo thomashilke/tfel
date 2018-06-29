@@ -38,6 +38,5 @@ int main(int argc, char *argv[]) {
     std::cout << e << std::endl;
   }
 
-  linear_solver_impl::petsc::global_initialize::release();
   return 0;
 }

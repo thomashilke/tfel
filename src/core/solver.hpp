@@ -1,8 +1,11 @@
+#ifndef SOLVER_H
+#define SOLVER_H
 
 #include <map>
 #include <string>
 #include <memory>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 
 #include <spikes/array.hpp>
@@ -12,109 +15,9 @@
 #include <petsc/private/kspimpl.h>
 #include <petscdmshell.h>
 
+#include "meta.hpp"
+#include "dictionary.hpp"
 
-class dictionary {
-private:
-  struct basic_value {
-    virtual void print(std::ostream& stream) const = 0;
-  };
-
-  template<typename T>
-  struct value: public basic_value {
-    value(const T& v): v(v) {}
-    
-    virtual void print(std::ostream& stream) const;
-    
-    T v;
-  };
-
-  using value_ptr = std::shared_ptr<basic_value>;
-  
-public:
-  dictionary() {}
-
-  template<typename T>
-  dictionary& set(const std::string& key, const T& v) {
-    auto p = new value<T>(v);
-    kv[key] = value_ptr(p);
-    return *this;
-  }
-
-  template<std::size_t n>
-  dictionary& set(const std::string& key, const char (&str)[n]) {
-    auto p = new value<std::string>(str);
-    kv[key] = value_ptr(p);
-    return *this;
-  }
-
-  template<typename T>
-  const T& get(const std::string& key) const {
-    auto item(kv.find(key));
-    if (item == kv.end())
-      throw std::string("dictionary::get: key '") + key + "' not found.";
-
-    const value<T>* p(dynamic_cast<const value<T>*>((item->second).get()));
-    if (p == nullptr)
-      throw std::string("dictionary::get: key '") + key + "' is of wrong type.";
-
-    return p->v;
-  }
-
-  bool key_exists(const std::string& key) const {
-    return kv.find(key) != kv.end();
-  }
-
-  template<typename Iterator>
-  bool keys_exist(Iterator begin, Iterator end) const {
-    while (begin != end) {
-      if (not key_exists(*begin))
-        return false;
-      ++begin;
-    }
-
-    return true;
-  }
-
-  void clear() {
-    kv.clear();
-  }
-
-  void print(std::ostream& stream) const {
-    bool first_item(true);
-
-    stream << "dictionary {";
-    for (const auto& item: kv) {
-      if (not first_item)
-        stream << "," << std::endl;
-      else
-        stream << std::endl;
-
-      stream << "  \"" << item.first << "\": ";
-      item.second->print(stream);
-      
-      first_item = false;
-    }
-    stream << std::endl << "}" << std::endl;
-  }
-
-private:  
-  std::map<std::string, value_ptr> kv;
-};
-
-template<typename T>
-void dictionary::value<T>::print(std::ostream& stream) const {
-  stream << v;
-}
-
-template<>
-void dictionary::value<std::string>::print(std::ostream& stream) const {
-  stream << "\"" << v << "\"";
-}
-
-template<>
-void dictionary::value<bool>::print(std::ostream& stream) const {
-  stream << std::boolalpha << v;
-}
 
 class matrix;
 class sparse_matrix;
@@ -127,7 +30,7 @@ namespace solver {
   public:
     virtual ~basic_solver() {}
 
-    virtual void set_operator(const matrix& m) = 0;
+    void set_operator(const matrix& m);
     virtual void set_operator(const sparse_matrix& m) = 0;
     virtual void set_operator(const dense_matrix& m) = 0;
     
@@ -140,20 +43,10 @@ namespace solver {
     class lu: public basic_solver {
     public:
       lu(): data{1}, pivots{1}, valid_decomposition(false) {}
-
       virtual ~lu() {}
       
-      void set_operator(const matrix& m) {
-        
-      }
-      
-      void set_operator(const sparse_matrix& m) {
-
-      }
-      
-      void set_operator(const dense_matrix& m) {
-
-      }
+      void set_operator(const sparse_matrix& m);
+      void set_operator(const dense_matrix& m);
 
       void set_operator_size(std::size_t n) {
         data = array<double>{n, n};
@@ -193,6 +86,9 @@ namespace solver {
       
       bool valid_decomposition;
       dictionary report;
+
+    private:
+      void do_lu_decomposition();
     };
   }
   
@@ -228,14 +124,17 @@ namespace solver {
       gmres_ilu(const dictionary& params) {
         std::vector<std::string> expected_keys {
           "maxits", "restart",
-          "rtol",   "abstol",
-          "dtol",   "ilufill"
+          "rtol",   "atol",
+          "dtol",   "ilufill",
         };
   
         if (not params.keys_exist(expected_keys.begin(), expected_keys.end()))
           throw std::string("solver::petsc::gmres_ilu: missing key(s) "
                             "in parameter dictionary.");
-  
+        
+        const auto& petsc_init(petsc::initialize::instance());
+        ignore_unused(petsc_init);
+        
         PetscErrorCode ierr;
         ierr = MatCreate(PETSC_COMM_WORLD, &a);CHKERRV(ierr);
         ierr = MatSetType(a, MATSEQAIJ);CHKERRV(ierr);
@@ -264,7 +163,7 @@ namespace solver {
         ierr = PCFactorSetLevels(pc, params.get<unsigned int>("ilufill"));CHKERRV(ierr); 
       }
 
-      ~gmres_ilu() {
+      virtual ~gmres_ilu() {
         PetscErrorCode ierr;
         
         ierr = MatDestroy(&a);CHKERRV(ierr);
@@ -272,19 +171,12 @@ namespace solver {
         ierr = KSPDestroy(&ksp);CHKERRV(ierr);
       }
       
-      void set_operator(const matrix& m);
-
-      void set_operator(const sparse_matrix& m) {
-
-      }
+      virtual void set_operator(const sparse_matrix& m);
+      virtual void set_operator(const dense_matrix& m);
       
-      void set_operator(const dense_matrix& m) {
-
-      }
-      
-      bool solve(const array<double>& rhs,
-                 array<double>& x,
-                 dictionary& report);
+      virtual bool solve(const array<double>& rhs,
+                         array<double>& x,
+                         dictionary& report);
       
     private:
       Mat a;
@@ -308,9 +200,9 @@ namespace solver {
         PetscStrtolower(normtype);
         
         std::cout << it << " KSP " << normtype
-                  << " resid norm " << rnorm
-                  << " true resid norm " << truenorm
-                  << "||r(i)||/||b||" << truenorm/bnorm
+                  << " resid norm " << std::setw(14) << std::right << rnorm
+                  << " true resid norm " << std::setw(14) << std::right << truenorm
+                  << "||r(i)||/||b||" << std::setw(14) << std::right << truenorm/bnorm
                   << std::endl;
         
         return 0;
@@ -319,33 +211,38 @@ namespace solver {
   }
 }
 
-solver::petsc::initialize* solver::petsc::initialize::inst(nullptr);
+
 
 class matrix {
 public:
   virtual ~matrix() {}
 
-  virtual void populate_solver(solver::basic_solver* s) const = 0;
+  virtual void populate_solver(solver::basic_solver& s) const = 0;
   
   virtual std::size_t get_row_number() const = 0;
   virtual std::size_t get_column_number() const = 0;
 
   virtual std::size_t get_nz_element_number() const = 0;
 
-  virtual void fill(double v) = 0;
+  virtual void clear() = 0;
   
   virtual void set(std::size_t i, std::size_t j, double v) = 0;
   virtual void add(std::size_t i, std::size_t j, double v) = 0;
   virtual double get(std::size_t i, std::size_t j) const = 0;
+  virtual double& get(std::size_t i, std::size_t j) = 0;
 };
+
 
 class sparse_matrix: public matrix {
 public:
+  friend class solver::lapack::lu;
+  friend class solver::petsc::gmres_ilu;
+  
   sparse_matrix(std::size_t n_row, std::size_t n_column)
     : n_row(n_row), n_column(n_column) {}
 
-  virtual void populate_solver(solver::basic_solver* s) const {
-    s->set_operator(*this);
+  virtual void populate_solver(solver::basic_solver& s) const {
+    s.set_operator(*this);
   }
   
   virtual std::size_t get_row_number() const { return n_row; }
@@ -355,7 +252,7 @@ public:
     return values.size();
   }
   
-  virtual void fill(double v) {
+  virtual void clear() {
     values.clear();
   }
   
@@ -374,18 +271,27 @@ public:
     else
       return item->second;
   }
+
+  virtual double& get(std::size_t i, std::size_t j) {
+    auto result(values.insert(std::make_pair(std::make_pair(i, j), 0.0)));
+    return result.first->second;
+  }
   
 private:
   std::size_t n_row, n_column;
   std::map<std::pair<std::size_t, std::size_t>, double> values;
 };
 
+
 class dense_matrix: public matrix {
 public:
+  friend class solver::lapack::lu;
+  friend class solver::petsc::gmres_ilu;
+  
   dense_matrix(std::size_t n_row, std::size_t n_column): values{n_row, n_column} {}
 
-  virtual void populate_solver(solver::basic_solver* s) const {
-    s->set_operator(*this);
+  virtual void populate_solver(solver::basic_solver& s) const {
+    s.set_operator(*this);
   }
   
   virtual std::size_t get_row_number() const { return values.get_size(0); }
@@ -395,7 +301,7 @@ public:
     return values.get_size(0) * values.get_size(1);
   }
   
-  virtual void fill(double v) { values.fill(v); }
+  virtual void clear() { values.fill(0.0); }
   
   virtual void set(std::size_t i, std::size_t j, double v) {
     values.at(i, j) = v;
@@ -408,122 +314,14 @@ public:
   virtual double get(std::size_t i, std::size_t j) const {
     return values.at(i, j);
   }
+
+  virtual double& get(std::size_t i, std::size_t j) {
+    return values.at(i, j);
+  }
   
 private:
   array<double> values;
 };
 
 
-bool solver::petsc::gmres_ilu::solve(const array<double>& rhs,
-                                     array<double>& x,
-                                     dictionary& report) {
-  PetscErrorCode ierr;
-  
-  ierr = VecZeroEntries(b);
-  for (std::size_t i(0); i < rhs.get_size(0); ++i) {
-    ierr = VecSetValue(b, i, rhs.at(i), INSERT_VALUES);CHKERRCONTINUE(ierr);
-  }
-  ierr = VecAssemblyBegin(b);CHKERRCONTINUE(ierr);
-  ierr = VecAssemblyEnd(b);CHKERRCONTINUE(ierr);
-
-  Vec y;
-  ierr = VecDuplicate(b, &y);CHKERRCONTINUE(ierr);
-  ierr = KSPSolve(ksp, b, y);CHKERRCONTINUE(ierr);
-
-  std::vector<PetscInt> iy(rhs.get_size(0));
-  std::iota(iy.begin(), iy.end(), 0);
-
-  ierr = VecGetValues(y, iy.size(), &iy[0], &x.at(0));CHKERRCONTINUE(ierr);
-  ierr = VecDestroy(&y);CHKERRCONTINUE(ierr);
-  return true;
-}
-
-/*
-void solver::petsc::gmres_ilu::set_operator(const matrix& m) {
-  PetscErrorCode ierr;
-  
-  ierr = MatZeroEntries(a);CHKERRV(ierr);
-  
-  ierr = MatSetSizes(a,
-                     m.get_row_number(), m.get_column_number(),
-                     m.get_row_number(), m.get_column_number());CHKERRV(ierr);
-  ierr = VecSetSizes(b,
-                     m.get_row_number(), m.get_column_number());CHKERRV(ierr);
-  ierr = MatSeqAIJSetPreallocation(a, m.get_nz_element_number(), nullptr);CHKERRV(ierr);
-  ierr = VecSetUp(b);CHKERRV(ierr);
-  
-  m.populate_solver(this);
-
-  ierr = MatAssemblyBegin(a, MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-  ierr = MatAssemblyEnd(a, MAT_FINAL_ASSEMBLY);CHKERRV(ierr);
-  ierr = KSPSetOperators(ksp, a, a);CHKERRV(ierr);
-}
-
-void solver::lapack::lu::set_operator(const matrix& m) {
-  report.clear();
-  
-  m.populate_solver(this);
-  pivots = array<lapack_int>{m.get_row_number()};
-
-  lapack_int n(m.get_row_number());
-  lapack_int info(LAPACKE_dgetrf(LAPACK_ROW_MAJOR,
-                                 n, n, data.get_data(), n,
-                                 pivots.get_data()));
-
-  if (info > 0) {
-    this->report.set("error", "singular matrix");
-  } else if (info < 0) {
-    this->report.set("error", "dgetrf invalid parameter");
-  }
-
-  valid_decomposition = true;
-}
-*/
-
-void fd_heat(sparse_matrix& m, array<double>& rhs, std::size_t n) {
-  for (std::size_t i(0); i < n; ++i) {
-    m.set(i, i, 1.0);
-    rhs.at(i) = 1.0;
-  }
-}
-
-int main() {
-  try {
-    sparse_matrix a(10, 10);
-    array<double> rhs{10};
-    array<double> x{10};
-
-    fd_heat(a, rhs, 10);
-    
-    dictionary p(dictionary()
-                 .set("maxits",  2000u)
-                 .set("restart", 1000u)
-                 .set("rtol",    1.e-8)
-                 .set("abstol",  1.e-50)
-                 .set("dtol",    1.e20)
-                 .set("ilufill", 2u)
-                 .set("test_bool", true)
-                 .set("test_string", "str"));
-    p.print(std::cout);
-    
-    //solver::petsc::gmres_ilu s(p);
-    solver::lapack::lu s;
-    
-
-    s.set_operator(a);
-    dictionary report;
-    if (s.solve(rhs, x, report)) {
-      std::cout << "success." << std::endl;
-      //std::cout << report.get<unsigned int>("iterations") << " iterations." << std::endl;
-    } else {
-      report.print(std::cout);
-      std::cout << "failed to converge: " << report.get<std::string>("error") << std::endl;
-    }
-  
-  }
-  catch (const std::string& e) {
-    std::cout << e << std::endl;
-  }
-  
-  return 0;
-}
+#endif /* SOLVER_H */

@@ -382,8 +382,17 @@ void navier_stokes(std::size_t n) {
         linear_form_elapsed_time = t.tic();
       }
 
+      dictionary param(dictionary()
+                       .set("maxits",  2000u)
+                       .set("restart", 1000u)
+                       .set("rtol",    1.e-8)
+                       .set("abstol",  1.e-50)
+                       .set("dtol",    1.e20)
+                       .set("ilufill", 2u));
+      solver::petsc::gmres_ilu s(param);
+      
       timer t;
-      auto xpp(a.solve(f));
+      auto xpp(a.solve(f, s));
       linear_solve_elapsed_time = t.tic();
 
         

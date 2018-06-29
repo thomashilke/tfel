@@ -115,7 +115,16 @@ void test_cfe() {
   }
   //f.show(std::cout);
 
-  const fes_type::element x(a.solve(f));
+  dictionary p(dictionary()
+               .set("maxits",  2000u)
+               .set("restart", 1000u)
+               .set("rtol",    1.e-8)
+               .set("abstol",  1.e-50)
+               .set("dtol",    1.e20)
+               .set("ilufill", 2u));
+  solver::petsc::gmres_ilu s(p);
+  
+  const fes_type::element x(a.solve(f, s));
 
   exporter::ensight6("laplacien_0", to_mesh_vertex_data<fe_0_type>(x.get_component<0>()), "solution");
   exporter::ensight6("laplacien_1", to_mesh_vertex_data<fe_1_type>(x.get_component<1>()), "solution");

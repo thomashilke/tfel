@@ -206,3 +206,54 @@ sur des triangles est définit dans le tableau qui suit.
   6 & arrête $(2,3)$ & $(0.5, 0.5)$ & $4x_0x_1 $                          & $4x_1$              & $4x_0$ \\
   \bottomrule
 \end{tabularx}
+
+
+\section{Simulation events logging}
+La phase de développement d'un code numérique est une opération
+complexe, et les symptômes associés à un bug se manifestent
+souvent loin de la source de l'erreur. Afin de faciliter la
+compréhension de l'exécution d'un code numérique, il est essentiel
+d'avoir une source d'informations détaillées sur le déroulement de
+chaque partie des différents algorithmes. D'un autre coté, une
+pléthore d'information risque de noyer un signal significatif. Il faut
+disposer d'un moyen efficace de filtrer le bruit et sélectionner
+uniquement l'information intéressante.
+
+On s'inspire ici du système mis en place par le standard ANT+ qui
+découple l'émission d'évènements par un appareil, le stockage d'un
+ensemble d'évènements et leur visualisation ou analyse à posteriori.
+
+En suivant cette analogie, un code numérique est un appareil qui
+produit un flux de messages pendant un laps de temps. Chaque code
+numérique émet un ensemble de messages qui font soit partie d'un
+standard, soit qui sont spécifiques a ce code.
+Chaque instance d'exécution d'un code numérique correspond à une
+activité au sens du protocole ANT+.
+
+Une activité, c'est-à-dire un flux (fini ou infini) de messages est
+destiné à être traité par un client, dont le but est de donner une
+représentation (graphique, textuelle, ou autre) en temps réel ou a
+posteriori d'une instance d'execution d'un code numérique.
+
+On peut imaginer plusieurs types de client:
+\begin{itemize}
+\item \texttt{ascii_dump}: affiche tous les messages
+  séquentiellement avec un minimum de formattage,
+\item \texttt{ascii_structured}: affiche une sélection de message sous
+  forme d'un arbre structuré dynamique, dans un terminal, avec des
+  informations de timing et de progression,
+  \item \texttt{ascii_graphs}: affiche des plots en ascii de
+    différentes métriques au cours des itérations des algorithmes
+\end{itemize}
+
+On standardise deux formats de communication: un format ascii lisible
+pour l'humain, et un format binaire destiné à être lu par les
+clients software et le stockage à long terme.
+
+Un message peut être de deux types:
+\begin{enumerate}
+\item record declaration,
+\item record.
+\end{enumerate}
+
+Exemple d'une session:

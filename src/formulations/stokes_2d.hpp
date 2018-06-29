@@ -61,7 +61,16 @@ public:
   }
 
   const element_type& solve() {
-    solution = a.solve(f);
+    dictionary p(dictionary()
+                 .set("maxits",  2000u)
+                 .set("restart", 1000u)
+                 .set("rtol",    1.e-8)
+                 .set("abstol",  1.e-50)
+                 .set("dtol",    1.e20)
+                 .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(p);
+
+    solution = a.solve(f, s);
     return solution;
   }
   

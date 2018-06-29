@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   submesh<cell_type, cell::point> dm(m.get_point_submesh(0));
   fes_type fes(m);
 
-  bilinear_form<fes_type, fes_type> a(fes, fes); {
+  bilinear_form<fes_type, fes_type> a(fes, fes, 1, 1); {
     const auto u(a.get_trial_function());
     const auto v(a.get_test_function());
 
@@ -25,22 +25,30 @@ int main(int argc, char *argv[]) {
 			      d<2>(u) * d<2>(v)
 			      , m);
 
-    auto solution_mean(a.new_constraint());
-    solution_mean -= integrate<quad_type>(u, m);
-    solution_mean |= integrate<quad_type>(v, m);
-    a.assemble_constraint(solution_mean, solution_mean, 0.0);
+    a.algebraic_trial_block(0) += integrate<quad_type>(u, m);
+    a.algebraic_test_block(0) += integrate<quad_type>(v, m);
+    a.algebraic_block(0, 0) = 0.0;
   }
 
-  linear_form<fes_type> f(fes); {
+  linear_form<fes_type> f(fes, 1); {
     const auto v(f.get_test_function());
 
     f += integrate<quad_type>(src * v
 			      , m);
-    f.set_constraint_value(1.0);
+    f.algebraic_equation_value(0) = 1.0;
   }
 
+  dictionary p(dictionary()
+               .set("maxits",  2000u)
+               .set("restart", 1000u)
+               .set("rtol",    1.e-8)
+               .set("abstol",  1.e-50)
+               .set("dtol",    1.e20)
+               .set("ilufill", 2u));
+  solver::petsc::gmres_ilu s(p);
+
   exporter::ensight6("poisson_constraint"
-		     , to_mesh_vertex_data<fe_type>(a.solve(f)), "solution");
+		     , to_mesh_vertex_data<fe_type>(a.solve(f, s)), "solution");
   
   return 0;
 }

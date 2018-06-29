@@ -9,8 +9,7 @@
 
 #include "mesh.hpp"
 #include "expression.hpp"
-#include "sparse_linear_system.hpp"
-#include "linear_solver.hpp"
+#include "solver.hpp"
 #include "meta.hpp"
 #include "fe_value_manager.hpp"
 

@@ -105,7 +105,16 @@ int main(int argc, char* argv[]) {
                                 , m);
     }
 
-    const fes_type::element x(a.solve(f));
+    dictionary param(dictionary()
+                     .set("maxits",  2000u)
+                     .set("restart", 1000u)
+                     .set("rtol",    1.e-8)
+                     .set("abstol",  1.e-50)
+                     .set("dtol",    1.e20)
+                     .set("ilufill", 2u));
+    solver::petsc::gmres_ilu s(param);
+    
+    const fes_type::element x(a.solve(f, s));
 
     
     const auto u0(x.get_component<0>());

@@ -20,12 +20,11 @@
 #include "core/form.hpp"
 #include "core/linear_algebra.hpp"
 #include "core/linear_form.hpp"
-#include "core/linear_solver.hpp"
+#include "core/solver.hpp"
 #include "core/mesh.hpp"
 #include "core/meta.hpp"
 #include "core/projector.hpp"
 #include "core/quadrature.hpp"
-#include "core/sparse_linear_system.hpp"
 #include "core/mesh_data.hpp"
 #include "core/operator.hpp"
 

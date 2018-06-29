@@ -1,26 +1,24 @@
 #ifndef _BILINEAR_FORM_H_
 #define _BILINEAR_FORM_H_
 
+enum class algebraic_block {test_block, trial_block};
+
 template<typename test_fes_type, typename trial_fes_type>
 class bilinear_form {
 public:
-  class constraint_handle;
-  
   bilinear_form(const test_fes_type& te_fes,
-		const trial_fes_type& tr_fes)
+		const trial_fes_type& tr_fes,
+                std::size_t algebraic_equation_number = 0,
+                std::size_t algebraic_dof_number = 0)
     : test_fes(te_fes), trial_fes(tr_fes),
-      a(te_fes.get_dof_number(), tr_fes.get_dof_number()),
-      petsc(
-	linear_solver().get_solver(
-	  solver::petsc,
-	  method::gmres,
-	  preconditioner::ilu)), constraint_number(0) {
+      a(te_fes.get_dof_number() + algebraic_equation_number,
+        tr_fes.get_dof_number() + algebraic_dof_number),
+      a_eq_number(algebraic_equation_number),
+      a_dof_number(algebraic_dof_number) {
     clear();
   }
 
-  ~bilinear_form() {
-    delete petsc; petsc = nullptr;
-  }
+  ~bilinear_form() {}
 
   template<typename T>
   void operator+=(T integration_proxy) {
@@ -101,6 +99,7 @@ public:
 	  }
 	}
       }
+      
       for (unsigned int i(0); i < n_test_dof; ++i)
 	for (unsigned int j(0); j < n_trial_dof; ++j) {
 	  accumulate(test_fes.get_dof(integration_proxy.get_global_cell_id(k), i),
@@ -108,70 +107,23 @@ public:
 		     a_el.at(i, j) * volume);
         }
     }
-
-    dirty = true;
   }
 
   expression<form<0,1,0> > get_test_function() const { return form<0,1,0>(); }
   expression<form<1,2,0> > get_trial_function() const { return form<1,2,0>(); }
 
-  constraint_handle new_constraint();
-  void assemble_constraint(const constraint_handle& l_1, const constraint_handle& l_2, double value);
+  template<algebraic_block block>
+  class algebraic_block_handle;
   
-  void prepare_solver() {
-    petsc->set_size(test_fes.get_dof_number() + constraint_number);
-    
-    // Convert to CRS format
-    std::vector<int>
-      row(a.get_equation_number() + 1),
-      col(a.get_elements().size());
-    std::vector<double>
-      val(a.get_elements().size());
-    
-    std::size_t row_id(0), val_id(0);
-    row[0] = row_id;
-    for (const auto& v: a.get_elements()) {
-      while (row_id < v.first.first) {
-	++row_id;
-	row[row_id] = val_id;
-      }
-      col[val_id] = v.first.second;
-      val[val_id] = v.second;
-      ++val_id;
-    }
-    row.back() = val_id;
-
-    // count the number of non-zero per row
-    std::vector<int> nnz(a.get_equation_number());
-    for (std::size_t n(0); n < a.get_equation_number(); ++n)
-      nnz[n] = row[n + 1] - row[n];
-      
-    petsc->preallocate(&nnz[0]);
-
-    if(true) {
-      // Assemble line by line
-      for (std::size_t row_id(0); row_id < row.size() - 1; ++row_id) {
-	if (row[row_id + 1] > row[row_id])
-	  petsc->add_row(row_id,
-			 nnz[row_id],
-			 &col[row[row_id]],
-			 &val[row[row_id]]);
-      }
-    } else {
-      // Assemble element by element
-      for (const auto& v: a.get_elements())
-	petsc->add_value(v.first.first, v.first.second, v.second);
-    }
-    petsc->assemble();
-    //petsc->show();
-    
-    
-    dirty = false;
-  }
+  algebraic_block_handle<algebraic_block::test_block> algebraic_test_block(std::size_t a_dof_id);
+  algebraic_block_handle<algebraic_block::trial_block> algebraic_trial_block(std::size_t a_eq_id);
+  double& algebraic_block(std::size_t a_eq, std::size_t a_dof);
   
-  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form) {
+  typename trial_fes_type::element solve(const linear_form<test_fes_type>& form,
+                                         solver::basic_solver& s,
+                                         dictionary* result = nullptr) const {
     // Add the value of the dirichlet dof in the right hand side
-    array<double> f{trial_fes.get_dof_number() + constraint_number};
+    array<double> f{trial_fes.get_dof_number() + a_dof_number};
     std::copy(&form.get_coefficients().at(0),
 	      &form.get_coefficients().at(0) + test_fes.get_dof_number(),
 	      &f.at(0));
@@ -184,16 +136,20 @@ public:
       f.at(i.first) = i.second;
     }
     
-    if (dirty)
-      prepare_solver();
+    s.set_operator(a);
+    array<double> x{trial_fes.get_dof_number() + a_dof_number};
+    dictionary r;
+    s.solve(f, x, r);
+
+    if (result)
+      *result = r;
     
-    if (constraint_number == 0) {
-      return typename trial_fes_type::element(trial_fes, petsc->solve(f));
+    if (a_dof_number == 0) {
+      return typename trial_fes_type::element(trial_fes, x);
     } else {
-      array<double> solution(petsc->solve(f));
       array<double> coefficients{trial_fes.get_dof_number()};
-      std::copy(&solution.at(0),
-		&solution.at(0) + trial_fes.get_dof_number(),
+      std::copy(&x.at(0),
+		&x.at(0) + trial_fes.get_dof_number(),
 		&coefficients.at(0));
       
       return typename trial_fes_type::element(trial_fes, coefficients);
@@ -205,36 +161,34 @@ public:
 
     // Add the identity equations for each dirichlet dof
     for (const auto& i: test_fes.get_dirichlet_dof_values())
-      a.accumulate(i.first, i.first, 1.0);
-
-    constraint_number = 0;
+      a.add(i.first, i.first, 1.0);
   }
   
   void show(std::ostream& stream) const {
-    a.show(stream);
+    //a.show(stream);
   }
 
   void export_data(std::ostream& stream) const {
-    a.export_data(stream);
+    //a.export_data(stream);
   }
   
 private:
   const test_fes_type& test_fes;
   const trial_fes_type& trial_fes;
   
-  sparse_linear_system a;
-  linear_solver_impl::solver_base* petsc;
-  bool dirty = true;
-  std::size_t constraint_number;
+  sparse_matrix a;
+  std::size_t a_eq_number;
+  std::size_t a_dof_number;
 
   void accumulate(std::size_t i, std::size_t j, double value) {
     if (test_fes.get_dirichlet_dof_values().count(i) == 0)
-      a.accumulate(i, j, value);
+      a.add(i, j, value);
   }
 };
 
 template<typename test_fes_type, typename trial_fes_type>
-class bilinear_form<test_fes_type, trial_fes_type>::constraint_handle {
+template<algebraic_block block>
+class bilinear_form<test_fes_type, trial_fes_type>::algebraic_block_handle {
   using bilinear_form_type = bilinear_form<test_fes_type, trial_fes_type>;
   using test_fe_type = typename test_fes_type::fe_type;
   using trial_fe_type = typename trial_fes_type::fe_type;
@@ -246,13 +200,13 @@ class bilinear_form<test_fes_type, trial_fes_type>::constraint_handle {
   static const std::size_t trial_fe_index = get_index_of_element<trial_fe_type, unique_fe_list>::value;
 
 public:
-  constraint_handle(bilinear_form_type& f, std::size_t constraint_id)
-    : b_form(f), constraint_id(constraint_id) {}
+  algebraic_block_handle(bilinear_form_type& f, std::size_t id)
+    : b_form(f), id(id) {}
 
-  std::size_t get_id() const { return constraint_id; }
+  std::size_t get_id() const { return id; }
   
   template<typename T>
-  void operator-=(const T& integration_proxy) {
+  void operator+=(const T& integration_proxy) {
     typedef typename T::quadrature_type quadrature_type;
     typedef typename T::cell_type cell_type;
 
@@ -267,125 +221,108 @@ public:
     fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
     fe_zvalues.clear();
 
-    const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
-    array<double> a_el{n_trial_dof};
+    if (block == algebraic_block::trial_block) {
+      const std::size_t n_trial_dof(trial_fe_type::n_dof_per_element);
+      array<double> a_el{n_trial_dof};
     
-    // loop over the elements
-    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
-      a_el.fill(0.0);
+      // loop over the elements
+      for (unsigned int k(0); k < m.get_cell_number(); ++k) {
+        a_el.fill(0.0);
       
-      // prepare the quadrature points
-      const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
-      const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_cells(),
-									k, xq_hat));
+        // prepare the quadrature points
+        const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
+        const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
+                                                                          m.get_cells(),
+                                                                          k, xq_hat));
 
-      // prepare the basis function values
-      const array<double> jmt(m.get_jmt(k));
-      fe_values.set_points(xq_hat);
-      fe_values.prepare(jmt);
+        // prepare the basis function values
+        const array<double> jmt(m.get_jmt(k));
+        fe_values.set_points(xq_hat);
+        fe_values.prepare(jmt);
       
-      const array<double>& psi(fe_zvalues.template get_values<test_fe_index>());
-      const array<double>& phi(fe_values.template get_values<trial_fe_index>());
+        const array<double>& psi(fe_zvalues.template get_values<test_fe_index>());
+        const array<double>& phi(fe_values.template get_values<trial_fe_index>());
 
-      // evaluate the weak form
-      const double volume(m.get_cell_volume(k));
-      for (unsigned int q(0); q < n_q; ++q) {
-	integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+        // evaluate the weak form
+        const double volume(m.get_cell_volume(k));
+        for (unsigned int q(0); q < n_q; ++q) {
+          integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
 	
-	for (unsigned int j(0); j < n_trial_dof; ++j) {
-	  a_el.at(j) += omega.at(q) * integration_proxy.f(k,
-							  &xq.at(q, 0), &xq_hat.at(q, 0),
-							  &psi.at(q, 0, 0),
-							  &phi.at(q, j, 0));
-	}
+          for (unsigned int j(0); j < n_trial_dof; ++j) {
+            a_el.at(j) += omega.at(q) * integration_proxy.f(k,
+                                                            &xq.at(q, 0), &xq_hat.at(q, 0),
+                                                            &psi.at(q, 0, 0),
+                                                            &phi.at(q, j, 0));
+          }
+        }
+        for (unsigned int j(0); j < n_trial_dof; ++j)
+          b_form.accumulate(b_form.test_fes.get_dof_number() + id,
+                            b_form.trial_fes.get_dof(integration_proxy.get_global_cell_id(k), j),
+                            a_el.at(j) * volume);
       }
-      for (unsigned int j(0); j < n_trial_dof; ++j)
-	b_form.accumulate(b_form.test_fes.get_dof_number() + constraint_id,
-			  b_form.trial_fes.get_dof(integration_proxy.get_global_cell_id(k), j),
-			  a_el.at(j) * volume);
-    }
 
-    b_form.dirty = true;
-  }
+    } else if (block == algebraic_block::test_block) {
+      const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
+      array<double> a_el{n_test_dof};
 
-  template<typename T>
-  void operator|=(const T& integration_proxy) {
-    typedef typename T::quadrature_type quadrature_type;
-    typedef typename T::cell_type cell_type;
-
-    const auto& m(integration_proxy.m);
-
-    // prepare the quadrature weights
-    const std::size_t n_q(quadrature_type::n_point);
-    array<double> omega{n_q};
-    omega.set_data(&quadrature_type::w[0]);
-
-    // storage for the point-wise basis function evaluation
-    fe_value_manager<unique_fe_list> fe_values(n_q), fe_zvalues(n_q);
-    fe_zvalues.clear();
-
-
-    const std::size_t n_test_dof(test_fe_type::n_dof_per_element);
-    array<double> a_el{n_test_dof};
-
-    // loop over the elements
-    for (unsigned int k(0); k < m.get_cell_number(); ++k) {
-      a_el.fill(0.0);
+      // loop over the elements
+      for (unsigned int k(0); k < m.get_cell_number(); ++k) {
+        a_el.fill(0.0);
       
-      // prepare the quadrature points
-      const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
-      const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
-									m.get_cells(),
-									k, xq_hat));
-      // prepare the basis function values
-      const array<double> jmt(m.get_jmt(k));
-      fe_values.set_points(xq_hat);
-      fe_values.prepare(jmt);
+        // prepare the quadrature points
+        const array<double> xq_hat(integration_proxy.get_quadrature_points(k));
+        const array<double> xq(cell_type::map_points_to_space_coordinates(m.get_vertices(),
+                                                                          m.get_cells(),
+                                                                          k, xq_hat));
+        // prepare the basis function values
+        const array<double> jmt(m.get_jmt(k));
+        fe_values.set_points(xq_hat);
+        fe_values.prepare(jmt);
       
-      const array<double>& psi(fe_values.template get_values<test_fe_index>());
-      const array<double>& phi(fe_zvalues.template get_values<trial_fe_index>());
+        const array<double>& psi(fe_values.template get_values<test_fe_index>());
+        const array<double>& phi(fe_zvalues.template get_values<trial_fe_index>());
 
-      // evaluate the weak form
-      const double volume(m.get_cell_volume(k));
-      for (unsigned int q(0); q < n_q; ++q) {
-	integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
-	for (unsigned int i(0); i < n_test_dof; ++i) {
-	  a_el.at(i) += omega.at(q) * integration_proxy.f(k,
-							  &xq.at(q, 0), &xq_hat.at(q, 0),
-							  &psi.at(q, i, 0),
-							  &phi.at(q, 0, 0));
-	}
+        // evaluate the weak form
+        const double volume(m.get_cell_volume(k));
+        for (unsigned int q(0); q < n_q; ++q) {
+          integration_proxy.f.prepare(k, &xq.at(q, 0), &xq_hat.at(q, 0));
+          for (unsigned int i(0); i < n_test_dof; ++i) {
+            a_el.at(i) += omega.at(q) * integration_proxy.f(k,
+                                                            &xq.at(q, 0), &xq_hat.at(q, 0),
+                                                            &psi.at(q, i, 0),
+                                                            &phi.at(q, 0, 0));
+          }
+        }
+        for (unsigned int i(0); i < n_test_dof; ++i)
+          b_form.accumulate(b_form.test_fes.get_dof(integration_proxy.get_global_cell_id(k), i),
+                            b_form.trial_fes.get_dof_number() + id,
+                            a_el.at(i) * volume);
       }
-      for (unsigned int i(0); i < n_test_dof; ++i)
-	b_form.accumulate(b_form.test_fes.get_dof(integration_proxy.get_global_cell_id(k), i),
-			  b_form.trial_fes.get_dof_number() + constraint_id,
-			  a_el.at(i) * volume);
     }
-
-    b_form.dirty = true;
   }
 
 private:
   bilinear_form_type& b_form;
-  std::size_t constraint_id;
+  std::size_t id;
 };
 
-
 template<typename test_fes_type, typename trial_fes_type>
-typename bilinear_form<test_fes_type, trial_fes_type>::constraint_handle
-bilinear_form<test_fes_type, trial_fes_type>::new_constraint() {
-  constraint_number += 1;
-  a.set_sizes(test_fes.get_dof_number() + constraint_number,
-	      trial_fes.get_dof_number() + constraint_number);
-  return constraint_handle(*this, constraint_number - 1);
+typename bilinear_form<test_fes_type, trial_fes_type>::template algebraic_block_handle<algebraic_block::test_block>
+bilinear_form<test_fes_type, trial_fes_type>::algebraic_test_block(std::size_t id) {
+  return algebraic_block_handle<algebraic_block::test_block>(*this, id);
 }
 
+template<typename test_fes_type, typename trial_fes_type>
+typename bilinear_form<test_fes_type, trial_fes_type>::template algebraic_block_handle<algebraic_block::trial_block>
+bilinear_form<test_fes_type, trial_fes_type>::algebraic_trial_block(std::size_t id) {
+  return algebraic_block_handle<algebraic_block::trial_block>(*this, id);
+}
 
 template<typename test_fes_type, typename trial_fes_type>
-void bilinear_form<test_fes_type, trial_fes_type>::assemble_constraint(const constraint_handle& l_1, const constraint_handle& l_2, double value) {
-  accumulate(test_fes.get_dof_number() + l_1.get_id(),
-	     trial_fes.get_dof_number() + l_2.get_id(), value);
+double& bilinear_form<test_fes_type, trial_fes_type>::algebraic_block(std::size_t id_1, std::size_t id_2) {
+  return a.
+    get(test_fes.get_dof_number() + id_1,
+	     trial_fes.get_dof_number() + id_2);
 }
 
 

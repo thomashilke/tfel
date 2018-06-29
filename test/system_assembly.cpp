@@ -13,8 +13,7 @@
 #include "../src/core/mesh.hpp"
 #include "../src/core/fes.hpp"
 #include "../src/core/quadrature.hpp"
-#include "../src/core/sparse_linear_system.hpp"
-
+#include "../src/core/solver.hpp"
 
 int main(int argc, char *argv[]) {
   timer t;
@@ -39,8 +38,8 @@ int main(int argc, char *argv[]) {
     finite_element_space<fe> fes(m, left_boundary);
     fes.show(std::cout);
     
-    sparse_linear_system sys(fes.get_dof_number(),
-			     fes.get_dof_number());
+    sparse_matrix sys(fes.get_dof_number(),
+                      fes.get_dof_number());
 
     std::cout << std::setw(40) << "finite element system: "
 	      << std::setw(6) << std::right << t.tic() << " [ms]" << std::endl;
@@ -97,8 +96,8 @@ int main(int argc, char *argv[]) {
 	      for (unsigned int n(0); n < dim; ++n)
 		a_el += volume * omega.at(q) * dphi.at(n, i, q) * dphi.at(n, j, q);
 	    }
-	    sys.accumulate(fes.get_dof(k, j),
-			   fes.get_dof(k, i), a_el);
+	    sys.add(fes.get_dof(k, j),
+                    fes.get_dof(k, i), a_el);
 	  }
 	}
       }
@@ -149,8 +148,8 @@ int main(int argc, char *argv[]) {
 
 	      a_el += volume * omega.at(q) * 0.0;
 	    }
-	    sys.accumulate(fes.get_dof(dm.get_parent_cell_id(k), j),
-			   fes.get_dof(dm.get_parent_cell_id(k), i), a_el);
+	    sys.add(fes.get_dof(dm.get_parent_cell_id(k), j),
+                    fes.get_dof(dm.get_parent_cell_id(k), i), a_el);
 	  }
 	}
       }
@@ -265,8 +264,6 @@ int main(int argc, char *argv[]) {
     for (std::size_t j(1); j < rhs.get_size(0); ++j)
       std::cout << "; " << rhs.at(j);
     std::cout << "];" << std::endl;
-  
-    sys.show(std::cout);
   }
   catch (const std::string& e) {
     std::cout << e << std::endl;

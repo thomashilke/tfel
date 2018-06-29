@@ -30,7 +30,7 @@ CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -std=c++11 \
 LDFLAGS += -Wall -Wextra \
 	   -L$(SITE_PETSC_LIB_DIR) -L$(SITE_LAPACK_LIB_DIR) -L./lib/ -L$(SITE_LIB_DIR)
 
-LDLIBS = -lpetsc -llapacke -ltfel -lalucelldb
+LDLIBS = -lpetsc -llapacke -lalucelldb -Wl,-all_load -ltfel
 AR = ar
 ARFLAGS = rc
 MKDIR = mkdir
@@ -45,11 +45,22 @@ PKG_NAME = tfel
 
 
 SOURCES = \
+	src/main.cpp \
+	src/core/quadrature.cpp \
+	src/core/solver.cpp \
+	src/core/dictionary.cpp \
+	src/core/cell.cpp \
+	src/core/mesh.cpp \
+	src/core/fe.cpp \
+	src/protocols/stokes_2d/driven_cavity.cpp \
+	src/protocols/steady_advection_diffusion_2d/step.cpp \
+	src/protocols/unsteady_advection_diffusion_2d/rotating_hill.cpp \
+	src/protocols/unsteady_advection_diffusion_2d/front.cpp \
+	src/protocols/steady_advection_diffusion_1d/stabilisation.cpp \
 	test/finite_element_space.cpp \
 	test/quadrature_1d.cpp \
 	test/expression.cpp \
 	test/system_assembly.cpp \
-	test/linear_solver.cpp \
 	test/square_mesh.cpp \
 	test/l2_projection.cpp \
 	test/triangle_cell.cpp \
@@ -57,8 +68,6 @@ SOURCES = \
 	test/laplacian_transient.cpp \
 	test/basic_finite_element_formulation.cpp \
 	test/quadrature_2d.cpp \
-	src/core/quadrature.cpp \
-	src/core/linear_solver.cpp \
 	test/composite_fe.cpp \
 	test/stokes_2d.cpp \
 	test/l2_p1_bubble_projection.cpp \
@@ -67,15 +76,6 @@ SOURCES = \
 	test/linear_constraint.cpp \
 	test/composite_linear_constraint.cpp \
 	test/mesh_data.cpp \
-	src/protocols/stokes_2d/driven_cavity.cpp \
-	src/protocols/steady_advection_diffusion_2d/step.cpp \
-	src/protocols/unsteady_advection_diffusion_2d/rotating_hill.cpp \
-	src/protocols/unsteady_advection_diffusion_2d/front.cpp \
-	src/protocols/steady_advection_diffusion_1d/stabilisation.cpp \
-	src/main.cpp \
-	src/core/cell.cpp \
-	src/core/mesh.cpp \
-	src/core/fe.cpp \
 	test/stokes_2d_p2_p1.cpp \
 	test/navier_stokes_2d_p2_p1.cpp \
 	test/fe_derivative_form.cpp
@@ -100,12 +100,10 @@ HEADERS = \
 	include/tfel/core/form.hpp \
 	include/tfel/core/linear_algebra.hpp \
 	include/tfel/core/linear_form.hpp \
-	include/tfel/core/linear_solver.hpp \
 	include/tfel/core/mesh.hpp \
 	include/tfel/core/meta.hpp \
 	include/tfel/core/projector.hpp \
 	include/tfel/core/quadrature.hpp \
-	include/tfel/core/sparse_linear_system.hpp \
 	include/tfel/formulations/steady_advection_diffusion_2d.hpp \
 	include/tfel/formulations/steady_advection_diffusion_1d.hpp \
 	include/tfel/formulations/stokes_2d.hpp \
@@ -116,7 +114,9 @@ HEADERS = \
 	include/tfel/core/vector_operation.hpp \
 	include/tfel/core/subdomain.hpp \
 	include/tfel/core/mesh_data.hpp \
-	include/tfel/core/operator.hpp
+	include/tfel/core/operator.hpp \
+	include/tfel/core/dictionary.hpp \
+	include/tfel/core/solver.hpp
 
 
 BIN = \
@@ -124,7 +124,6 @@ BIN = \
 	bin/test_expression \
 	bin/test_quadrature_1d \
 	bin/test_system_assembly \
-	bin/test_linear_solver \
 	bin/test_square_mesh \
 	bin/test_l2_projection \
 	bin/test_triangle_cell \
@@ -155,7 +154,6 @@ bin/main: build/src/main.o
 bin/test_quadrature_1d: build/test/quadrature_1d.o
 bin/test_expression: build/test/expression.o
 bin/test_system_assembly: build/test/system_assembly.o
-bin/test_linear_solver: build/test/linear_solver.o
 bin/test_square_mesh: build/test/square_mesh.o
 bin/test_l2_projection: build/test/l2_projection.o
 bin/test_triangle_cell: build/test/triangle_cell.o
@@ -187,4 +185,5 @@ lib/libtfel.a: \
 	build/src/core/mesh.o \
 	build/src/core/quadrature.o \
 	build/src/core/cell.o \
-	build/src/core/linear_solver.o
+	build/src/core/dictionary.o \
+	build/src/core/solver.o

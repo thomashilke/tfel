@@ -101,7 +101,7 @@ last problem is well-posed and that the function \\( u_h \\) is an
 approximation of \\( u \\) in the sense that
 
 $$
-    \left\lVert u - u_h \right\rVert = O(h^2).
+    \left\lVert u - u_h \right\rVert_{L^2(\Omega)} = O(h^2).
 $$
 
 We know proceed to the implementation of discrete weak formulation

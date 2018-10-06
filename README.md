@@ -1,5 +1,6 @@
 # Template Finite Element Library
-By Thomas Hilke
+By Thomas Hilke. More informations can be found at
+[https://thomashilke.github.io/tfel/](https://thomashilke.github.io/tfel/).
 
 ## Requirements
 To compile an use the TFEL, you must have the following packages which
